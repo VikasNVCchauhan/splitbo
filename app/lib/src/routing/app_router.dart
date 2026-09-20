@@ -31,11 +31,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   ref.onDispose(authNotifier.dispose);
 
   return GoRouter(
-    initialLocation: AppRoutes.home,
+    initialLocation: AppRoutes.signIn,
     debugLogDiagnostics: true,
     refreshListenable: authNotifier,
     redirect: (context, state) {
-      // TODO: re-enable auth guard before production
+      final container = ProviderScope.containerOf(context);
+      final userAsync = container.read(authStateProvider);
+      final isSignedIn = userAsync.valueOrNull != null;
+      final onAuthPage = state.matchedLocation.startsWith('/auth');
+
+      if (!isSignedIn && !onAuthPage) return AppRoutes.signIn;
+      if (isSignedIn && onAuthPage) return AppRoutes.home;
       return null;
     },
     routes: [
