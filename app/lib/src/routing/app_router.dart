@@ -8,6 +8,7 @@ import 'package:feature_auth/feature_auth.dart';
 import 'package:feature_balances/feature_balances.dart';
 import 'package:feature_expenses/feature_expenses.dart';
 import 'package:feature_groups/feature_groups.dart';
+import 'package:feature_settings/feature_settings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -82,8 +83,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(routes: [
             GoRoute(
               path: AppRoutes.settings,
-              builder: (_, __) =>
-                  const _PlaceholderScreen(label: 'Settings'),
+              builder: (_, __) => const SettingsScreen(),
             ),
           ]),
         ],

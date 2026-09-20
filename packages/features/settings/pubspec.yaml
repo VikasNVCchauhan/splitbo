@@ -14,11 +14,12 @@ dependencies:
     path: ../../core
   domain:
     path: ../../domain
+  data:
+    path: ../../data
   design_system:
     path: ../../design_system
   flutter_riverpod: ^2.5.1
   go_router: ^14.2.0
-  image_picker: ^1.1.2
 
 dev_dependencies:
   flutter_test:

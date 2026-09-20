@@ -40,10 +40,9 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
   Future<void> _save() async {
     final desc = _descCtrl.text.trim();
     final amount = double.tryParse(_amountCtrl.text.replaceAll(',', '')) ?? 0;
-    final group = _selectedGroup;
-    if (desc.isEmpty || amount <= 0 || group == null) {
+    if (desc.isEmpty || amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all fields')),
+        const SnackBar(content: Text('Please enter a description and amount')),
       );
       return;
     }
@@ -59,15 +58,19 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
     }
     setState(() => _saving = true);
 
-    final splits = group.memberIds
-        .map((id) => SplitEntity(userId: id, amount: amount / group.memberIds.length))
-        .toList();
+    final group = _selectedGroup;
+    final groupId = group?.id ?? 'personal_${user.id}';
+    final splits = group != null
+        ? group.memberIds
+            .map((id) => SplitEntity(userId: id, amount: amount / group.memberIds.length))
+            .toList()
+        : [SplitEntity(userId: user.id, amount: amount)];
 
     final result = await ref.read(expenseRepositoryProvider).addExpense(
-          groupId: group.id,
+          groupId: groupId,
           description: desc,
           amount: amount,
-          currency: group.currency,
+          currency: group?.currency ?? 'INR',
           paidBy: user.id,
           splits: splits,
           category: _category,
