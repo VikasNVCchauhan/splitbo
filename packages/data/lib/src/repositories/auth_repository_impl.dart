@@ -25,7 +25,7 @@ class AuthRepositoryImpl implements AuthRepository {
   final GoogleSignIn _googleSignIn;
 
   CollectionReference<Map<String, dynamic>> get _users =>
-      _firestore.collection('users');
+      _firestore.collection('${dbPrefix}users');
 
   @override
   Stream<UserEntity?> watchAuthState() =>

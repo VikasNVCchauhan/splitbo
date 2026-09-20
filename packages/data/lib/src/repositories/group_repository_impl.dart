@@ -1,3 +1,4 @@
+import '../providers/firebase_providers.dart';
 // packages/data/lib/src/repositories/group_repository_impl.dart
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -13,18 +14,21 @@ class GroupRepositoryImpl implements GroupRepository {
   final FirebaseFirestore _firestore;
 
   CollectionReference<Map<String, dynamic>> get _groups =>
-      _firestore.collection('groups');
+      _firestore.collection('${dbPrefix}groups');
   CollectionReference<Map<String, dynamic>> get _users =>
-      _firestore.collection('users');
+      _firestore.collection('${dbPrefix}users');
 
   @override
   Stream<List<GroupEntity>> watchGroups(String userId) => _groups
       .where('memberIds', arrayContains: userId)
-      .orderBy('createdAt', descending: true)
       .snapshots()
-      .map((snap) => snap.docs
-          .map((d) => GroupDto.fromFirestore(d).toEntity())
-          .toList());
+      .map((snap) {
+        final list = snap.docs
+            .map((d) => GroupDto.fromFirestore(d).toEntity())
+            .toList();
+        list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        return list;
+      });
 
   @override
   Future<Result<GroupEntity, AppError>> getGroup(String groupId) async {

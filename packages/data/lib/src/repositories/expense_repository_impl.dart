@@ -1,3 +1,4 @@
+import '../providers/firebase_providers.dart';
 // packages/data/lib/src/repositories/expense_repository_impl.dart
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -17,7 +18,7 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
   final String _currentUserId;
 
   CollectionReference<Map<String, dynamic>> _expenses(String groupId) =>
-      _firestore.collection('groups').doc(groupId).collection('expenses');
+      _firestore.collection('${dbPrefix}groups').doc(groupId).collection('expenses');
 
   @override
   Stream<List<ExpenseEntity>> watchExpenses(String groupId) => _expenses(groupId)

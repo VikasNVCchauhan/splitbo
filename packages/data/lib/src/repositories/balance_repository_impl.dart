@@ -1,3 +1,4 @@
+import '../providers/firebase_providers.dart';
 // packages/data/lib/src/repositories/balance_repository_impl.dart
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -13,10 +14,10 @@ class BalanceRepositoryImpl implements BalanceRepository {
   final FirebaseFirestore _firestore;
 
   CollectionReference<Map<String, dynamic>> _balances(String groupId) =>
-      _firestore.collection('groups').doc(groupId).collection('balances');
+      _firestore.collection('${dbPrefix}groups').doc(groupId).collection('balances');
 
   CollectionReference<Map<String, dynamic>> _settlements(String groupId) =>
-      _firestore.collection('groups').doc(groupId).collection('settlements');
+      _firestore.collection('${dbPrefix}groups').doc(groupId).collection('settlements');
 
   @override
   Stream<List<BalanceEntity>> watchBalances(String userId) {
