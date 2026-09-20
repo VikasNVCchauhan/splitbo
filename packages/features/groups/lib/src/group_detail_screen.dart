@@ -130,7 +130,6 @@ class _GroupDetailBody extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _GroupBanner(group: group),
-          const Divider(height: 1, color: _border),
           Expanded(
             child: expensesAsync.when(
               loading: () => const Center(
@@ -707,30 +706,37 @@ class _GroupBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final symbol = group.currency == 'INR' ? '₹' : group.currency;
     final members = group.memberIds;
-    final visibleCount = members.length > 5 ? 5 : members.length;
+    final visibleCount = members.length.clamp(0, 6);
     final overflow = members.length - visibleCount;
+    const avatarSize = 36.0;
+    const overlap = 14.0;
+    final stackWidth = visibleCount > 0
+        ? avatarSize + (visibleCount - 1) * (avatarSize - overlap) + (overflow > 0 ? avatarSize - overlap : 0)
+        : 0.0;
 
     return Container(
       color: _surface,
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ── Top row: avatar + info ──────────────────────────────
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 64,
-                height: 64,
+                width: 68,
+                height: 68,
                 decoration: BoxDecoration(
                   color: _green.withOpacity(0.12),
                   shape: BoxShape.circle,
-                  border: Border.all(color: _green.withOpacity(0.3), width: 2),
+                  border: Border.all(color: _green.withOpacity(0.35), width: 2),
                 ),
                 child: Center(
                   child: Text(
                     group.name.isNotEmpty ? group.name[0].toUpperCase() : '?',
                     style: const TextStyle(
-                        fontSize: 26, fontWeight: FontWeight.w800, color: _green),
+                        fontSize: 28, fontWeight: FontWeight.w800, color: _green),
                   ),
                 ),
               ),
@@ -742,80 +748,90 @@ class _GroupBanner extends StatelessWidget {
                     Text(group.name,
                         style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 17,
+                            fontSize: 18,
                             fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 6),
+                    // Instagram-style overlapping member avatars
+                    if (members.isNotEmpty)
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: stackWidth,
+                            height: avatarSize,
+                            child: Stack(
+                              children: [
+                                for (int i = 0; i < visibleCount; i++)
+                                  Positioned(
+                                    left: i * (avatarSize - overlap),
+                                    child: Container(
+                                      width: avatarSize,
+                                      height: avatarSize,
+                                      decoration: BoxDecoration(
+                                        color: _memberColors[i % _memberColors.length]
+                                            .withOpacity(0.18),
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                            color: Colors.black, width: 2),
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          String.fromCharCode(65 + i), // A, B, C…
+                                          style: TextStyle(
+                                              color: _memberColors[
+                                                  i % _memberColors.length],
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w800),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                if (overflow > 0)
+                                  Positioned(
+                                    left: visibleCount * (avatarSize - overlap),
+                                    child: Container(
+                                      width: avatarSize,
+                                      height: avatarSize,
+                                      decoration: BoxDecoration(
+                                        color: _textSecondary.withOpacity(0.1),
+                                        shape: BoxShape.circle,
+                                        border:
+                                            Border.all(color: Colors.black, width: 2),
+                                      ),
+                                      child: Center(
+                                        child: Text('+$overflow',
+                                            style: const TextStyle(
+                                                color: _textSecondary, fontSize: 10)),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${group.memberCount} member${group.memberCount == 1 ? '' : 's'}',
+                            style: const TextStyle(
+                                color: _textSecondary, fontSize: 12),
+                          ),
+                        ],
+                      ),
                     const SizedBox(height: 4),
                     Text(
-                      '${group.memberCount} member${group.memberCount == 1 ? '' : 's'}',
-                      style: const TextStyle(color: _textSecondary, fontSize: 13),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '$symbol${group.totalExpenses.toStringAsFixed(0)} total expenses',
+                      '$symbol${group.totalExpenses.toStringAsFixed(0)} total',
                       style: const TextStyle(
-                          color: _green, fontSize: 13, fontWeight: FontWeight.w600),
+                          color: _green,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600),
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          if (members.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            const Text('Members',
-                style: TextStyle(
-                    color: _textSecondary, fontSize: 11, letterSpacing: 0.5)),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                for (int i = 0; i < visibleCount; i++)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: Column(
-                      children: [
-                        Container(
-                          width: 38,
-                          height: 38,
-                          decoration: BoxDecoration(
-                            color: _memberColors[i % _memberColors.length]
-                                .withOpacity(0.15),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: _memberColors[i % _memberColors.length]
-                                  .withOpacity(0.4),
-                            ),
-                          ),
-                          child: Center(
-                            child: Text(
-                              (i + 1).toString(),
-                              style: TextStyle(
-                                  color: _memberColors[i % _memberColors.length],
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                if (overflow > 0)
-                  Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      color: _textSecondary.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: _border),
-                    ),
-                    child: Center(
-                      child: Text('+$overflow',
-                          style: const TextStyle(
-                              color: _textSecondary, fontSize: 11)),
-                    ),
-                  ),
-              ],
-            ),
-          ],
+          // ── Action row ──────────────────────────────────────────
+          const SizedBox(height: 16),
+          const Divider(height: 1, color: _border),
         ],
       ),
     );
