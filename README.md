@@ -281,12 +281,38 @@ No gradients, no shadows, flat and minimal.
 
 ## Roadmap
 
-- [x] Firestore security rules
-- [ ] Native iOS / Android builds
-- [ ] Push notifications (Firebase Messaging)
-- [ ] Invite members via link
-- [ ] Export expenses to CSV/PDF
+### v1 — Core (current)
+- [x] Google Sign-In + Firebase Auth
+- [x] Groups + Expenses + Real-time Firestore sync
+- [x] AI Receipt Scanning (Gemini 1.5 Flash)
+- [x] Activity feed + Settings/Profile
+- [x] Firestore security rules + composite indexes (auto-deploy via CI)
+- [x] Group detail screen with expense list
+- [x] Export expenses to CSV
+- [x] Invite members via link (copy-to-clipboard + auto-join route)
+
+### v2 — Frictionless Imports
+- [ ] Push notifications (Firebase Cloud Messaging)
+- [ ] Gmail integration — auto-detect receipts from Uber, Ola, Rapido, MakeMyTrip, OYO, Swiggy, Zomato, Amazon, Flipkart in inbox
+- [ ] SMS parsing (Android) — auto-import from ride & food apps with zero effort
+- [ ] Share sheet target — share any confirmation PDF/email directly into Splitbo
+- [ ] Native iOS + Android builds
+
+### v3 — Enterprise / Reimbursements
+- [ ] Employee expense tracking — employees log work expenses (travel, meals, accommodation, client entertainment)
+- [ ] Reimbursement workflows — submit expense → manager approves → marked reimbursed
+- [ ] Policy enforcement — flag expenses that exceed per-diem limits
+- [ ] Cost-centre tagging — tag expenses to projects, clients, or departments
+- [ ] Finance dashboard — manager view of pending approvals, monthly spend by team
+- [ ] Export to CSV/PDF for accounting (Tally, QuickBooks, SAP integration)
+- [ ] GST-aware split — separate taxable vs non-taxable amounts for corporate reporting
+
+### v4 — Scale
+- [ ] Invite members via email
 - [ ] Offline support
+- [ ] Multi-currency with live FX rates
+- [ ] Recurring expenses
+- [ ] Audit trail for enterprise compliance
 
 ---
 

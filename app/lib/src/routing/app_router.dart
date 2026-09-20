@@ -26,6 +26,7 @@ abstract final class AppRoutes {
 
   static String groupDetail(String id)   => '/groups/$id';
   static String expenseDetail(String id) => '/expense/$id';
+  static String inviteGroup(String id)   => '/invite/$id';
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -71,8 +72,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               routes: [
                 GoRoute(
                   path: ':id',
-                  builder: (_, state) => _PlaceholderScreen(
-                    label: 'Group: ${state.pathParameters['id']}',
+                  builder: (_, state) => GroupDetailScreen(
+                    groupId: state.pathParameters['id']!,
                   ),
                 ),
               ],
@@ -99,6 +100,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.signUp,
         builder: (_, __) => const SignInScreen(),
+      ),
+      GoRoute(
+        path: '/invite/:id',
+        builder: (_, state) => _InviteScreen(
+          groupId: state.pathParameters['id']!,
+        ),
       ),
       GoRoute(
         path: AppRoutes.expenseNew,
@@ -258,6 +265,64 @@ class _PlaceholderScreen extends StatelessWidget {
       appBar: AppBar(title: Text(label)),
       body: Center(
         child: Text(label, style: Theme.of(context).textTheme.headlineMedium),
+      ),
+    );
+  }
+}
+
+// Opens when someone taps an invite link — auto-joins group after sign-in.
+class _InviteScreen extends ConsumerStatefulWidget {
+  const _InviteScreen({required this.groupId});
+  final String groupId;
+
+  @override
+  ConsumerState<_InviteScreen> createState() => _InviteScreenState();
+}
+
+class _InviteScreenState extends ConsumerState<_InviteScreen> {
+  bool _joining = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _tryJoin());
+  }
+
+  Future<void> _tryJoin() async {
+    final user = ref.read(authStateProvider).valueOrNull;
+    if (user == null) {
+      // Not signed in — redirect to sign-in, then come back
+      if (mounted) context.go(AppRoutes.signIn);
+      return;
+    }
+    setState(() => _joining = true);
+    await ref.read(groupRepositoryProvider).addMembers(
+      groupId: widget.groupId,
+      userIds: [user.id],
+    );
+    if (mounted) {
+      setState(() => _joining = false);
+      context.go(AppRoutes.groupDetail(widget.groupId));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(
+                color: Color(0xFFC3FD00), strokeWidth: 2),
+            const SizedBox(height: 20),
+            Text(
+              _joining ? 'Joining group…' : 'Checking sign-in…',
+              style: const TextStyle(color: Colors.white, fontSize: 15),
+            ),
+          ],
+        ),
       ),
     );
   }

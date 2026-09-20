@@ -133,12 +133,16 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
       );
       if (result == null || result.files.isEmpty) return;
       final file = result.files.first;
-      if (file.bytes == null) return;
+      final bytes = file.bytes;
+      if (bytes == null || bytes.isEmpty) {
+        _toastError('Could not read file. Try picking again.');
+        return;
+      }
       final ext = (file.extension ?? 'jpg').toLowerCase();
       final mime = ext == 'pdf' ? 'application/pdf' : 'image/jpeg';
-      await _runOcr(file.bytes!, mime);
-    } catch (_) {
-      _toastError('Could not open file.');
+      await _runOcr(bytes, mime);
+    } catch (e) {
+      _toastError('Could not open file: $e');
     }
   }
 
@@ -184,8 +188,8 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
           duration: const Duration(seconds: 3),
         ),
       );
-    } catch (_) {
-      _toastError('Scan failed — please fill in manually.');
+    } catch (e) {
+      _toastError('Scan failed: ${e.toString().length > 80 ? e.toString().substring(0, 80) : e.toString()}');
     } finally {
       if (mounted) setState(() => _scanning = false);
     }
@@ -246,7 +250,9 @@ If you cannot read something, use null for that field. Return ONLY the JSON.
         )
         .timeout(const Duration(seconds: 25));
 
-    if (response.statusCode != 200) return null;
+    if (response.statusCode != 200) {
+      throw Exception('Gemini ${response.statusCode}: ${response.body.length > 200 ? response.body.substring(0, 200) : response.body}');
+    }
 
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     final candidates = data['candidates'] as List?;
@@ -291,7 +297,10 @@ If you cannot read something, use null for that field. Return ONLY the JSON.
     setState(() => _scanning = false);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-          content: Text(msg), backgroundColor: const Color(0xFF1E1E1E)),
+        content: Text(msg),
+        backgroundColor: const Color(0xFF1E1E1E),
+        duration: const Duration(seconds: 6),
+      ),
     );
   }
 
