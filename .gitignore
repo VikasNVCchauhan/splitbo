@@ -4,13 +4,12 @@
 .flutter-plugins-dependencies
 .packages
 build/
-*.g.dart
+# *.g.dart intentionally NOT ignored — app_tokens.g.dart is committed
 *.freezed.dart
 
 # pub
 .pub-cache/
 .pub/
-pubspec.lock
 
 # iOS
 **/ios/Pods/
