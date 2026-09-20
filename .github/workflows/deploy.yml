@@ -36,7 +36,19 @@ jobs:
         with:
           path: app/build/web
 
-  deploy:
+  deploy-firebase:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy Firestore indexes and rules
+        uses: w9jds/firebase-action@master
+        with:
+          args: deploy --only firestore:indexes,firestore:rules --project splitbo
+        env:
+          GCP_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
+  deploy-pages:
     needs: build
     runs-on: ubuntu-latest
     environment:

@@ -2,7 +2,7 @@
 
 > **Split bills. Keep friends.**
 
-🌐 **Live App: [https://vikasnvcchauhan.github.io/splitbo/](https://vikasnvcchauhan.github.io/splitbo/)**
+**Live App: [https://vikasnvcchauhan.github.io/splitbo/](https://vikasnvcchauhan.github.io/splitbo/)**
 
 Splitbo is a modern expense-splitting app built with Flutter Web + Firebase. Track shared expenses across groups, settle balances, and scan receipts with AI — all with a clean dark-first UI.
 
@@ -60,9 +60,9 @@ splitbo/
 │       └── settings/           # Settings screen
 │
 ├── docs/                       # PRD, architecture docs, brand guidelines, marketing assets
-├── firebase/                   # Firebase config (rules, indexes)
+├── firebase/                   # Firestore rules + composite index definitions
 ├── functions/                  # Cloud Functions (placeholder)
-├── tools/                      # Dev tools (contrast checker, token generator)
+├── .github/workflows/          # GitHub Actions: build + deploy to GitHub Pages + Firebase
 ├── melos.yaml                  # Monorepo config
 └── pubspec.yaml                # Root pubspec
 ```
@@ -90,29 +90,96 @@ cd splitbo
 # Install all package dependencies
 flutter pub get
 
-# Run the web app on Chrome
+# Run the web app on Chrome (debug mode — skips Google Sign-In, goes straight to home)
 cd app
 flutter run -d chrome --web-port 3000
 ```
 
 App opens at **http://localhost:3000**
 
-> **Note for new machines:** Add `http://localhost:3000` to Authorised JavaScript origins in [Google Cloud Console](https://console.cloud.google.com/auth/clients?project=splitbo) for Google Sign-In to work locally.
+> **Debug mode bypass:** In `kDebugMode`, the auth guard is skipped and the app opens directly to the home screen. This is intentional for local UI development — no Firebase account needed to build and test locally.
 
 ---
 
-## Firebase Setup
+## Developer Onboarding — New Team Member Checklist
 
-The app connects to the `splitbo` Firebase project. `firebase_options.dart` is included in the repo so no additional Firebase setup is needed to run the app.
+Follow these steps when setting up on a new machine.
 
-For Google Sign-In to work on your machine, you need to whitelist `localhost:3000` in Google Cloud Console:
+### 1. Request Google Account Access
 
-1. Go to [Google Cloud Console → Credentials](https://console.cloud.google.com/apis/credentials)
-2. Open the OAuth 2.0 client for the `splitbo` project
-3. Under **Authorised JavaScript origins**, add `http://localhost:3000`
-4. Save and wait ~30 seconds for propagation
+Ask the project owner to add your Google account to the Firebase project:
+- Firebase Console → **Project Settings** → **Users and permissions** → Add member
 
-> **Note:** Firestore security rules are open during development. Tighten before any public release.
+### 2. Add Your Localhost to OAuth Whitelist
+
+For Google Sign-In to work on your local machine (release mode / production testing):
+
+1. Go to [Google Cloud Console → Credentials](https://console.cloud.google.com/apis/credentials?project=splitbo)
+2. Open the OAuth 2.0 Client ID named `splitbo`
+3. Under **Authorised JavaScript origins**, add: `http://localhost:3000`
+4. Click **Save** — takes ~30 seconds to propagate
+
+### 3. Firebase Project Details
+
+| Field | Value |
+|-------|-------|
+| Project ID | `splitbo` |
+| Project Console | https://console.firebase.google.com/project/splitbo |
+| Auth Provider | Google Sign-In (enabled) |
+| Firestore Region | `nam5` (us-central) |
+
+Firestore collections:
+
+| Collection | Prefix in dev | Description |
+|-----------|--------------|-------------|
+| `users` | `dev_users` | User profiles |
+| `groups` | `dev_groups` | Expense groups |
+| `expenses` | `dev_expenses` | Expenses per group |
+| `balances` | `dev_balances` | Per-user balance snapshots |
+
+> **Dev vs Prod isolation:** When running locally (`kDebugMode = true`), all Firestore reads/writes go to `dev_*` collections. Production data is never touched during local development.
+
+### 4. GitHub Repository
+
+| Field | Value |
+|-------|-------|
+| Repo | https://github.com/VikasNVCchauhan/splitbo |
+| Live URL | https://vikasnvcchauhan.github.io/splitbo/ |
+| Default branch | `main` |
+
+Every push to `main` automatically:
+- Builds the Flutter web app
+- Deploys to GitHub Pages (live URL above)
+- Deploys Firestore security rules + composite indexes to Firebase
+
+### 5. GitHub Secrets (CI/CD)
+
+The following secret is required in the GitHub repo for the auto-deploy to work. The project owner manages this.
+
+| Secret Name | Purpose |
+|------------|---------|
+| `FIREBASE_SERVICE_ACCOUNT` | Service account JSON for deploying Firestore rules/indexes |
+
+To regenerate this key (if it expires or needs rotation):
+1. Go to [Firebase Console → Project Settings → Service Accounts](https://console.firebase.google.com/project/splitbo/settings/serviceaccounts/adminsdk)
+2. Click **Generate new private key**
+3. Go to [GitHub → Settings → Secrets → Actions](https://github.com/VikasNVCchauhan/splitbo/settings/secrets/actions)
+4. Update the `FIREBASE_SERVICE_ACCOUNT` secret with the new JSON content
+
+> **Never commit the service account JSON to the repo.** It is only stored in GitHub Secrets.
+
+### 6. Firestore Composite Indexes
+
+Indexes are defined in [`firebase/firestore.indexes.json`](firebase/firestore.indexes.json) and deployed automatically by GitHub Actions.
+
+Current indexes:
+
+| Collection | Fields | Purpose |
+|-----------|--------|---------|
+| `groups` | `memberIds` (array-contains) + `createdAt` (desc) | Home screen groups list |
+| `expenses` | `groupId` (asc) + `createdAt` (desc) | Group expense feed |
+| `expenses` | `paidBy` (asc) + `createdAt` (desc) | Balance calculations |
+| `balances` | `userId` (asc) + `groupId` (asc) | Balance lookups |
 
 ---
 
@@ -150,7 +217,7 @@ On the Add Expense screen, tap **Scan Receipt** to:
 
 1. Take a photo, pick from gallery, or upload a PDF/DOCX
 2. The file is sent to **Gemini 1.5 Flash** with a structured prompt
-3. Gemini understands full receipt context (restaurant, utility bill, grocery, fuel, etc.) and returns JSON: `{amount, description, category, notes}`
+3. Gemini understands full receipt context and returns JSON: `{amount, description, category, notes}`
 4. Fields are auto-filled in the form — review and save
 
 The Gemini API key is bundled in the app (same Firebase project key). Enable the **Generative Language API** in Google Cloud Console if OCR returns errors.
@@ -173,7 +240,7 @@ Logo mark is an SVG `CustomPainter` — dot + curved blade + crescent with punch
 
 ## Architecture Diagram
 
-Use this prompt in any AI image generator (Midjourney, DALL·E, Ideogram, etc.) to produce an architecture diagram for Splitbo:
+Use this prompt in any AI image generator (Midjourney, DALL·E, Ideogram, etc.):
 
 ```
 A clean, dark-background software architecture diagram for a mobile app called "Splitbo".
@@ -214,7 +281,7 @@ No gradients, no shadows, flat and minimal.
 
 ## Roadmap
 
-- [ ] Firestore security rules
+- [x] Firestore security rules
 - [ ] Native iOS / Android builds
 - [ ] Push notifications (Firebase Messaging)
 - [ ] Invite members via link
