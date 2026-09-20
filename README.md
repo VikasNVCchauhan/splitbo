@@ -97,6 +97,8 @@ flutter run -d chrome --web-port 3000
 
 App opens at **http://localhost:3000**
 
+> **Note for new machines:** Add `http://localhost:3000` to Authorised JavaScript origins in [Google Cloud Console](https://console.cloud.google.com/auth/clients?project=splitbo) for Google Sign-In to work locally.
+
 ---
 
 ## Firebase Setup
