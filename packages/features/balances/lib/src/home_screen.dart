@@ -212,6 +212,10 @@ class _SplitboAppBar extends StatelessWidget implements PreferredSizeWidget {
         ],
       ),
       actions: [
+        IconButton(
+          icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 24),
+          onPressed: () => context.push('/activity'),
+        ),
         Padding(
           padding: const EdgeInsets.only(right: 16),
           child: CircleAvatar(

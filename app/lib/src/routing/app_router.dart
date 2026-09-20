@@ -4,6 +4,7 @@
 import 'dart:async';
 
 import 'package:data/data.dart';
+import 'package:feature_activity/feature_activity.dart';
 import 'package:feature_auth/feature_auth.dart';
 import 'package:feature_balances/feature_balances.dart';
 import 'package:feature_expenses/feature_expenses.dart';
@@ -80,8 +81,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(routes: [
             GoRoute(
               path: AppRoutes.activity,
-              builder: (_, __) =>
-                  const _PlaceholderScreen(label: 'Activity'),
+              builder: (_, __) => const ActivityScreen(),
             ),
           ]),
           StatefulShellBranch(routes: [
