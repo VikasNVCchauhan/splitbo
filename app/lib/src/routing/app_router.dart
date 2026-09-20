@@ -37,6 +37,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final container = ProviderScope.containerOf(context);
       final userAsync = container.read(authStateProvider);
+
+      // While auth is loading, don't redirect — wait for it to resolve
+      if (userAsync.isLoading) return null;
+
       final isSignedIn = userAsync.valueOrNull != null;
       final onAuthPage = state.matchedLocation.startsWith('/auth');
 
