@@ -152,16 +152,14 @@ class _AppShell extends ConsumerWidget {
     ref.watch(saveFcmTokenProvider);
     return Scaffold(
       body: shell,
-      floatingActionButton: shell.currentIndex == 0
-          ? FloatingActionButton(
-              onPressed: () => context.push(AppRoutes.expenseNew),
-              backgroundColor: _brandGreen,
-              foregroundColor: Colors.black,
-              elevation: 4,
-              shape: const CircleBorder(),
-              child: const Icon(Icons.add_rounded, size: 28),
-            )
-          : null,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => context.push(AppRoutes.expenseNew),
+        backgroundColor: _brandGreen,
+        foregroundColor: Colors.black,
+        elevation: 4,
+        shape: const CircleBorder(),
+        child: const Icon(Icons.add_rounded, size: 28),
+      ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: BottomAppBar(
         color: _bg,

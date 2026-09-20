@@ -27,12 +27,6 @@ class GroupsScreen extends ConsumerWidget {
             color: colors.textPrimary,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.add, color: colors.brandPrimary, size: 26),
-            onPressed: () => _showCreateGroupSheet(context, ref),
-          ),
-        ],
       ),
       body: groupsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),

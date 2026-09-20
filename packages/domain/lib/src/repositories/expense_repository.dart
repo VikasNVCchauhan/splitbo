@@ -23,6 +23,7 @@ abstract interface class ExpenseRepository {
   });
 
   Future<Result<ExpenseEntity, AppError>> updateExpense({
+    required String groupId,
     required String expenseId,
     String? description,
     double? amount,
@@ -33,7 +34,10 @@ abstract interface class ExpenseRepository {
     String? receiptUrl,
   });
 
-  Future<Result<void, AppError>> deleteExpense(String expenseId);
+  Future<Result<void, AppError>> deleteExpense({
+    required String groupId,
+    required String expenseId,
+  });
 
   /// Upload a receipt image and return its Storage URL.
   Future<Result<String, AppError>> uploadReceipt({

@@ -70,6 +70,10 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
         updatedAt: now,
       );
       await docRef.set(dto.toFirestore());
+      await _firestore
+          .collection('${dbPrefix}groups')
+          .doc(groupId)
+          .update({'totalExpenses': FieldValue.increment(amount)});
       return Ok(dto.toEntity());
     } on FirebaseException catch (e) {
       return Err(_mapError(e));
@@ -80,6 +84,7 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
 
   @override
   Future<Result<ExpenseEntity, AppError>> updateExpense({
+    required String groupId,
     required String expenseId,
     String? description,
     double? amount,
@@ -89,18 +94,59 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
     String? notes,
     String? receiptUrl,
   }) async {
-    // Requires groupId — not available here. Feature packages call repo
-    // methods via the use-case which should pass groupId as context.
-    return const Err(UnknownError(
-      'updateExpense not yet implemented in client. Use Cloud Function.',
-    ));
+    try {
+      final docRef = _expenses(groupId).doc(expenseId);
+      if (amount != null) {
+        final snap = await docRef.get();
+        final oldAmount = (snap.data()?['amount'] as num?)?.toDouble() ?? 0.0;
+        await _firestore
+            .collection('${dbPrefix}groups')
+            .doc(groupId)
+            .update({'totalExpenses': FieldValue.increment(amount - oldAmount)});
+      }
+      final updates = <String, dynamic>{
+        if (description != null) 'description': description,
+        if (amount != null) 'amount': amount,
+        if (paidBy != null) 'paidBy': paidBy,
+        if (splits != null)
+          'splits': splits
+              .map((s) => {'userId': s.userId, 'amount': s.amount})
+              .toList(),
+        if (category != null) 'category': category.name,
+        if (notes != null) 'notes': notes,
+        if (receiptUrl != null) 'receiptUrl': receiptUrl,
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+      await docRef.update(updates);
+      final updated = await docRef.get();
+      return Ok(ExpenseDto.fromFirestore(updated).toEntity());
+    } on FirebaseException catch (e) {
+      return Err(_mapError(e));
+    } catch (e) {
+      return Err(UnknownError(e.toString(), null, e));
+    }
   }
 
   @override
-  Future<Result<void, AppError>> deleteExpense(String expenseId) async {
-    return const Err(UnknownError(
-      'deleteExpense requires groupId. Pass via use-case context.',
-    ));
+  Future<Result<void, AppError>> deleteExpense({
+    required String groupId,
+    required String expenseId,
+  }) async {
+    try {
+      final docRef = _expenses(groupId).doc(expenseId);
+      final snap = await docRef.get();
+      final amount = (snap.data()?['amount'] as num?)?.toDouble() ?? 0.0;
+      await docRef.delete();
+      await _firestore
+          .collection('${dbPrefix}groups')
+          .doc(groupId)
+          .update({'totalExpenses': FieldValue.increment(-amount)});
+      return const Ok(null);
+    } on FirebaseException catch (e) {
+      return Err(_mapError(e));
+    } catch (e) {
+      return Err(UnknownError(e.toString(), null, e));
+    }
   }
 
   @override

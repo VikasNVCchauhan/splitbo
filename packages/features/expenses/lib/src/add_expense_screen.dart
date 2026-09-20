@@ -11,6 +11,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
+// ── Split mode ────────────────────────────────────────────────────────────────
+enum _SplitMode { equal, byAmount, byPercent }
+
 class AddExpenseScreen extends ConsumerStatefulWidget {
   const AddExpenseScreen({super.key});
 
@@ -25,45 +28,164 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
   ExpenseCategory _category = ExpenseCategory.other;
   bool _saving = false;
 
+  // Split state
+  _SplitMode _splitMode = _SplitMode.equal;
+  final Map<String, TextEditingController> _splitControllers = {};
+
   // OCR state
   Uint8List? _receiptPreview;
   bool _scanning = false;
   String? _scanHint;
 
+  bool get _isFormValid {
+    final amount = double.tryParse(_amountCtrl.text.replaceAll(',', '')) ?? 0;
+    return _descCtrl.text.trim().isNotEmpty &&
+        amount > 0 &&
+        _selectedGroup != null;
+  }
+
+  bool get _hasAnyValue =>
+      _descCtrl.text.isNotEmpty ||
+      _amountCtrl.text.isNotEmpty ||
+      _selectedGroup != null;
+
+  @override
+  void initState() {
+    super.initState();
+    _descCtrl.addListener(() => setState(() {}));
+    _amountCtrl.addListener(() => setState(() {}));
+  }
+
+  void _clearForm() {
+    for (final c in _splitControllers.values) {
+      c.dispose();
+    }
+    _splitControllers.clear();
+    setState(() {
+      _descCtrl.clear();
+      _amountCtrl.clear();
+      _selectedGroup = null;
+      _category = ExpenseCategory.other;
+      _splitMode = _SplitMode.equal;
+      _receiptPreview = null;
+      _scanHint = null;
+    });
+  }
+
   @override
   void dispose() {
     _descCtrl.dispose();
     _amountCtrl.dispose();
+    for (final c in _splitControllers.values) {
+      c.dispose();
+    }
     super.dispose();
+  }
+
+  void _onGroupChanged(GroupEntity? g) {
+    for (final c in _splitControllers.values) {
+      c.dispose();
+    }
+    _splitControllers.clear();
+    if (g != null) {
+      for (final memberId in g.memberIds) {
+        _splitControllers[memberId] = TextEditingController();
+      }
+    }
+    setState(() {
+      _selectedGroup = g;
+      _splitMode = _SplitMode.equal;
+    });
+  }
+
+  void _prefillSplitControllers() {
+    final group = _selectedGroup;
+    if (group == null) return;
+    final amount = double.tryParse(_amountCtrl.text.replaceAll(',', '')) ?? 0;
+    final n = group.memberIds.length;
+    if (n == 0) return;
+    for (final memberId in group.memberIds) {
+      final ctrl = _splitControllers[memberId];
+      if (ctrl == null) continue;
+      switch (_splitMode) {
+        case _SplitMode.equal:
+          ctrl.text = '';
+        case _SplitMode.byAmount:
+          ctrl.text = amount > 0 ? (amount / n).toStringAsFixed(0) : '';
+        case _SplitMode.byPercent:
+          ctrl.text = (100.0 / n).toStringAsFixed(0);
+      }
+    }
+  }
+
+  List<SplitEntity> _computeSplits(GroupEntity group, double amount) {
+    switch (_splitMode) {
+      case _SplitMode.equal:
+        final share = amount / group.memberIds.length;
+        return group.memberIds
+            .map((id) => SplitEntity(userId: id, amount: share))
+            .toList();
+      case _SplitMode.byAmount:
+        return group.memberIds.map((id) {
+          final v = double.tryParse(
+                  _splitControllers[id]?.text.replaceAll(',', '') ?? '0') ??
+              0;
+          return SplitEntity(userId: id, amount: v);
+        }).toList();
+      case _SplitMode.byPercent:
+        return group.memberIds.map((id) {
+          final pct = double.tryParse(_splitControllers[id]?.text ?? '0') ?? 0;
+          return SplitEntity(userId: id, amount: amount * pct / 100);
+        }).toList();
+    }
   }
 
   Future<void> _save() async {
     final desc = _descCtrl.text.trim();
-    final amount = double.tryParse(_amountCtrl.text.replaceAll(',', '')) ?? 0;
+    final amount =
+        double.tryParse(_amountCtrl.text.replaceAll(',', '')) ?? 0;
     if (desc.isEmpty || amount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a description and amount')),
-      );
+      _toastError('Please enter a description and amount');
       return;
     }
     final user = ref.read(authStateProvider).valueOrNull;
     if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please sign in to add expenses'),
-          backgroundColor: Color(0xFF1E1E1E),
-        ),
-      );
+      _toastError('Please sign in to add expenses');
       return;
     }
-    setState(() => _saving = true);
 
     final group = _selectedGroup;
+
+    // Validate custom splits before saving
+    if (group != null) {
+      if (_splitMode == _SplitMode.byAmount) {
+        final total = _splitControllers.values
+            .map((c) =>
+                double.tryParse(c.text.replaceAll(',', '')) ?? 0)
+            .fold<double>(0, (a, b) => a + b);
+        if ((total - amount).abs() > 0.5) {
+          _toastError(
+              'Split amounts must add up to ₹${amount.toStringAsFixed(0)} (currently ₹${total.toStringAsFixed(0)})');
+          return;
+        }
+      }
+      if (_splitMode == _SplitMode.byPercent) {
+        final total = _splitControllers.values
+            .map((c) => double.tryParse(c.text) ?? 0)
+            .fold<double>(0, (a, b) => a + b);
+        if ((total - 100).abs() > 0.5) {
+          _toastError(
+              'Percentages must add up to 100% (currently ${total.toStringAsFixed(0)}%)');
+          return;
+        }
+      }
+    }
+
+    setState(() => _saving = true);
+
     final groupId = group?.id ?? 'personal_${user.id}';
     final splits = group != null
-        ? group.memberIds
-            .map((id) => SplitEntity(userId: id, amount: amount / group.memberIds.length))
-            .toList()
+        ? _computeSplits(group, amount)
         : [SplitEntity(userId: user.id, amount: amount)];
 
     final result = await ref.read(expenseRepositoryProvider).addExpense(
@@ -80,11 +202,26 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
       setState(() => _saving = false);
       result.fold(
         ok: (_) => Navigator.of(context).pop(),
-        err: (err) => ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(err.message)),
-        ),
+        err: (err) => _toastError(err.message),
       );
     }
+  }
+
+  // ── Group picker ──────────────────────────────────────────────────────────
+
+  void _showGroupPicker(List<GroupEntity> groups) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _GroupPickerSheet(
+        groups: groups,
+        selected: _selectedGroup,
+        onSelect: (g) {
+          Navigator.pop(context);
+          _onGroupChanged(g);
+        },
+      ),
+    );
   }
 
   // ── Receipt scanning ──────────────────────────────────────────────────────
@@ -142,7 +279,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
       final mime = ext == 'pdf' ? 'application/pdf' : 'image/jpeg';
       await _runOcr(bytes, mime);
     } catch (e) {
-      _toastError('Could not open file: $e');
+      _toastError('Could not open file.');
     }
   }
 
@@ -158,16 +295,17 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
       if (!mounted) return;
 
       if (result == null) {
+        setState(() => _scanHint = 'Could not read receipt');
         _toastError('Could not read receipt — try a clearer photo.');
         return;
       }
 
       setState(() {
         _scanHint = 'Receipt scanned ✓';
-        if (result.amount != null && _amountCtrl.text.isEmpty) {
+        if (result.amount != null) {
           _amountCtrl.text = result.amount!.toStringAsFixed(0);
         }
-        if (result.merchant != null && _descCtrl.text.isEmpty) {
+        if (result.merchant != null) {
           _descCtrl.text = result.merchant!;
         }
         if (result.category != null) {
@@ -176,28 +314,28 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Row(
+        const SnackBar(
+          content: Row(
             children: [
               Icon(Icons.check_circle_rounded, color: Color(0xFFC3FD00), size: 18),
               SizedBox(width: 8),
-              Text('Receipt scanned! Check the details below.'),
+              Text('Receipt scanned!',
+                  style: TextStyle(color: Colors.white)),
             ],
           ),
-          backgroundColor: const Color(0xFF1E1E1E),
-          duration: const Duration(seconds: 3),
+          backgroundColor: Color(0xFF1E1E1E),
+          duration: Duration(seconds: 3),
         ),
       );
-    } catch (e) {
-      _toastError('Scan failed: ${e.toString().length > 80 ? e.toString().substring(0, 80) : e.toString()}');
+    } catch (_) {
+      if (mounted) setState(() => _scanHint = 'Scan failed');
+      _toastError('Scan failed — please try again.');
     } finally {
       if (mounted) setState(() => _scanning = false);
     }
   }
 
-  // Uses Gemini 1.5 Flash (multimodal) — understands bill context holistically,
-  // not keyword matching. Handles restaurant receipts, utility bills, fuel slips,
-  // grocery invoices, PDFs, etc.
+  // Gemini 1.5 Flash multimodal receipt parser.
   Future<_OcrResult?> _callGeminiVision(Uint8List bytes, String mime) async {
     const apiKey = 'AIzaSyDLWgzUy_UYUcyg0Rp5RBO-lxQMmpM10WU';
     const prompt = r'''
@@ -206,20 +344,9 @@ You are a receipt/bill parser. Analyze the image and return ONLY a JSON object (
   "amount": <final total as a number, e.g. 1250.50>,
   "description": "<vendor/merchant name, concise, max 40 chars>",
   "category": "<exactly one of: food, transport, accommodation, entertainment, utilities, shopping, medical, education, other>",
-  "notes": "<one short phrase like 'Electricity bill Apr', 'Dinner for 3', 'Fuel refill'>"
+  "notes": "<one short phrase>"
 }
-
-Category rules (use full context, not just words):
-- food: restaurant, cafe, food delivery, grocery store, bakery, dhaba
-- transport: fuel/petrol, cab, auto, metro, bus, toll, parking, bike rental
-- accommodation: hotel, resort, lodge, homestay, PG, service apartment
-- entertainment: movies, OTT, concert, event, game, sport, amusement
-- utilities: electricity, water, gas, internet/broadband, mobile recharge, DTH, maintenance
-- shopping: clothing, electronics, furniture, appliances, online order (Amazon/Flipkart etc)
-- medical: hospital, clinic, pharmacy/chemist, lab test, doctor consultation
-- education: school fee, coaching, course, books, stationery
-
-If you cannot read something, use null for that field. Return ONLY the JSON.
+If you cannot read something, use null. Return ONLY the JSON.
 ''';
 
     final response = await http
@@ -251,27 +378,33 @@ If you cannot read something, use null for that field. Return ONLY the JSON.
         .timeout(const Duration(seconds: 25));
 
     if (response.statusCode != 200) {
-      throw Exception('Gemini ${response.statusCode}: ${response.body.length > 200 ? response.body.substring(0, 200) : response.body}');
+      throw Exception('Gemini API error (${response.statusCode})');
     }
 
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     final candidates = data['candidates'] as List?;
     if (candidates == null || candidates.isEmpty) return null;
 
-    final rawText = ((candidates[0]['content']['parts'] as List?)
-            ?.firstWhere((p) => p['text'] != null,
-                orElse: () => null)?['text'] as String?) ??
+    // Null-safe extraction of response text
+    final candidate = candidates[0] as Map?;
+    final content = candidate?['content'] as Map?;
+    final parts = content?['parts'] as List?;
+    final rawText = parts
+            ?.whereType<Map>()
+            .where((p) => p['text'] != null)
+            .map<String>((p) => p['text'].toString())
+            .firstOrNull ??
         '';
 
-    // Strip markdown code fences if Gemini wrapped the JSON
-    final jsonStr = rawText
-        .replaceAll(RegExp(r'```json\s*'), '')
-        .replaceAll(RegExp(r'```\s*'), '')
-        .trim();
+    final jsonStr = _extractJson(rawText);
+    if (jsonStr == null) return null;
 
-    if (jsonStr.isEmpty) return null;
-
-    final parsed = jsonDecode(jsonStr) as Map<String, dynamic>;
+    Map<String, dynamic> parsed;
+    try {
+      parsed = jsonDecode(jsonStr) as Map<String, dynamic>;
+    } catch (_) {
+      return null;
+    }
 
     final amount = switch (parsed['amount']) {
       num n => n.toDouble(),
@@ -292,12 +425,26 @@ If you cannot read something, use null for that field. Return ONLY the JSON.
     return _OcrResult(amount: amount, merchant: description, category: category);
   }
 
+  // Extracts a JSON object from a string that may contain markdown fences or extra text.
+  static String? _extractJson(String raw) {
+    final s = raw
+        .replaceAll(RegExp(r'```json\s*'), '')
+        .replaceAll(RegExp(r'```\s*'), '')
+        .trim();
+    if (s.startsWith('{')) {
+      final end = s.lastIndexOf('}');
+      if (end > 0) return s.substring(0, end + 1);
+    }
+    final match = RegExp(r'\{[\s\S]*\}').firstMatch(s);
+    return match?.group(0);
+  }
+
   void _toastError(String msg) {
     if (!mounted) return;
     setState(() => _scanning = false);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(msg),
+        content: Text(msg, style: const TextStyle(color: Colors.white)),
         backgroundColor: const Color(0xFF1E1E1E),
         duration: const Duration(seconds: 6),
       ),
@@ -312,7 +459,6 @@ If you cannot read something, use null for that field. Return ONLY the JSON.
     final spacing = context.spacing;
     final radius = context.radius;
     final groupsAsync = ref.watch(watchGroupsProvider);
-    final isSignedIn = ref.watch(authStateProvider).valueOrNull != null;
     const brandGreen = Color(0xFFC3FD00);
 
     return Scaffold(
@@ -327,17 +473,18 @@ If you cannot read something, use null for that field. Return ONLY the JSON.
           onPressed: () => Navigator.of(context).pop(),
         ),
         actions: [
-          TextButton(
-            onPressed: _saving ? null : _save,
-            child: Text(
-              'Save',
-              style: TextStyle(
-                color: brandGreen,
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
+          if (_hasAnyValue)
+            TextButton(
+              onPressed: _clearForm,
+              child: Text(
+                'Clear',
+                style: TextStyle(
+                  color: colors.textSecondary,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 15,
+                ),
               ),
             ),
-          ),
         ],
       ),
       body: SingleChildScrollView(
@@ -438,37 +585,83 @@ If you cannot read something, use null for that field. Return ONLY the JSON.
             ),
             SizedBox(height: spacing.stackMd),
 
-            // ── Group picker ───────────────────────────────────────
+            // ── Group picker (modern card) ──────────────────────────
             groupsAsync.when(
-              loading: () => isSignedIn
-                  ? const LinearProgressIndicator()
-                  : DropdownButtonFormField<GroupEntity>(
-                      value: null,
-                      hint: const Text('Sign in to see groups'),
-                      decoration: const InputDecoration(
-                        labelText: 'Group',
-                        prefixIcon: Icon(Icons.group_outlined),
-                      ),
-                      items: const [],
-                      onChanged: null,
-                    ),
+              loading: () => const LinearProgressIndicator(),
               error: (_, __) => const SizedBox.shrink(),
-              data: (groups) => DropdownButtonFormField<GroupEntity>(
-                value: _selectedGroup,
-                hint: const Text('Select group'),
-                decoration: const InputDecoration(
-                  labelText: 'Group',
-                  prefixIcon: Icon(Icons.group_outlined),
+              data: (groups) => GestureDetector(
+                onTap: groups.isEmpty ? null : () => _showGroupPicker(groups),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: colors.surfaceRaised,
+                    borderRadius: BorderRadius.circular(radius.control),
+                    border: Border.all(color: colors.borderDefault),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.group_outlined,
+                          color: colors.textSecondary, size: 20),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _selectedGroup != null
+                            ? Row(
+                                children: [
+                                  Container(
+                                    width: 32,
+                                    height: 32,
+                                    decoration: BoxDecoration(
+                                      color: brandGreen.withOpacity(0.12),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        _selectedGroup!.name[0].toUpperCase(),
+                                        style: const TextStyle(
+                                          color: brandGreen,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        _selectedGroup!.name,
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                          color: colors.textPrimary,
+                                        ),
+                                      ),
+                                      Text(
+                                        '${_selectedGroup!.memberCount} member${_selectedGroup!.memberCount == 1 ? '' : 's'}',
+                                        style: TextStyle(
+                                            fontSize: 12,
+                                            color: colors.textSecondary),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              )
+                            : Text(
+                                groups.isEmpty
+                                    ? 'Create a group first'
+                                    : 'Select group',
+                                style: TextStyle(
+                                    fontSize: 15, color: colors.textSecondary),
+                              ),
+                      ),
+                      Icon(Icons.expand_more_rounded,
+                          color: colors.textSecondary, size: 22),
+                    ],
+                  ),
                 ),
-                items: groups
-                    .map((g) => DropdownMenuItem(
-                          value: g,
-                          child: Text(g.name),
-                        ))
-                    .toList(),
-                onChanged: (g) => setState(() => _selectedGroup = g),
-                dropdownColor: colors.surfaceOverlay,
-                style: TextStyle(color: colors.textPrimary, fontSize: 16),
               ),
             ),
             SizedBox(height: spacing.stackMd),
@@ -494,56 +687,47 @@ If you cannot read something, use null for that field. Return ONLY the JSON.
                       ))
                   .toList(),
             ),
-            SizedBox(height: spacing.stackXl),
+            SizedBox(height: spacing.stackMd),
 
-            // ── Split info ─────────────────────────────────────────
-            if (_selectedGroup != null)
-              Container(
-                padding: EdgeInsets.all(spacing.insetMd),
-                decoration: BoxDecoration(
-                  color: colors.backgroundSubtle,
-                  borderRadius: BorderRadius.circular(radius.control),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.info_outline,
-                        size: 16, color: colors.textSecondary),
-                    SizedBox(width: spacing.inlineSm),
-                    Text(
-                      'Split equally between ${_selectedGroup!.memberCount} members',
-                      style: TextStyle(
-                          fontSize: 13, color: colors.textSecondary),
-                    ),
-                  ],
-                ),
+            // ── Dynamic splits (only when group is selected) ────────
+            if (_selectedGroup != null) ...[
+              _SplitSection(
+                group: _selectedGroup!,
+                mode: _splitMode,
+                controllers: _splitControllers,
+                onModeChanged: (mode) {
+                  setState(() => _splitMode = mode);
+                  _prefillSplitControllers();
+                },
               ),
-
-            SizedBox(height: spacing.stackXl),
+              SizedBox(height: spacing.stackMd),
+            ],
 
             // ── Save button ────────────────────────────────────────
-            SizedBox(
-              height: 54,
-              child: ElevatedButton(
-                onPressed: _saving ? null : _save,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: brandGreen,
-                  foregroundColor: Colors.black,
-                  disabledBackgroundColor: brandGreen.withOpacity(0.4),
-                  elevation: 0,
-                  shape: const StadiumBorder(),
+            if (_isFormValid)
+              SizedBox(
+                height: 54,
+                child: ElevatedButton(
+                  onPressed: _saving ? null : _save,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: brandGreen,
+                    foregroundColor: Colors.black,
+                    disabledBackgroundColor: brandGreen.withOpacity(0.4),
+                    elevation: 0,
+                    shape: const StadiumBorder(),
+                  ),
+                  child: _saving
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2.5, color: Colors.black),
+                        )
+                      : const Text('Save Expense',
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w700)),
                 ),
-                child: _saving
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2.5, color: Colors.black),
-                      )
-                    : const Text('Add Expense',
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w700)),
               ),
-            ),
             SizedBox(height: spacing.stackMd),
           ],
         ),
@@ -553,7 +737,6 @@ If you cannot read something, use null for that field. Return ONLY the JSON.
 }
 
 // ── OCR result ────────────────────────────────────────────────────────────────
-
 class _OcrResult {
   final double? amount;
   final String? merchant;
@@ -561,8 +744,275 @@ class _OcrResult {
   const _OcrResult({this.amount, this.merchant, this.category});
 }
 
-// ── Scan Receipt banner ───────────────────────────────────────────────────────
+// ── Group picker bottom sheet ─────────────────────────────────────────────────
+class _GroupPickerSheet extends StatelessWidget {
+  const _GroupPickerSheet({
+    required this.groups,
+    required this.selected,
+    required this.onSelect,
+  });
 
+  final List<GroupEntity> groups;
+  final GroupEntity? selected;
+  final ValueChanged<GroupEntity?> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A1A),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 12),
+          Container(
+            width: 36,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey[700],
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Select Group',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...groups.map((g) {
+            final isSelected = g.id == selected?.id;
+            return ListTile(
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+              leading: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFC3FD00).withOpacity(0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    g.name[0].toUpperCase(),
+                    style: const TextStyle(
+                      color: Color(0xFFC3FD00),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ),
+              title: Text(
+                g.name,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight:
+                      isSelected ? FontWeight.w700 : FontWeight.w500,
+                  fontSize: 15,
+                ),
+              ),
+              subtitle: Text(
+                '${g.memberCount} member${g.memberCount == 1 ? '' : 's'}',
+                style: TextStyle(color: Colors.grey[500], fontSize: 12),
+              ),
+              trailing: isSelected
+                  ? const Icon(Icons.check_circle_rounded,
+                      color: Color(0xFFC3FD00), size: 22)
+                  : null,
+              onTap: () => onSelect(g),
+            );
+          }),
+          const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Split section ─────────────────────────────────────────────────────────────
+class _SplitSection extends StatelessWidget {
+  const _SplitSection({
+    required this.group,
+    required this.mode,
+    required this.controllers,
+    required this.onModeChanged,
+  });
+
+  final GroupEntity group;
+  final _SplitMode mode;
+  final Map<String, TextEditingController> controllers;
+  final ValueChanged<_SplitMode> onModeChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    const brandGreen = Color(0xFFC3FD00);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colors.surfaceRaised,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colors.borderDefault),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Mode selector row
+          Row(
+            children: [
+              const Icon(Icons.call_split_rounded,
+                  size: 16, color: Color(0xFFC3FD00)),
+              const SizedBox(width: 6),
+              Text(
+                'Split',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: colors.textPrimary,
+                ),
+              ),
+              const Spacer(),
+              ..._SplitMode.values.map((m) {
+                final sel = mode == m;
+                return GestureDetector(
+                  onTap: () => onModeChanged(m),
+                  child: Container(
+                    margin: const EdgeInsets.only(left: 6),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: sel ? brandGreen : colors.backgroundSubtle,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      switch (m) {
+                        _SplitMode.equal => 'Equal',
+                        _SplitMode.byAmount => '₹ Amount',
+                        _SplitMode.byPercent => '%',
+                      },
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: sel ? Colors.black : colors.textSecondary,
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ],
+          ),
+
+          const SizedBox(height: 14),
+
+          if (mode == _SplitMode.equal)
+            Text(
+              'Split equally between ${group.memberCount} member${group.memberCount == 1 ? '' : 's'}',
+              style: TextStyle(fontSize: 13, color: colors.textSecondary),
+            )
+          else
+            Column(
+              children: group.memberIds.map((memberId) {
+                final name =
+                    group.memberDisplayNames[memberId] ?? 'Member';
+                final ctrl = controllers[memberId];
+                if (ctrl == null) return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 16,
+                        backgroundColor: brandGreen.withOpacity(0.15),
+                        child: Text(
+                          name[0].toUpperCase(),
+                          style: const TextStyle(
+                            color: brandGreen,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          name,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: colors.textPrimary,
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        width: 90,
+                        child: TextField(
+                          controller: ctrl,
+                          keyboardType:
+                              const TextInputType.numberWithOptions(
+                                  decimal: true),
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(
+                                RegExp(r'[\d,.]')),
+                          ],
+                          textAlign: TextAlign.right,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: colors.textPrimary,
+                          ),
+                          decoration: InputDecoration(
+                            isDense: true,
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 8),
+                            prefixText:
+                                mode == _SplitMode.byAmount ? '₹' : '',
+                            suffixText:
+                                mode == _SplitMode.byPercent ? '%' : '',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide:
+                                  BorderSide(color: colors.borderDefault),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide:
+                                  const BorderSide(color: brandGreen),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide:
+                                  BorderSide(color: colors.borderDefault),
+                            ),
+                            filled: true,
+                            fillColor: colors.backgroundSubtle,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Scan Receipt banner ───────────────────────────────────────────────────────
 class _ScanReceiptBanner extends StatelessWidget {
   const _ScanReceiptBanner({
     required this.scanning,
@@ -581,6 +1031,7 @@ class _ScanReceiptBanner extends StatelessWidget {
     final colors = context.colors;
     const brandGreen = Color(0xFFC3FD00);
     final hasPreview = previewBytes != null;
+    final scanOk = scanHint?.contains('✓') ?? false;
 
     return GestureDetector(
       onTap: onTap,
@@ -594,7 +1045,9 @@ class _ScanReceiptBanner extends StatelessWidget {
             color: scanning
                 ? brandGreen
                 : hasPreview
-                    ? brandGreen.withOpacity(0.6)
+                    ? (scanOk
+                        ? brandGreen.withOpacity(0.6)
+                        : Colors.orange.withOpacity(0.6))
                     : colors.borderDefault,
             width: scanning ? 2 : 1.5,
           ),
@@ -608,7 +1061,8 @@ class _ScanReceiptBanner extends StatelessWidget {
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Color(0xFFC3FD00)),
+                          strokeWidth: 2,
+                          color: Color(0xFFC3FD00)),
                     ),
                     SizedBox(width: 12),
                     Text(
@@ -631,9 +1085,7 @@ class _ScanReceiptBanner extends StatelessWidget {
                           bottomLeft: Radius.circular(13),
                         ),
                         child: Image.memory(previewBytes!,
-                            width: 100,
-                            height: 100,
-                            fit: BoxFit.cover),
+                            width: 100, height: 100, fit: BoxFit.cover),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -641,15 +1093,23 @@ class _ScanReceiptBanner extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Row(
+                            Row(
                               children: [
-                                Icon(Icons.check_circle_rounded,
-                                    color: Color(0xFFC3FD00), size: 16),
-                                SizedBox(width: 6),
+                                Icon(
+                                  scanOk
+                                      ? Icons.check_circle_rounded
+                                      : Icons.error_outline_rounded,
+                                  color:
+                                      scanOk ? brandGreen : Colors.orange,
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 6),
                                 Text(
-                                  'Receipt scanned',
+                                  scanHint ?? 'Receipt attached',
                                   style: TextStyle(
-                                    color: Color(0xFFC3FD00),
+                                    color: scanOk
+                                        ? brandGreen
+                                        : Colors.orange,
                                     fontWeight: FontWeight.w600,
                                     fontSize: 14,
                                   ),
@@ -668,7 +1128,7 @@ class _ScanReceiptBanner extends StatelessWidget {
                       const Padding(
                         padding: EdgeInsets.only(right: 14),
                         child: Icon(Icons.refresh_rounded,
-                            color: Color(0xFFC3FD00), size: 20),
+                            color: brandGreen, size: 20),
                       ),
                     ],
                   )
@@ -682,8 +1142,10 @@ class _ScanReceiptBanner extends StatelessWidget {
                           color: brandGreen.withOpacity(0.12),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.document_scanner_outlined,
-                            size: 20, color: brandGreen),
+                        child: const Icon(
+                            Icons.document_scanner_outlined,
+                            size: 20,
+                            color: brandGreen),
                       ),
                       const SizedBox(width: 12),
                       Column(
@@ -719,13 +1181,11 @@ class _ScanReceiptBanner extends StatelessWidget {
 }
 
 // ── Scan options bottom sheet ─────────────────────────────────────────────────
-
 class _ScanSheet extends StatelessWidget {
-  const _ScanSheet({
-    required this.onCamera,
-    required this.onGallery,
-    required this.onFile,
-  });
+  const _ScanSheet(
+      {required this.onCamera,
+      required this.onGallery,
+      required this.onFile});
 
   final VoidCallback onCamera;
   final VoidCallback onGallery;
@@ -747,42 +1207,34 @@ class _ScanSheet extends StatelessWidget {
             width: 36,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey[700],
-              borderRadius: BorderRadius.circular(2),
-            ),
+                color: Colors.grey[700],
+                borderRadius: BorderRadius.circular(2)),
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Scan Receipt',
-            style: TextStyle(
-                color: Colors.white,
-                fontSize: 17,
-                fontWeight: FontWeight.w700),
-          ),
+          const Text('Scan Receipt',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700)),
           const SizedBox(height: 4),
-          Text(
-            'Auto-fill expense details from your receipt',
-            style: TextStyle(color: Colors.grey[500], fontSize: 13),
-          ),
+          Text('Auto-fill expense details from your receipt',
+              style: TextStyle(color: Colors.grey[500], fontSize: 13)),
           const SizedBox(height: 20),
           _SheetOption(
-            icon: Icons.camera_alt_outlined,
-            label: 'Take a Photo',
-            subtitle: 'Use your camera',
-            onTap: onCamera,
-          ),
+              icon: Icons.camera_alt_outlined,
+              label: 'Take a Photo',
+              subtitle: 'Use your camera',
+              onTap: onCamera),
           _SheetOption(
-            icon: Icons.photo_library_outlined,
-            label: 'Choose from Gallery',
-            subtitle: 'Pick an existing image',
-            onTap: onGallery,
-          ),
+              icon: Icons.photo_library_outlined,
+              label: 'Choose from Gallery',
+              subtitle: 'Pick an existing image',
+              onTap: onGallery),
           _SheetOption(
-            icon: Icons.attach_file_rounded,
-            label: 'Upload File',
-            subtitle: 'PDF, JPG, PNG',
-            onTap: onFile,
-          ),
+              icon: Icons.attach_file_rounded,
+              label: 'Upload File',
+              subtitle: 'PDF, JPG, PNG',
+              onTap: onFile),
           const SizedBox(height: 16),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -805,12 +1257,11 @@ class _ScanSheet extends StatelessWidget {
 }
 
 class _SheetOption extends StatelessWidget {
-  const _SheetOption({
-    required this.icon,
-    required this.label,
-    required this.subtitle,
-    required this.onTap,
-  });
+  const _SheetOption(
+      {required this.icon,
+      required this.label,
+      required this.subtitle,
+      required this.onTap});
 
   final IconData icon;
   final String label;
@@ -834,21 +1285,19 @@ class _SheetOption extends StatelessWidget {
               color: Colors.white, fontWeight: FontWeight.w600)),
       subtitle: Text(subtitle,
           style: TextStyle(color: Colors.grey[500], fontSize: 12)),
-      trailing: Icon(Icons.chevron_right_rounded,
-          color: Colors.grey[600], size: 20),
+      trailing:
+          Icon(Icons.chevron_right_rounded, color: Colors.grey[600], size: 20),
       onTap: onTap,
     );
   }
 }
 
 // ── Category chip ─────────────────────────────────────────────────────────────
-
 class _CategoryChip extends StatelessWidget {
-  const _CategoryChip({
-    required this.category,
-    required this.selected,
-    required this.onSelected,
-  });
+  const _CategoryChip(
+      {required this.category,
+      required this.selected,
+      required this.onSelected});
 
   final ExpenseCategory category;
   final bool selected;
@@ -878,8 +1327,7 @@ class _CategoryChip extends StatelessWidget {
       selectedColor: colors.brandPrimaryLt,
       checkmarkColor: colors.brandPrimaryDk,
       side: BorderSide(
-        color: selected ? colors.brandPrimary : colors.borderDefault,
-      ),
+          color: selected ? colors.brandPrimary : colors.borderDefault),
       labelStyle: TextStyle(
         color: selected ? colors.brandPrimaryDk : colors.textPrimary,
         fontSize: 13,

@@ -1,35 +1,32 @@
 import 'package:data/data.dart';
+import 'package:design_system/design_system.dart';
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-const _green = Color(0xFFC3FD00);
-const _surface = Color(0xFF1A1A1A);
-const _border = Color(0xFF2C2C2C);
-const _textSecondary = Color(0xFF9E9E9E);
 
 class ActivityScreen extends ConsumerWidget {
   const ActivityScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.colors;
     final groupsAsync = ref.watch(watchGroupsProvider);
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: colors.backgroundDefault,
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: colors.backgroundDefault,
         elevation: 0,
         automaticallyImplyLeading: false,
-        title: const Text(
+        title: Text(
           'Activity',
           style: TextStyle(
-              color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800),
+              color: colors.textPrimary, fontSize: 20, fontWeight: FontWeight.w800),
         ),
       ),
       body: groupsAsync.when(
-        loading: () => const Center(
-            child: CircularProgressIndicator(color: _green, strokeWidth: 2)),
+        loading: () => Center(
+            child: CircularProgressIndicator(color: colors.brandPrimary, strokeWidth: 2)),
         error: (e, _) => _EmptyState(
           icon: Icons.wifi_off_rounded,
           title: 'Could not load activity',
@@ -57,7 +54,6 @@ class _ActivityFeed extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef r) {
-    // Collect expenses from all groups
     final allExpensesAsync = groups.map((g) => r.watch(watchExpensesProvider(g.id))).toList();
     final allExpenses = <({ExpenseEntity expense, String groupName})>[];
 
@@ -112,6 +108,7 @@ class _ActivityTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final icon = _categoryIcons[expense.category] ?? Icons.receipt_long_outlined;
     final formattedDate = _formatDate(expense.createdAt);
 
@@ -119,9 +116,9 @@ class _ActivityTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: _surface,
+        color: colors.surfaceRaised,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _border),
+        border: Border.all(color: colors.borderDefault),
       ),
       child: Row(
         children: [
@@ -129,10 +126,10 @@ class _ActivityTile extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: const Color(0xFF252525),
+              color: colors.brandPrimary.withOpacity(0.12),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: _green, size: 20),
+            child: Icon(icon, color: colors.brandPrimary, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -141,23 +138,23 @@ class _ActivityTile extends StatelessWidget {
               children: [
                 Text(
                   expense.description,
-                  style: const TextStyle(
-                      color: Colors.white,
+                  style: TextStyle(
+                      color: colors.textPrimary,
                       fontSize: 14,
                       fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   '$groupName · $formattedDate',
-                  style: const TextStyle(color: _textSecondary, fontSize: 12),
+                  style: TextStyle(color: colors.textSecondary, fontSize: 12),
                 ),
               ],
             ),
           ),
           Text(
             '${expense.currency} ${expense.amount.toStringAsFixed(0)}',
-            style: const TextStyle(
-                color: _green, fontSize: 14, fontWeight: FontWeight.w700),
+            style: TextStyle(
+                color: colors.brandPrimary, fontSize: 14, fontWeight: FontWeight.w700),
           ),
         ],
       ),
@@ -183,25 +180,25 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 40),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: _textSecondary, size: 48),
+            Icon(icon, color: colors.textDisabled, size: 48),
             const SizedBox(height: 16),
             Text(title,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                    color: Colors.white,
+                style: TextStyle(
+                    color: colors.textPrimary,
                     fontSize: 16,
                     fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             Text(subtitle,
                 textAlign: TextAlign.center,
-                style:
-                    const TextStyle(color: _textSecondary, fontSize: 13)),
+                style: TextStyle(color: colors.textSecondary, fontSize: 13)),
           ],
         ),
       ),

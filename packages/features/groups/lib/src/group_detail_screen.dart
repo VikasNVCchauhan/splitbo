@@ -62,7 +62,7 @@ class _GroupDetailBody extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: Colors.black,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: _green),
         title: Text(
           group.name,
           style: const TextStyle(
@@ -75,10 +75,31 @@ class _GroupDetailBody extends ConsumerWidget {
               tooltip: 'Export CSV',
               onPressed: () => _exportCsv(expenses, group, context),
             ),
-          ) ?? const SizedBox.shrink(),          IconButton(
+          ) ?? const SizedBox.shrink(),
+          IconButton(
             icon: const Icon(Icons.person_add_outlined, color: Colors.white),
             tooltip: 'Invite',
             onPressed: () => _copyInviteLink(group.id, context),
+          ),
+          PopupMenuButton<String>(
+            color: _surface,
+            icon: const Icon(Icons.more_vert, color: Colors.white),
+            onSelected: (v) {
+              if (v == 'delete') _confirmDeleteGroup(context, ref);
+            },
+            itemBuilder: (_) => [
+              const PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete_outline, color: Color(0xFFFF6B6B), size: 18),
+                    SizedBox(width: 10),
+                    Text('Delete Group',
+                        style: TextStyle(color: Color(0xFFFF6B6B))),
+                  ],
+                ),
+              ),
+            ],
           ),
           const SizedBox(width: 4),
         ],
@@ -102,13 +123,49 @@ class _GroupDetailBody extends ConsumerWidget {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push('/expense/new'),
-        backgroundColor: _green,
-        foregroundColor: Colors.black,
-        elevation: 4,
-        shape: const CircleBorder(),
-        child: const Icon(Icons.add_rounded, size: 28),
+    );
+  }
+
+  void _confirmDeleteGroup(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: _surface,
+        title: const Text('Delete Group',
+            style: TextStyle(color: Colors.white)),
+        content: Text(
+          'Delete "${group.name}"? This cannot be undone.',
+          style: const TextStyle(color: _textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel',
+                style: TextStyle(color: _textSecondary)),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final result = await ref
+                  .read(groupRepositoryProvider)
+                  .deleteGroup(group.id);
+              if (context.mounted) {
+                result.fold(
+                  ok: (_) => context.pop(),
+                  err: (e) => ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(e.message,
+                          style: const TextStyle(color: Colors.white)),
+                      backgroundColor: const Color(0xFF1E1E1E),
+                    ),
+                  ),
+                );
+              }
+            },
+            child: const Text('Delete',
+                style: TextStyle(color: Color(0xFFFF6B6B))),
+          ),
+        ],
       ),
     );
   }
@@ -207,7 +264,7 @@ class _GroupHeader extends StatelessWidget {
   }
 }
 
-class _ExpenseList extends StatelessWidget {
+class _ExpenseList extends ConsumerWidget {
   const _ExpenseList({required this.expenses, required this.group});
   final List<ExpenseEntity> expenses;
   final GroupEntity group;
@@ -225,15 +282,14 @@ class _ExpenseList extends StatelessWidget {
   };
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final symbol = group.currency == 'INR' ? '₹' : group.currency;
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       itemCount: expenses.length,
       itemBuilder: (context, i) {
         final e = expenses[i];
-        final icon =
-            _categoryIcons[e.category] ?? Icons.receipt_long_outlined;
+        final icon = _categoryIcons[e.category] ?? Icons.receipt_long_outlined;
         final diff = DateTime.now().difference(e.createdAt);
         final when = diff.inDays > 0
             ? '${diff.inDays}d ago'
@@ -241,53 +297,173 @@ class _ExpenseList extends StatelessWidget {
                 ? '${diff.inHours}h ago'
                 : '${diff.inMinutes}m ago';
 
-        return Container(
-          margin: const EdgeInsets.only(bottom: 10),
-          padding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            color: _surface,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: _border),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF252525),
-                  borderRadius: BorderRadius.circular(10),
+        return GestureDetector(
+          onTap: () => _showExpenseActions(context, ref, e),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: _surface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: _border),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF252525),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, color: _green, size: 18),
                 ),
-                child: Icon(icon, color: _green, size: 18),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(e.description,
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600)),
-                    Text('$when · ${e.category.label}',
-                        style: const TextStyle(
-                            color: _textSecondary, fontSize: 12)),
-                  ],
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(e.description,
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600)),
+                      Text('$when · ${e.category.label}',
+                          style: const TextStyle(
+                              color: _textSecondary, fontSize: 12)),
+                    ],
+                  ),
                 ),
-              ),
-              Text(
-                '$symbol${e.amount.toStringAsFixed(0)}',
-                style: const TextStyle(
-                    color: _green,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700),
-              ),
-            ],
+                Text(
+                  '$symbol${e.amount.toStringAsFixed(0)}',
+                  style: const TextStyle(
+                      color: _green, fontSize: 14, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(width: 4),
+                const Icon(Icons.more_vert, color: _textSecondary, size: 16),
+              ],
+            ),
           ),
         );
       },
+    );
+  }
+
+  void _showExpenseActions(
+      BuildContext context, WidgetRef ref, ExpenseEntity e) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        margin: const EdgeInsets.all(12),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        decoration: BoxDecoration(
+          color: _surface,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              e.description,
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${group.currency == 'INR' ? '₹' : group.currency}${e.amount.toStringAsFixed(2)} · ${e.category.label}',
+              style: const TextStyle(color: _textSecondary, fontSize: 13),
+            ),
+            const SizedBox(height: 20),
+            _ActionTile(
+              icon: Icons.edit_outlined,
+              label: 'Edit Expense',
+              color: Colors.white,
+              onTap: () {
+                Navigator.pop(context);
+                _showEditSheet(context, ref, e);
+              },
+            ),
+            const SizedBox(height: 4),
+            _ActionTile(
+              icon: Icons.delete_outline,
+              label: 'Delete Expense',
+              color: const Color(0xFFFF6B6B),
+              onTap: () {
+                Navigator.pop(context);
+                _confirmDelete(context, ref, e);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _confirmDelete(
+      BuildContext context, WidgetRef ref, ExpenseEntity e) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: _surface,
+        title: const Text('Delete Expense',
+            style: TextStyle(color: Colors.white)),
+        content: Text(
+          'Delete "${e.description}"?',
+          style: const TextStyle(color: _textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel',
+                style: TextStyle(color: _textSecondary)),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final result = await ref
+                  .read(expenseRepositoryProvider)
+                  .deleteExpense(groupId: group.id, expenseId: e.id);
+              if (context.mounted) {
+                result.fold(
+                  ok: (_) => ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Expense deleted',
+                          style: TextStyle(color: Colors.white)),
+                      backgroundColor: Color(0xFF1E1E1E),
+                    ),
+                  ),
+                  err: (err) => ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(err.message,
+                          style: const TextStyle(color: Colors.white)),
+                      backgroundColor: const Color(0xFF1E1E1E),
+                    ),
+                  ),
+                );
+              }
+            },
+            child: const Text('Delete',
+                style: TextStyle(color: Color(0xFFFF6B6B))),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditSheet(
+      BuildContext context, WidgetRef ref, ExpenseEntity e) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => ProviderScope(
+        parent: ProviderScope.containerOf(context),
+        child: _EditExpenseSheet(expense: e, group: group),
+      ),
     );
   }
 }
@@ -314,6 +490,251 @@ class _EmptyExpenses extends StatelessWidget {
           const Text('Tap + to add the first expense',
               style: TextStyle(color: _textSecondary, fontSize: 13)),
         ],
+      ),
+    );
+  }
+}
+
+class _ActionTile extends StatelessWidget {
+  const _ActionTile({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 20),
+            const SizedBox(width: 14),
+            Text(label,
+                style: TextStyle(
+                    color: color, fontSize: 15, fontWeight: FontWeight.w500)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Edit expense sheet ────────────────────────────────────────────────────────
+class _EditExpenseSheet extends ConsumerStatefulWidget {
+  const _EditExpenseSheet({required this.expense, required this.group});
+  final ExpenseEntity expense;
+  final GroupEntity group;
+
+  @override
+  ConsumerState<_EditExpenseSheet> createState() => _EditExpenseSheetState();
+}
+
+class _EditExpenseSheetState extends ConsumerState<_EditExpenseSheet> {
+  late final TextEditingController _descCtrl;
+  late final TextEditingController _amountCtrl;
+  late ExpenseCategory _category;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _descCtrl = TextEditingController(text: widget.expense.description);
+    _amountCtrl = TextEditingController(
+        text: widget.expense.amount.toStringAsFixed(0));
+    _category = widget.expense.category;
+  }
+
+  @override
+  void dispose() {
+    _descCtrl.dispose();
+    _amountCtrl.dispose();
+    super.dispose();
+  }
+
+  bool get _isValid {
+    final amount = double.tryParse(_amountCtrl.text.replaceAll(',', '')) ?? 0;
+    return _descCtrl.text.trim().isNotEmpty && amount > 0;
+  }
+
+  Future<void> _save() async {
+    final desc = _descCtrl.text.trim();
+    final amount =
+        double.tryParse(_amountCtrl.text.replaceAll(',', '')) ?? 0;
+    if (!_isValid) return;
+    setState(() => _saving = true);
+    final result = await ref.read(expenseRepositoryProvider).updateExpense(
+          groupId: widget.group.id,
+          expenseId: widget.expense.id,
+          description: desc,
+          amount: amount,
+          category: _category,
+        );
+    if (!mounted) return;
+    setState(() => _saving = false);
+    result.fold(
+      ok: (_) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Expense updated',
+                style: TextStyle(color: Colors.white)),
+            backgroundColor: Color(0xFF1E1E1E),
+          ),
+        );
+      },
+      err: (err) => ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(err.message,
+              style: const TextStyle(color: Colors.white)),
+          backgroundColor: const Color(0xFF1E1E1E),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        margin: const EdgeInsets.all(12),
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+        decoration: BoxDecoration(
+          color: _surface,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                const Text('Edit Expense',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700)),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.close, color: _textSecondary),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _DarkInputField(
+              controller: _descCtrl,
+              label: 'Description',
+              onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: 12),
+            _DarkInputField(
+              controller: _amountCtrl,
+              label: 'Amount',
+              type: TextInputType.number,
+              onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<ExpenseCategory>(
+              value: _category,
+              dropdownColor: const Color(0xFF252525),
+              style: const TextStyle(color: Colors.white, fontSize: 15),
+              decoration: InputDecoration(
+                labelText: 'Category',
+                labelStyle: const TextStyle(color: _textSecondary),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: _border)),
+                enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: _border)),
+                focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: _green)),
+                filled: true,
+                fillColor: const Color(0xFF252525),
+              ),
+              items: ExpenseCategory.values
+                  .map((c) => DropdownMenuItem(
+                      value: c,
+                      child: Text(c.label,
+                          style: const TextStyle(color: Colors.white))))
+                  .toList(),
+              onChanged: (v) => setState(() => _category = v!),
+            ),
+            const SizedBox(height: 20),
+            if (_isValid)
+              SizedBox(
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: _saving ? null : _save,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _green,
+                    foregroundColor: Colors.black,
+                    elevation: 0,
+                    shape: const StadiumBorder(),
+                  ),
+                  child: _saving
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2.5, color: Colors.black))
+                      : const Text('Save Changes',
+                          style: TextStyle(
+                              fontSize: 15, fontWeight: FontWeight.w700)),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DarkInputField extends StatelessWidget {
+  const _DarkInputField({
+    required this.controller,
+    required this.label,
+    this.type,
+    this.onChanged,
+  });
+  final TextEditingController controller;
+  final String label;
+  final TextInputType? type;
+  final ValueChanged<String>? onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      style: const TextStyle(color: Colors.white),
+      keyboardType: type,
+      onChanged: onChanged,
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: _textSecondary),
+        border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: _border)),
+        enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: _border)),
+        focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: _green)),
+        filled: true,
+        fillColor: const Color(0xFF252525),
       ),
     );
   }

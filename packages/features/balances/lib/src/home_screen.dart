@@ -64,8 +64,8 @@ class HomeScreen extends ConsumerWidget {
             _ActionRow(
               icon: Icons.bolt_outlined,
               title: 'Settle Up',
-              subtitle: 'Clear balances easily',
-              onTap: () {},
+              subtitle: 'See who owes what',
+              onTap: () => context.push('/balances'),
             ),
             const SizedBox(height: 20),
 
@@ -177,33 +177,10 @@ class _SplitboAppBar extends StatelessWidget implements PreferredSizeWidget {
       elevation: 0,
       automaticallyImplyLeading: false,
       titleSpacing: 20,
-      title: Row(
-        children: [
-          SplitboLogoMark(size: 28, color: colors.brandPrimary),
-          const SizedBox(width: 8),
-          RichText(
-            text: TextSpan(
-              children: [
-                TextSpan(
-                  text: 'Split',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: colors.textPrimary,
-                  ),
-                ),
-                TextSpan(
-                  text: 'Bo',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: colors.brandPrimary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+      title: Image.asset(
+        'assets/images/logo_full.jpg',
+        height: 34,
+        fit: BoxFit.contain,
       ),
       actions: [
         IconButton(
@@ -350,7 +327,9 @@ class _RecentGroupRow extends StatelessWidget {
     final colors = context.colors;
     final total = group.totalExpenses;
 
-    return Container(
+    return GestureDetector(
+      onTap: () => context.push('/groups/${group.id}'),
+      child: Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
       decoration: BoxDecoration(
@@ -423,7 +402,8 @@ class _RecentGroupRow extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ),  // Container
+    );  // GestureDetector
   }
 }
 

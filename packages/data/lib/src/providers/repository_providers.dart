@@ -93,3 +93,25 @@ final watchGroupBalanceProvider = StreamProvider.family<BalanceEntity?,
           groupId: args.groupId,
           userId: args.userId,
         ));
+
+// Client-side balance computation from expense streams.
+// Returns Map<otherUserId, netAmount> — positive = they owe currentUser, negative = currentUser owes them.
+final computeGroupBalancesProvider =
+    Provider.family<Map<String, double>, String>((ref, groupId) {
+  final currentUser = ref.watch(authStateProvider).valueOrNull;
+  if (currentUser == null) return {};
+  final expenses = ref.watch(watchExpensesProvider(groupId)).valueOrNull ?? [];
+  final net = <String, double>{};
+  for (final expense in expenses) {
+    final paidBy = expense.paidBy;
+    for (final split in expense.splits) {
+      if (split.userId == paidBy) continue;
+      if (paidBy == currentUser.id) {
+        net[split.userId] = (net[split.userId] ?? 0) + split.amount;
+      } else if (split.userId == currentUser.id) {
+        net[paidBy] = (net[paidBy] ?? 0) - split.amount;
+      }
+    }
+  }
+  return net;
+});
