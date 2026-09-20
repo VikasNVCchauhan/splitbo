@@ -11,6 +11,16 @@ const _textSecondary = Color(0xFF9E9E9E);
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
+  void _comingSoon(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Coming soon'),
+        backgroundColor: Color(0xFF1A1A1A),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userAsync = ref.watch(authStateProvider);
@@ -73,15 +83,15 @@ class SettingsScreen extends ConsumerWidget {
 
           // Settings rows
           _Section(title: 'Account', children: [
-            _Row(icon: Icons.person_outline, label: 'Edit Profile', onTap: () {}),
-            _Row(icon: Icons.notifications_outlined, label: 'Notifications', onTap: () {}),
+            _Row(icon: Icons.person_outline, label: 'Edit Profile', onTap: () => _comingSoon(context)),
+            _Row(icon: Icons.notifications_outlined, label: 'Notifications', onTap: () => _comingSoon(context)),
           ]),
 
           const SizedBox(height: 20),
 
           _Section(title: 'Support', children: [
-            _Row(icon: Icons.help_outline, label: 'Help & FAQ', onTap: () {}),
-            _Row(icon: Icons.privacy_tip_outlined, label: 'Privacy Policy', onTap: () {}),
+            _Row(icon: Icons.help_outline, label: 'Help & FAQ', onTap: () => _comingSoon(context)),
+            _Row(icon: Icons.privacy_tip_outlined, label: 'Privacy Policy', onTap: () => _comingSoon(context)),
           ]),
 
           const SizedBox(height: 32),

@@ -139,14 +139,16 @@ class _AppShell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: shell,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push(AppRoutes.expenseNew),
-        backgroundColor: _brandGreen,
-        foregroundColor: Colors.black,
-        elevation: 4,
-        shape: const CircleBorder(),
-        child: const Icon(Icons.add_rounded, size: 28),
-      ),
+      floatingActionButton: shell.currentIndex == 0
+          ? FloatingActionButton(
+              onPressed: () => context.push(AppRoutes.expenseNew),
+              backgroundColor: _brandGreen,
+              foregroundColor: Colors.black,
+              elevation: 4,
+              shape: const CircleBorder(),
+              child: const Icon(Icons.add_rounded, size: 28),
+            )
+          : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: BottomAppBar(
         color: _bg,
