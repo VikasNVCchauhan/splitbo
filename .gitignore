@@ -67,3 +67,9 @@ functions/.env
 
 # Melos
 .melos_tool/
+
+# Service account keys — never commit
+*-service-account*.json
+*-7cbe0f307bfe*.json
+docs/*.json
+

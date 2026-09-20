@@ -115,8 +115,15 @@ class _ActivityTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.colors;
+    final currentUser = ref.watch(authStateProvider).valueOrNull;
     final icon = _categoryIcons[expense.category] ?? Icons.receipt_long_outlined;
     final formattedDate = _formatDate(expense.createdAt);
+    final paidByLabel = currentUser?.id == expense.paidBy
+        ? 'Paid by you'
+        : 'Paid by member';
+    final splitLabel = expense.splits.isNotEmpty
+        ? 'Split ${expense.splits.length} ways'
+        : '';
 
     return GestureDetector(
       onTap: () => _showActions(context, ref),
@@ -153,8 +160,16 @@ class _ActivityTile extends ConsumerWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '$groupName · $formattedDate',
-                    style: TextStyle(color: colors.textSecondary, fontSize: 12),
+                    groupName,
+                    style: TextStyle(
+                        color: colors.brandPrimary,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    [paidByLabel, if (splitLabel.isNotEmpty) splitLabel, formattedDate].join(' · '),
+                    style: TextStyle(color: colors.textSecondary, fontSize: 11),
                   ),
                 ],
               ),

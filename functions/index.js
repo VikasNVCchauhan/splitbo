@@ -3,14 +3,20 @@ const { defineSecret } = require('firebase-functions/params');
 
 const geminiKey = defineSecret('GEMINI_API_KEY');
 
-const PROMPT = `You are a receipt/bill parser. Analyze the image and return ONLY a JSON object (no markdown, no explanation):
+const PROMPT = `You are an expert receipt and bill parser. Analyze the image and return ONLY a JSON object (no markdown, no explanation, no code fences):
 {
   "amount": <final total as a number, e.g. 1250.50>,
   "description": "<vendor/merchant name, concise, max 40 chars>",
   "category": "<exactly one of: food, transport, accommodation, entertainment, utilities, shopping, medical, education, other>",
-  "notes": "<one short phrase>"
+  "notes": "<one short descriptive phrase about what was purchased>",
+  "groupName": "<name of a group, event, or trip visible on the receipt, or null if none>",
+  "people": ["<name1>", "<name2>"]
 }
-If you cannot read something, use null. Return ONLY the JSON.`;
+
+For "people": extract any customer names, attendee names, or passenger names from the receipt. These are people who were part of this expense. Return an empty array [] if no names found.
+For "groupName": look for event names, table names, trip references, booking references that suggest a group context. Return null if none.
+For "category": choose the best fit — food for restaurants/groceries, transport for taxis/fuel/flights, accommodation for hotels, entertainment for movies/events, utilities for bills, shopping for retail, medical for pharmacy/hospital, education for courses/books.
+If you cannot read a field, use null. Return ONLY the JSON, nothing else.`;
 
 exports.parseReceipt = onCall(
   { secrets: [geminiKey], maxInstances: 10, timeoutSeconds: 30 },
@@ -50,6 +56,25 @@ exports.parseReceipt = onCall(
     }
 
     const data = await res.json();
-    return data;
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+
+    // Strip markdown fences if Gemini wraps in ```json ... ```
+    const cleaned = text.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/i, '').trim();
+
+    let parsed;
+    try {
+      parsed = JSON.parse(cleaned);
+    } catch {
+      throw new HttpsError('internal', 'Could not parse Gemini response as JSON.');
+    }
+
+    return {
+      amount: parsed.amount ?? null,
+      description: parsed.description ?? null,
+      category: parsed.category ?? null,
+      notes: parsed.notes ?? null,
+      groupName: parsed.groupName ?? null,
+      people: Array.isArray(parsed.people) ? parsed.people : [],
+    };
   }
 );

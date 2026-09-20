@@ -144,7 +144,7 @@ class SettingsScreen extends ConsumerWidget {
               _Row(
                 icon: Icons.security_outlined,
                 label: 'Security',
-                onTap: () => _comingSoon(context),
+                onTap: () => _showSecurity(context),
               ),
             ],
           ),
@@ -158,12 +158,12 @@ class SettingsScreen extends ConsumerWidget {
               _Row(
                 icon: Icons.help_outline_rounded,
                 label: 'Help & FAQ',
-                onTap: () => _comingSoon(context),
+                onTap: () => _showHelpFaq(context),
               ),
               _Row(
                 icon: Icons.privacy_tip_outlined,
                 label: 'Privacy Policy',
-                onTap: () => _comingSoon(context),
+                onTap: () => _showPrivacyPolicy(context),
               ),
               _Row(
                 icon: Icons.info_outline_rounded,
@@ -214,11 +214,220 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   void _showAbout(BuildContext context) {
-    showAboutDialog(
+    _showInfoSheet(
+      context,
+      title: 'About Splitbo',
+      icon: Icons.info_outline_rounded,
+      items: const [
+        _InfoItem(label: 'Version', value: '1.0.0 (v1 Release)'),
+        _InfoItem(label: 'Built with', value: 'Flutter + Firebase'),
+        _InfoItem(label: 'AI Receipt Scanning', value: 'Gemini 1.5 Flash'),
+        _InfoItem(label: 'Architecture', value: 'Clean Architecture · Riverpod · Melos'),
+        _InfoItem(label: 'GitHub', value: 'github.com/VikasNVCchauhan/splitbo'),
+        _InfoItem(label: 'License', value: 'Private — All rights reserved'),
+      ],
+      footer: '© 2025 Splitbo. All rights reserved.',
+    );
+  }
+
+  void _showSecurity(BuildContext context) {
+    _showInfoSheet(
+      context,
+      title: 'Security',
+      icon: Icons.security_outlined,
+      items: const [
+        _InfoItem(
+          label: 'Authentication',
+          value: 'Google Sign-In via Firebase Auth. No passwords stored.',
+        ),
+        _InfoItem(
+          label: 'Data in transit',
+          value: 'All data is encrypted in transit (HTTPS/TLS). Firebase enforces this.',
+        ),
+        _InfoItem(
+          label: 'Data at rest',
+          value: 'Firestore encrypts all data at rest by default using AES-256.',
+        ),
+        _InfoItem(
+          label: 'Access control',
+          value: 'Firestore Security Rules ensure you can only read/write your own groups and expenses. Other users\' data is inaccessible.',
+        ),
+        _InfoItem(
+          label: 'API keys',
+          value: 'AI service keys are stored in Google Cloud Secret Manager — never in the app bundle.',
+        ),
+        _InfoItem(
+          label: 'Session',
+          value: 'Sessions are managed by Firebase Auth tokens with automatic expiry and refresh.',
+        ),
+      ],
+      footer: 'Splitbo does not sell or share your data with third parties.',
+    );
+  }
+
+  void _showHelpFaq(BuildContext context) {
+    _showInfoSheet(
+      context,
+      title: 'Help & FAQ',
+      icon: Icons.help_outline_rounded,
+      items: const [
+        _InfoItem(
+          label: 'How do I add an expense?',
+          value: 'Tap the + button on any screen or open a group and tap "Add Expense". Fill in the description, amount, and who paid.',
+        ),
+        _InfoItem(
+          label: 'How do splits work?',
+          value: 'By default expenses are split equally. Tap "Split" to switch to custom amounts or percentages per member.',
+        ),
+        _InfoItem(
+          label: 'What is a guest member?',
+          value: 'A guest is someone without a Splitbo account. They appear in your group so you can track expenses involving them, but they cannot sign in.',
+        ),
+        _InfoItem(
+          label: 'How do I scan a receipt?',
+          value: 'On the Add Expense screen, tap "Scan Receipt". Splitbo uses Gemini AI to read the amount, merchant, category, and even names of people on the bill.',
+        ),
+        _InfoItem(
+          label: 'How do I settle up?',
+          value: 'Go to the Balances tab to see who owes whom. Settle Up functionality is coming in v1.5.',
+        ),
+        _InfoItem(
+          label: 'Can I edit or delete an expense?',
+          value: 'Yes — tap any expense in the group or Activity tab to get Edit and Delete options.',
+        ),
+        _InfoItem(
+          label: 'Is my data backed up?',
+          value: 'All data is stored in Firebase Firestore, which is replicated and backed up automatically by Google.',
+        ),
+      ],
+    );
+  }
+
+  void _showPrivacyPolicy(BuildContext context) {
+    _showInfoSheet(
+      context,
+      title: 'Privacy Policy',
+      icon: Icons.privacy_tip_outlined,
+      items: const [
+        _InfoItem(
+          label: 'What we collect',
+          value: 'Your Google account name and email (for sign-in), expense data you enter, and group information you create.',
+        ),
+        _InfoItem(
+          label: 'What we don\'t collect',
+          value: 'Passwords (Google handles auth), payment details, or any data beyond what you explicitly enter.',
+        ),
+        _InfoItem(
+          label: 'How your data is used',
+          value: 'Solely to provide the expense-splitting service. Your data is not analysed for advertising or shared with third parties.',
+        ),
+        _InfoItem(
+          label: 'Receipt images',
+          value: 'When you scan a receipt, the image is sent to Google\'s Gemini AI for parsing and is not stored permanently.',
+        ),
+        _InfoItem(
+          label: 'Data deletion',
+          value: 'You can delete your groups and expenses at any time. To delete your account, contact the Splitbo team.',
+        ),
+        _InfoItem(
+          label: 'Third-party services',
+          value: 'Firebase (Google) for auth and database. Google Gemini for receipt parsing. Both are subject to Google\'s privacy policy.',
+        ),
+      ],
+      footer: 'Last updated: September 2025. Contact: splitbo@vikas.dev',
+    );
+  }
+
+  void _showInfoSheet(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required List<_InfoItem> items,
+    String? footer,
+  }) {
+    showModalBottomSheet(
       context: context,
-      applicationName: 'Splitbo',
-      applicationVersion: '1.0.0',
-      applicationLegalese: '© 2025 Splitbo. All rights reserved.',
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        maxChildSize: 0.92,
+        minChildSize: 0.4,
+        builder: (_, ctrl) => Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFF1A1A1A),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            children: [
+              Container(
+                margin: const EdgeInsets.only(top: 12, bottom: 4),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF9E9E9E).withOpacity(0.4),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+                child: Row(
+                  children: [
+                    Icon(icon, color: const Color(0xFFC3FD00), size: 22),
+                    const SizedBox(width: 10),
+                    Text(title,
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700)),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Color(0xFF9E9E9E)),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1, color: Color(0xFF2C2C2C)),
+              Expanded(
+                child: ListView(
+                  controller: ctrl,
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                  children: [
+                    ...items.map((item) => Padding(
+                          padding: const EdgeInsets.only(bottom: 20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(item.label,
+                                  style: const TextStyle(
+                                      color: Color(0xFFC3FD00),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.4)),
+                              const SizedBox(height: 4),
+                              Text(item.value,
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      height: 1.5)),
+                            ],
+                          ),
+                        )),
+                    if (footer != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(footer,
+                            style: const TextStyle(
+                                color: Color(0xFF9E9E9E), fontSize: 12)),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -431,6 +640,12 @@ class _DarkField extends StatelessWidget {
       ),
     );
   }
+}
+
+class _InfoItem {
+  final String label;
+  final String value;
+  const _InfoItem({required this.label, required this.value});
 }
 
 // ── Section + Row ─────────────────────────────────────────────────────────────

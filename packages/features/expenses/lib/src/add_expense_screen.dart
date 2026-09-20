@@ -15,7 +15,8 @@ import 'package:image_picker/image_picker.dart';
 enum _SplitMode { equal, byAmount, byPercent }
 
 class AddExpenseScreen extends ConsumerStatefulWidget {
-  const AddExpenseScreen({super.key});
+  const AddExpenseScreen({super.key, this.initialGroupId});
+  final String? initialGroupId;
 
   @override
   ConsumerState<AddExpenseScreen> createState() => _AddExpenseScreenState();
@@ -54,6 +55,16 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
     super.initState();
     _descCtrl.addListener(() => setState(() {}));
     _amountCtrl.addListener(() => setState(() {}));
+    if (widget.initialGroupId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _preselectGroup(widget.initialGroupId!));
+    }
+  }
+
+  void _preselectGroup(String groupId) {
+    ref.read(watchGroupsProvider).whenData((groups) {
+      final group = groups.where((g) => g.id == groupId).firstOrNull;
+      if (group != null && mounted) setState(() => _selectedGroup = group);
+    });
   }
 
   void _clearForm() {
@@ -311,80 +322,230 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
         }
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Row(
-            children: [
-              Icon(Icons.check_circle_rounded, color: Color(0xFFC3FD00), size: 18),
-              SizedBox(width: 8),
-              Text('Receipt scanned!',
-                  style: TextStyle(color: Colors.white)),
-            ],
+      // Auto-match group by name from receipt
+      if (result.groupName != null && _selectedGroup == null) {
+        final groupsAsync = ref.read(watchGroupsProvider);
+        groupsAsync.whenData((groups) {
+          final query = result.groupName!.toLowerCase();
+          final match = groups.where((g) =>
+              g.name.toLowerCase().contains(query) ||
+              query.contains(g.name.toLowerCase())).firstOrNull;
+          if (match != null && mounted) {
+            setState(() => _selectedGroup = match);
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text('Group matched: ${match.name}',
+                  style: const TextStyle(color: Colors.white)),
+              backgroundColor: const Color(0xFF1E1E1E),
+              duration: const Duration(seconds: 3),
+            ));
+          } else if (mounted && result.groupName!.isNotEmpty) {
+            _promptCreateGroup(result.groupName!);
+          }
+        });
+      }
+
+      // Suggest adding people found on the receipt
+      if (result.people.isNotEmpty && mounted) {
+        await Future.delayed(const Duration(milliseconds: 400));
+        if (mounted) _showPeopleSuggestion(result.people);
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle_rounded, color: Color(0xFFC3FD00), size: 18),
+                SizedBox(width: 8),
+                Text('Receipt scanned!', style: TextStyle(color: Colors.white)),
+              ],
+            ),
+            backgroundColor: Color(0xFF1E1E1E),
+            duration: Duration(seconds: 3),
           ),
-          backgroundColor: Color(0xFF1E1E1E),
-          duration: Duration(seconds: 3),
-        ),
-      );
+        );
+      }
     } catch (e) {
       // ignore: avoid_print
       print('OCR error: $e');
-      if (mounted) setState(() => _scanHint = 'Scan failed: ${e.toString().substring(0, e.toString().length.clamp(0, 80))}');
-      _toastError('Scan failed — please try again.');
+      final msg = e.toString().contains('NOT_FOUND') || e.toString().contains('not-found')
+          ? 'OCR service not yet deployed. Fill in manually.'
+          : 'Scan failed — try a clearer photo or fill manually.';
+      if (mounted) setState(() => _scanHint = msg);
+      _toastError(msg);
     } finally {
       if (mounted) setState(() => _scanning = false);
     }
   }
 
+  void _promptCreateGroup(String suggestedName) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A1A),
+        title: const Text('Create group?',
+            style: TextStyle(color: Colors.white)),
+        content: Text(
+          'Receipt mentions "$suggestedName". Create a new group with this name?',
+          style: const TextStyle(color: Color(0xFF9E9E9E)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Skip', style: TextStyle(color: Color(0xFF9E9E9E))),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final result = await ref.read(groupRepositoryProvider).createGroup(
+                    name: suggestedName,
+                    currency: 'INR',
+                  );
+              if (mounted) {
+                result.fold(
+                  ok: (group) {
+                    setState(() => _selectedGroup = group);
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text('Group "${group.name}" created',
+                          style: const TextStyle(color: Colors.white)),
+                      backgroundColor: const Color(0xFF1E1E1E),
+                    ));
+                  },
+                  err: (_) {},
+                );
+              }
+            },
+            child: const Text('Create',
+                style: TextStyle(color: Color(0xFFC3FD00))),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPeopleSuggestion(List<String> people) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        margin: const EdgeInsets.all(12),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A1A1A),
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('People on this receipt',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700)),
+            const SizedBox(height: 6),
+            Text(
+              _selectedGroup != null
+                  ? 'Add them to "${_selectedGroup!.name}"?'
+                  : 'Select a group first to add these people.',
+              style: const TextStyle(color: Color(0xFF9E9E9E), fontSize: 13),
+            ),
+            const SizedBox(height: 16),
+            ...people.map((name) => ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: CircleAvatar(
+                    backgroundColor: const Color(0xFFC3FD00).withOpacity(0.12),
+                    child: Text(name.isNotEmpty ? name[0].toUpperCase() : '?',
+                        style: const TextStyle(
+                            color: Color(0xFFC3FD00),
+                            fontWeight: FontWeight.w700)),
+                  ),
+                  title: Text(name,
+                      style: const TextStyle(color: Colors.white)),
+                  trailing: _selectedGroup == null
+                      ? null
+                      : TextButton(
+                          onPressed: () async {
+                            final firestore = ref.read(firebaseFirestoreProvider);
+                            final docRef = firestore.collection('${dbPrefix}users').doc();
+                            await docRef.set({
+                              'displayName': name,
+                              'email': null,
+                              'isGuest': true,
+                              'createdAt': DateTime.now().millisecondsSinceEpoch,
+                            });
+                            await ref.read(groupRepositoryProvider).addMembers(
+                                  groupId: _selectedGroup!.id,
+                                  userIds: [docRef.id],
+                                );
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                content: Text('$name added to group',
+                                    style: const TextStyle(color: Colors.white)),
+                                backgroundColor: const Color(0xFF1E1E1E),
+                              ));
+                            }
+                          },
+                          style: TextButton.styleFrom(
+                              foregroundColor: const Color(0xFFC3FD00)),
+                          child: const Text('Add'),
+                        ),
+                )),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Done',
+                    style: TextStyle(color: Color(0xFF9E9E9E))),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // Calls the parseReceipt Cloud Function — key never touches the client.
   Future<_OcrResult?> _callGeminiVision(Uint8List bytes, String mime) async {
-    final callable =
-        FirebaseFunctions.instance.httpsCallable('parseReceipt');
+    final callable = FirebaseFunctions.instance.httpsCallable(
+      'parseReceipt',
+      options: HttpsCallableOptions(timeout: const Duration(seconds: 35)),
+    );
     final result = await callable.call<Map<Object?, Object?>>({
       'imageBase64': base64Encode(bytes),
       'mimeType': mime,
     });
 
     final data = Map<String, dynamic>.from(result.data);
-    final candidates = data['candidates'] as List?;
-    if (candidates == null || candidates.isEmpty) return null;
 
-    final candidate = (candidates[0] as Map?)?.cast<String, dynamic>();
-    final content = (candidate?['content'] as Map?)?.cast<String, dynamic>();
-    final parts = content?['parts'] as List?;
-    final rawText = parts
-            ?.whereType<Map>()
-            .where((p) => p['text'] != null)
-            .map<String>((p) => p['text'].toString())
-            .firstOrNull ??
-        '';
-
-    final jsonStr = _extractJson(rawText);
-    if (jsonStr == null) return null;
-
-    Map<String, dynamic> parsed;
-    try {
-      parsed = jsonDecode(jsonStr) as Map<String, dynamic>;
-    } catch (_) {
-      return null;
-    }
-
-    final amount = switch (parsed['amount']) {
+    final amount = switch (data['amount']) {
       num n => n.toDouble(),
       String s => double.tryParse(s.replaceAll(',', '')),
       _ => null,
     };
-    final description = parsed['description'] as String?;
-    final categoryStr = parsed['category'] as String?;
+    final description = data['description'] as String?;
+    final categoryStr = data['category'] as String?;
+    final groupName = data['groupName'] as String?;
+    final peopleRaw = data['people'];
+    final people = peopleRaw is List
+        ? peopleRaw.whereType<String>().toList()
+        : <String>[];
 
     ExpenseCategory? category;
     if (categoryStr != null) {
       try {
-        category =
-            ExpenseCategory.values.firstWhere((c) => c.name == categoryStr);
+        category = ExpenseCategory.values.firstWhere((c) => c.name == categoryStr);
       } catch (_) {}
     }
 
-    return _OcrResult(amount: amount, merchant: description, category: category);
+    return _OcrResult(
+      amount: amount,
+      merchant: description,
+      category: category,
+      groupName: groupName,
+      people: people,
+    );
   }
 
   // Extracts a JSON object from a string that may contain markdown fences or extra text.
@@ -703,7 +864,15 @@ class _OcrResult {
   final double? amount;
   final String? merchant;
   final ExpenseCategory? category;
-  const _OcrResult({this.amount, this.merchant, this.category});
+  final String? groupName;
+  final List<String> people;
+  const _OcrResult({
+    this.amount,
+    this.merchant,
+    this.category,
+    this.groupName,
+    this.people = const [],
+  });
 }
 
 // ── Group picker bottom sheet ─────────────────────────────────────────────────

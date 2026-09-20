@@ -113,9 +113,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.expenseNew,
-        pageBuilder: (_, __) => const MaterialPage(
+        pageBuilder: (_, state) => MaterialPage(
           fullscreenDialog: true,
-          child: AddExpenseScreen(),
+          child: AddExpenseScreen(
+            initialGroupId: state.uri.queryParameters['groupId'],
+          ),
         ),
       ),
       GoRoute(

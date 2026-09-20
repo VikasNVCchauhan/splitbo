@@ -177,10 +177,42 @@ class _SplitboAppBar extends StatelessWidget implements PreferredSizeWidget {
       elevation: 0,
       automaticallyImplyLeading: false,
       titleSpacing: 20,
-      title: Image.asset(
-        'assets/images/logo_full.jpg',
-        height: 34,
-        fit: BoxFit.contain,
+      title: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(9),
+            child: Image.asset(
+              'assets/images/logo_icon.jpg',
+              height: 34,
+              width: 34,
+              fit: BoxFit.cover,
+            ),
+          ),
+          const SizedBox(width: 10),
+          const Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: 'Split',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                TextSpan(
+                  text: 'bo',
+                  style: TextStyle(
+                    color: Color(0xFFC3FD00),
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
       actions: [
         IconButton(

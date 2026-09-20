@@ -87,8 +87,20 @@ class _GroupDetailBody extends ConsumerWidget {
             icon: const Icon(Icons.more_vert, color: Colors.white),
             onSelected: (v) {
               if (v == 'delete') _confirmDeleteGroup(context, ref);
+              if (v == 'edit') _showEditGroupSheet(context, ref);
             },
             itemBuilder: (_) => [
+              const PopupMenuItem(
+                value: 'edit',
+                child: Row(
+                  children: [
+                    Icon(Icons.edit_outlined, color: Colors.white, size: 18),
+                    SizedBox(width: 10),
+                    Text('Edit Group',
+                        style: TextStyle(color: Colors.white)),
+                  ],
+                ),
+              ),
               const PopupMenuItem(
                 value: 'delete',
                 child: Row(
@@ -105,10 +117,19 @@ class _GroupDetailBody extends ConsumerWidget {
           const SizedBox(width: 4),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.push('/expense/new?groupId=${group.id}'),
+        backgroundColor: _green,
+        foregroundColor: Colors.black,
+        elevation: 2,
+        icon: const Icon(Icons.add),
+        label: const Text('Add Expense',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+      ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _GroupHeader(group: group),
+          _GroupBanner(group: group),
           const Divider(height: 1, color: _border),
           Expanded(
             child: expensesAsync.when(
@@ -123,6 +144,18 @@ class _GroupDetailBody extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showEditGroupSheet(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => ProviderScope(
+        parent: ProviderScope.containerOf(context),
+        child: _EditGroupSheet(group: group),
       ),
     );
   }
@@ -375,8 +408,8 @@ class _AddMemberSheetState extends ConsumerState<_AddMemberSheet>
               labelColor: _green,
               unselectedLabelColor: _textSecondary,
               tabs: const [
-                Tab(text: 'Search'),
                 Tab(text: 'Add Guest'),
+                Tab(text: 'Search'),
                 Tab(text: 'Share'),
               ],
             ),
@@ -384,17 +417,17 @@ class _AddMemberSheetState extends ConsumerState<_AddMemberSheet>
               child: TabBarView(
                 controller: _tab,
                 children: [
+                  _GuestTab(
+                    ctrl: _guestCtrl,
+                    adding: _addingGuest,
+                    onAdd: _addGuest,
+                  ),
                   _SearchTab(
                     ctrl: _searchCtrl,
                     results: _results,
                     searching: _searching,
                     onSearch: _search,
                     onAdd: _addUser,
-                  ),
-                  _GuestTab(
-                    ctrl: _guestCtrl,
-                    adding: _addingGuest,
-                    onAdd: _addGuest,
                   ),
                   _ShareTab(inviteUrl: _inviteUrl),
                 ],
@@ -661,55 +694,264 @@ class _ShareTab extends StatelessWidget {
   }
 }
 
-class _GroupHeader extends StatelessWidget {
-  const _GroupHeader({required this.group});
+class _GroupBanner extends StatelessWidget {
+  const _GroupBanner({required this.group});
   final GroupEntity group;
+
+  static const _memberColors = [
+    Color(0xFFC3FD00), Color(0xFF00D4FF), Color(0xFFFF6B9D),
+    Color(0xFFFFB347), Color(0xFF9B59B6), Color(0xFF2ECC71),
+  ];
 
   @override
   Widget build(BuildContext context) {
     final symbol = group.currency == 'INR' ? '₹' : group.currency;
+    final members = group.memberIds;
+    final visibleCount = members.length > 5 ? 5 : members.length;
+    final overflow = members.length - visibleCount;
+
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
       color: _surface,
-      child: Row(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: _green.withOpacity(0.12),
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(
-                group.name.isNotEmpty ? group.name[0].toUpperCase() : '?',
-                style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    color: _green),
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(group.name,
+          Row(
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: _green.withOpacity(0.12),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: _green.withOpacity(0.3), width: 2),
+                ),
+                child: Center(
+                  child: Text(
+                    group.name.isNotEmpty ? group.name[0].toUpperCase() : '?',
                     style: const TextStyle(
+                        fontSize: 26, fontWeight: FontWeight.w800, color: _green),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(group.name,
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${group.memberCount} member${group.memberCount == 1 ? '' : 's'}',
+                      style: const TextStyle(color: _textSecondary, fontSize: 13),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '$symbol${group.totalExpenses.toStringAsFixed(0)} total expenses',
+                      style: const TextStyle(
+                          color: _green, fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (members.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            const Text('Members',
+                style: TextStyle(
+                    color: _textSecondary, fontSize: 11, letterSpacing: 0.5)),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                for (int i = 0; i < visibleCount; i++)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: _memberColors[i % _memberColors.length]
+                                .withOpacity(0.15),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: _memberColors[i % _memberColors.length]
+                                  .withOpacity(0.4),
+                            ),
+                          ),
+                          child: Center(
+                            child: Text(
+                              (i + 1).toString(),
+                              style: TextStyle(
+                                  color: _memberColors[i % _memberColors.length],
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                if (overflow > 0)
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: _textSecondary.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: _border),
+                    ),
+                    child: Center(
+                      child: Text('+$overflow',
+                          style: const TextStyle(
+                              color: _textSecondary, fontSize: 11)),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// ── Edit Group Sheet ──────────────────────────────────────────────────────────
+class _EditGroupSheet extends ConsumerStatefulWidget {
+  const _EditGroupSheet({required this.group});
+  final GroupEntity group;
+
+  @override
+  ConsumerState<_EditGroupSheet> createState() => _EditGroupSheetState();
+}
+
+class _EditGroupSheetState extends ConsumerState<_EditGroupSheet> {
+  late final TextEditingController _nameCtrl;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameCtrl = TextEditingController(text: widget.group.name);
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final name = _nameCtrl.text.trim();
+    if (name.isEmpty) return;
+    setState(() => _saving = true);
+    final result = await ref
+        .read(groupRepositoryProvider)
+        .updateGroup(groupId: widget.group.id, name: name);
+    if (!mounted) return;
+    setState(() => _saving = false);
+    result.fold(
+      ok: (_) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Group updated', style: TextStyle(color: Colors.white)),
+            backgroundColor: Color(0xFF1E1E1E),
+          ),
+        );
+      },
+      err: (e) => ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.message, style: const TextStyle(color: Colors.white)),
+          backgroundColor: const Color(0xFF1E1E1E),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        margin: const EdgeInsets.all(12),
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+        decoration: BoxDecoration(
+          color: _surface,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                const Text('Edit Group',
+                    style: TextStyle(
                         color: Colors.white,
-                        fontSize: 16,
+                        fontSize: 18,
                         fontWeight: FontWeight.w700)),
-                const SizedBox(height: 4),
-                Text(
-                  '${group.memberCount} member${group.memberCount == 1 ? '' : 's'} · $symbol${group.totalExpenses.toStringAsFixed(0)} total',
-                  style:
-                      const TextStyle(color: _textSecondary, fontSize: 13),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.close, color: _textSecondary),
+                  onPressed: () => Navigator.pop(context),
                 ),
               ],
             ),
-          ),
-        ],
+            const SizedBox(height: 16),
+            TextField(
+              controller: _nameCtrl,
+              style: const TextStyle(color: Colors.white),
+              textCapitalization: TextCapitalization.words,
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(
+                labelText: 'Group name',
+                labelStyle: const TextStyle(color: _textSecondary),
+                prefixIcon: const Icon(Icons.group_outlined, color: _textSecondary),
+                filled: true,
+                fillColor: const Color(0xFF252525),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: _border)),
+                enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: _border)),
+                focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: _green)),
+              ),
+            ),
+            const SizedBox(height: 20),
+            if (_nameCtrl.text.trim().isNotEmpty)
+              SizedBox(
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: _saving ? null : _save,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _green,
+                    foregroundColor: Colors.black,
+                    elevation: 0,
+                    shape: const StadiumBorder(),
+                  ),
+                  child: _saving
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2.5, color: Colors.black))
+                      : const Text('Save Changes',
+                          style: TextStyle(
+                              fontSize: 15, fontWeight: FontWeight.w700)),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
