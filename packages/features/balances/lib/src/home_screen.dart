@@ -179,13 +179,7 @@ class _SplitboAppBar extends StatelessWidget implements PreferredSizeWidget {
       titleSpacing: 20,
       title: Row(
         children: [
-          SizedBox(
-            width: 28,
-            height: 28,
-            child: CustomPaint(
-              painter: _MarkPainter(colors.brandPrimary),
-            ),
-          ),
+          SplitboLogoMark(size: 28, color: colors.brandPrimary),
           const SizedBox(width: 8),
           RichText(
             text: TextSpan(
@@ -475,45 +469,3 @@ class _EmptyGroupsHint extends StatelessWidget {
   }
 }
 
-// ── Shared mini logo-mark painter — mirrors logo_mark.svg ────────────────────
-class _MarkPainter extends CustomPainter {
-  final Color color;
-  const _MarkPainter(this.color);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final s = size.shortestSide / 512;
-    final p = Paint()..color = color..style = PaintingStyle.fill;
-
-    // Dot
-    canvas.drawCircle(Offset(178 * s, 120 * s), 48 * s, p);
-
-    // Blade
-    final blade = Path()
-      ..moveTo(166 * s, 218 * s)
-      ..cubicTo(105 * s, 275 * s, 100 * s, 324 * s, 154 * s, 378 * s)
-      ..cubicTo(192 * s, 416 * s, 246 * s, 364 * s, 290 * s, 320 * s)
-      ..lineTo(426 * s, 184 * s)
-      ..lineTo(426 * s, 84 * s)
-      ..lineTo(326 * s, 84 * s)
-      ..close();
-    canvas.drawPath(blade, p);
-
-    // Crescent with evenodd hole (center 288,368 r=38)
-    final crescent = Path()
-      ..fillType = PathFillType.evenOdd
-      ..moveTo(346 * s, 294 * s)
-      ..cubicTo(407 * s, 237 * s, 412 * s, 188 * s, 358 * s, 134 * s)
-      ..cubicTo(320 * s, 96 * s, 266 * s, 148 * s, 222 * s, 192 * s)
-      ..lineTo(86 * s, 328 * s)
-      ..lineTo(86 * s, 428 * s)
-      ..lineTo(186 * s, 428 * s)
-      ..close();
-    crescent.addOval(
-        Rect.fromCircle(center: Offset(288 * s, 368 * s), radius: 38 * s));
-    canvas.drawPath(crescent, p);
-  }
-
-  @override
-  bool shouldRepaint(covariant _MarkPainter old) => old.color != color;
-}

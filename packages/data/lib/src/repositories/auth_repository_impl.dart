@@ -10,6 +10,7 @@ import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../dto/user_dto.dart';
+import '../providers/firebase_providers.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   AuthRepositoryImpl({
