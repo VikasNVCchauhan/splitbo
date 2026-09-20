@@ -2,6 +2,11 @@ import 'package:data/data.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+const _green = Color(0xFFC3FD00);
+const _bg = Colors.black;
+const _surface = Color(0xFF1A1A1A);
+const _textSecondary = Color(0xFF9E9E9E);
+
 class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({super.key});
 
@@ -22,7 +27,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         err: (err) => ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(err.message),
-            backgroundColor: const Color(0xFF1A1A1A),
+            backgroundColor: _surface,
           ),
         ),
       );
@@ -32,7 +37,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: _bg,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 28),
@@ -41,31 +46,41 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             children: [
               const Spacer(flex: 2),
 
-              // ── Real logo image (mark + wordmark on black bg) ──
+              // Logo + wordmark
               Image.asset(
                 'assets/images/logo_full.jpg',
-                width: 240,
+                width: 220,
                 fit: BoxFit.contain,
               ),
-
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               const Text(
                 'Split bills. Keep friends.',
                 style: TextStyle(
-                  fontSize: 15,
-                  color: Color(0xFF9E9E9E),
+                  fontSize: 14,
+                  color: _textSecondary,
                   letterSpacing: 0.1,
                 ),
               ),
 
               const Spacer(flex: 2),
 
-              // ── Buttons ────────────────────────────────────────
+              // Stacked expense cards
+              const _ExpenseCards(),
+              const SizedBox(height: 14),
+              const Text(
+                'Share expenses, not stress.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: _textSecondary,
+                ),
+              ),
+
+              const Spacer(flex: 2),
+
+              // Buttons
               if (_loading)
-                const CircularProgressIndicator(
-                  color: Color(0xFFC3FD00),
-                  strokeWidth: 2.5,
-                )
+                const CircularProgressIndicator(color: _green, strokeWidth: 2.5)
               else ...[
                 SizedBox(
                   width: double.infinity,
@@ -73,7 +88,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   child: ElevatedButton(
                     onPressed: _signIn,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFC3FD00),
+                      backgroundColor: _green,
                       foregroundColor: Colors.black,
                       elevation: 0,
                       shape: const StadiumBorder(),
@@ -88,44 +103,19 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 14),
-                SizedBox(
-                  width: double.infinity,
-                  height: 54,
-                  child: OutlinedButton(
-                    onPressed: _signIn,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      side: const BorderSide(
-                          color: Color(0xFF2C2C2C), width: 1.5),
-                      shape: const StadiumBorder(),
-                    ),
-                    child: const Text(
-                      'Sign In',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
+                const SizedBox(height: 18),
+                GestureDetector(
+                  onTap: _signIn,
+                  child: const Text(
+                    'Sign In',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: _green,
                     ),
                   ),
                 ),
               ],
-
-              const Spacer(flex: 2),
-
-              // ── Receipt illustration ───────────────────────────
-              const _ReceiptIllustration(),
-
-              const SizedBox(height: 16),
-              const Text(
-                'Good people split everything better.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF9E9E9E),
-                ),
-              ),
 
               const Spacer(flex: 1),
             ],
@@ -136,131 +126,125 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   }
 }
 
-// ── Receipt illustration ──────────────────────────────────────────────────────
-class _ReceiptIllustration extends StatelessWidget {
-  const _ReceiptIllustration();
+// ── Stacked expense preview cards ─────────────────────────────────────────────
+class _ExpenseCards extends StatelessWidget {
+  const _ExpenseCards();
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 90,
+      height: 140,
       child: Stack(
         alignment: Alignment.center,
-        clipBehavior: Clip.none,
         children: [
-          // Receipt card
-          Container(
-            width: 62,
-            height: 78,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                for (int i = 0; i < 3; i++) ...[
-                  Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE0E0E0),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  if (i < 2) const SizedBox(height: 5),
-                ],
-                const SizedBox(height: 8),
-                const Text(
-                  '₹',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF424242),
-                  ),
-                ),
-              ],
+          // Back card (tilted left)
+          Transform.rotate(
+            angle: -0.06,
+            child: _ExpenseCard(
+              icon: Icons.home_outlined,
+              title: 'Apartment',
+              avatarColors: const [Color(0xFF4CAF50), Color(0xFF2196F3)],
+              amount: '₹12,000',
+              offset: const Offset(0, 20),
             ),
           ),
-
-          // Spark marks
-          const Positioned(
-            top: 0,
-            left: 90,
-            child: Text('/',
-                style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFFC3FD00))),
-          ),
-          const Positioned(
-            top: 12,
-            left: 100,
-            child: Text('/',
-                style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFFC3FD00))),
-          ),
-          const Positioned(
-            top: 0,
-            right: 90,
-            child: Text('\\',
-                style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFFC3FD00))),
-          ),
-          const Positioned(
-            top: 12,
-            right: 100,
-            child: Text('\\',
-                style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFFC3FD00))),
-          ),
-
-          // Left avatars
-          Positioned(
-            left: 20,
-            top: 6,
-            child: _avatar(const Color(0xFF4CAF50), 40),
-          ),
-          Positioned(
-            left: 14,
-            bottom: 2,
-            child: _avatar(const Color(0xFFFF9800), 34),
-          ),
-
-          // Right avatar
-          Positioned(
-            right: 20,
-            top: 6,
-            child: _avatar(const Color(0xFF2196F3), 40),
+          // Front card (slight tilt right)
+          Transform.rotate(
+            angle: 0.04,
+            child: _ExpenseCard(
+              icon: Icons.restaurant_outlined,
+              title: 'Dinner',
+              avatarColors: const [Color(0xFFFF9800), Color(0xFF9C27B0)],
+              amount: '₹2,400',
+              offset: Offset.zero,
+            ),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _avatar(Color color, double size) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.black, width: 2),
+class _ExpenseCard extends StatelessWidget {
+  const _ExpenseCard({
+    required this.icon,
+    required this.title,
+    required this.avatarColors,
+    required this.amount,
+    required this.offset,
+  });
+
+  final IconData icon;
+  final String title;
+  final List<Color> avatarColors;
+  final String amount;
+  final Offset offset;
+
+  @override
+  Widget build(BuildContext context) {
+    return Transform.translate(
+      offset: offset,
+      child: Container(
+        width: 240,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: _surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFF2C2C2C), width: 1),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: const Color(0xFF252525),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: _green, size: 18),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      for (int i = 0; i < avatarColors.length; i++)
+                        Padding(
+                          padding: EdgeInsets.only(right: i < avatarColors.length - 1 ? 4 : 0),
+                          child: CircleAvatar(
+                            radius: 8,
+                            backgroundColor: avatarColors[i],
+                            child: const Icon(Icons.person, size: 9, color: Colors.white),
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Text(
+              amount,
+              style: const TextStyle(
+                color: _green,
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
       ),
-      child: Icon(Icons.person, size: size * 0.55, color: Colors.white),
     );
   }
 }
