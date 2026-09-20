@@ -197,11 +197,8 @@ class AuthRepositoryImpl implements AuthRepository {
   // ── Helpers ──────────────────────────────────────────────────────────────
 
   Future<UserEntity> _fetchOrCreateUser(User firebaseUser) async {
-    final doc = await _users.doc(firebaseUser.uid).get();
-    if (doc.exists) {
-      return UserDto.fromFirestore(doc).toEntity();
-    }
-    final entity = UserEntity(
+    // Build entity from Firebase Auth — works even if Firestore is unavailable
+    final fallback = UserEntity(
       id: firebaseUser.uid,
       displayName: firebaseUser.displayName ??
           firebaseUser.email?.split('@').first ??
@@ -211,10 +208,15 @@ class AuthRepositoryImpl implements AuthRepository {
       avatarUrl: firebaseUser.photoURL,
       createdAt: firebaseUser.metadata.creationTime ?? DateTime.now(),
     );
-    await _users
-        .doc(firebaseUser.uid)
-        .set(UserDto.fromEntity(entity).toFirestore());
-    return entity;
+    try {
+      final doc = await _users.doc(firebaseUser.uid).get();
+      if (doc.exists) return UserDto.fromFirestore(doc).toEntity();
+      await _users.doc(firebaseUser.uid).set(UserDto.fromEntity(fallback).toFirestore());
+      return fallback;
+    } catch (_) {
+      // Firestore unavailable / rules blocking — return auth-only entity
+      return fallback;
+    }
   }
 
   AppError _mapAuthError(FirebaseAuthException e) => switch (e.code) {
