@@ -399,7 +399,9 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
               Navigator.pop(context);
               final result = await ref.read(groupRepositoryProvider).createGroup(
                     name: suggestedName,
+                    description: '',
                     currency: 'INR',
+                    memberIds: [ref.read(authStateProvider).valueOrNull?.id ?? ''],
                   );
               if (mounted) {
                 result.fold(
