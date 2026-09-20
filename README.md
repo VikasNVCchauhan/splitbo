@@ -2,6 +2,8 @@
 
 > **Split bills. Keep friends.**
 
+🌐 **Live App: [https://vikasnvcchauhan.github.io/splitbo/](https://vikasnvcchauhan.github.io/splitbo/)**
+
 Splitbo is a modern expense-splitting app built with Flutter Web + Firebase. Track shared expenses across groups, settle balances, and scan receipts with AI — all with a clean dark-first UI.
 
 ---
