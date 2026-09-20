@@ -4,6 +4,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:domain/domain.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../repositories/auth_repository_impl.dart';
@@ -60,7 +61,12 @@ final saveFcmTokenProvider = FutureProvider<void>((ref) async {
 
   final messaging = FirebaseMessaging.instance;
   try {
-    final token = await messaging.getToken();
+    // vapidKey is web-only; on mobile getToken() works without it
+    final token = kIsWeb
+        ? await messaging.getToken(
+            vapidKey:
+                'BFbCEVSwBnNlXWvHAiFOFGqH7fE4aSs2PXJkIPaZvFxXSTxEz_kW5Av7AZ8SxME8L9YxRe9VjHNOFSwWZf4Dn2Y')
+        : await messaging.getToken();
     if (token == null) return;
     await ref
         .read(firebaseFirestoreProvider)

@@ -1,7 +1,5 @@
 // packages/features/groups/lib/src/group_detail_screen.dart
 
-import 'dart:convert';
-
 import 'package:data/data.dart';
 import 'package:design_system/design_system.dart';
 import 'package:domain/domain.dart';
@@ -11,8 +9,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
+import 'csv_export_stub.dart'
+    if (dart.library.html) 'csv_export_web.dart'
+    if (dart.library.io) 'csv_export_io.dart';
 
 const _green = Color(0xFFC3FD00);
 const _surface = Color(0xFF1A1A1A);
@@ -76,8 +75,7 @@ class _GroupDetailBody extends ConsumerWidget {
               tooltip: 'Export CSV',
               onPressed: () => _exportCsv(expenses, group, context),
             ),
-          ) ?? const SizedBox.shrink(),
-          IconButton(
+          ) ?? const SizedBox.shrink(),          IconButton(
             icon: const Icon(Icons.person_add_outlined, color: Colors.white),
             tooltip: 'Invite',
             onPressed: () => _copyInviteLink(group.id, context),
@@ -115,8 +113,8 @@ class _GroupDetailBody extends ConsumerWidget {
     );
   }
 
-  void _exportCsv(
-      List<ExpenseEntity> expenses, GroupEntity group, BuildContext context) {
+  Future<void> _exportCsv(
+      List<ExpenseEntity> expenses, GroupEntity group, BuildContext context) async {
     if (expenses.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No expenses to export')),
@@ -132,21 +130,14 @@ class _GroupDetailBody extends ConsumerWidget {
       buf.writeln(
           '$date,$desc,${e.category.label},${e.amount.toStringAsFixed(2)},${e.currency},${e.paidBy}');
     }
-    final csv = buf.toString();
 
-    if (kIsWeb) {
-      final bytes = utf8.encode(csv);
-      final blob = html.Blob([bytes], 'text/csv;charset=utf-8;');
-      final url = html.Url.createObjectUrlFromBlob(blob);
-      html.AnchorElement(href: url)
-        ..setAttribute('download', '${group.name}_expenses.csv')
-        ..click();
-      html.Url.revokeObjectUrl(url);
+    await downloadCsv(buf.toString(), '${group.name}_expenses.csv');
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Exported ${expenses.length} expenses')),
+      );
     }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Exported ${expenses.length} expenses')),
-    );
   }
 
   void _copyInviteLink(String groupId, BuildContext context) {
