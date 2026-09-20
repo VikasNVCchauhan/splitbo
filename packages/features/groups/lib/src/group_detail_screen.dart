@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 import 'csv_export_stub.dart'
     if (dart.library.html) 'csv_export_web.dart'
@@ -77,9 +78,9 @@ class _GroupDetailBody extends ConsumerWidget {
             ),
           ) ?? const SizedBox.shrink(),
           IconButton(
-            icon: const Icon(Icons.person_add_outlined, color: Colors.white),
-            tooltip: 'Invite',
-            onPressed: () => _copyInviteLink(group.id, context),
+            icon: const Icon(Icons.person_add_outlined, color: _green),
+            tooltip: 'Add Member',
+            onPressed: () => _showAddMemberSheet(context, ref),
           ),
           PopupMenuButton<String>(
             color: _surface,
@@ -197,14 +198,464 @@ class _GroupDetailBody extends ConsumerWidget {
     }
   }
 
+  void _showAddMemberSheet(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => ProviderScope(
+        parent: ProviderScope.containerOf(context),
+        child: _AddMemberSheet(group: group),
+      ),
+    );
+  }
+
   void _copyInviteLink(String groupId, BuildContext context) {
     const base = 'https://vikasnvcchauhan.github.io/splitbo';
     final link = '$base/#/invite/$groupId';
     Clipboard.setData(ClipboardData(text: link));
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Invite link copied to clipboard'),
+        content: Text('Invite link copied to clipboard',
+            style: TextStyle(color: Colors.white)),
+        backgroundColor: Color(0xFF1E1E1E),
         duration: Duration(seconds: 2),
+      ),
+    );
+  }
+}
+
+// ── Add Member Sheet ──────────────────────────────────────────────────────────
+class _AddMemberSheet extends ConsumerStatefulWidget {
+  const _AddMemberSheet({required this.group});
+  final GroupEntity group;
+
+  @override
+  ConsumerState<_AddMemberSheet> createState() => _AddMemberSheetState();
+}
+
+class _AddMemberSheetState extends ConsumerState<_AddMemberSheet>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tab;
+  final _searchCtrl = TextEditingController();
+  final _guestCtrl = TextEditingController();
+  List<({String id, String displayName, String? avatarUrl})> _results = [];
+  bool _searching = false;
+  bool _addingGuest = false;
+
+  static const _inviteBase = 'https://vikasnvcchauhan.github.io/splitbo';
+
+  @override
+  void initState() {
+    super.initState();
+    _tab = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tab.dispose();
+    _searchCtrl.dispose();
+    _guestCtrl.dispose();
+    super.dispose();
+  }
+
+  String get _inviteUrl => '$_inviteBase/#/invite/${widget.group.id}';
+
+  Future<void> _search(String q) async {
+    if (q.trim().length < 2) {
+      setState(() => _results = []);
+      return;
+    }
+    setState(() => _searching = true);
+    final result =
+        await ref.read(groupRepositoryProvider).searchUsers(q.trim());
+    if (!mounted) return;
+    setState(() {
+      _searching = false;
+      _results = result.fold(
+        ok: (list) => list
+            .where((u) => !widget.group.memberIds.contains(u.id))
+            .toList(),
+        err: (_) => [],
+      );
+    });
+  }
+
+  Future<void> _addUser(String userId, String displayName) async {
+    await ref.read(groupRepositoryProvider).addMembers(
+          groupId: widget.group.id,
+          userIds: [userId],
+        );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$displayName added to group',
+              style: const TextStyle(color: Colors.white)),
+          backgroundColor: const Color(0xFF1E1E1E),
+        ),
+      );
+      setState(() => _results.removeWhere((r) => r.id == userId));
+    }
+  }
+
+  Future<void> _addGuest() async {
+    final name = _guestCtrl.text.trim();
+    if (name.isEmpty) return;
+    setState(() => _addingGuest = true);
+    final firestore = ref.read(firebaseFirestoreProvider);
+    final docRef = firestore.collection('${dbPrefix}users').doc();
+    await docRef.set({
+      'displayName': name,
+      'email': null,
+      'isGuest': true,
+      'createdAt': DateTime.now().millisecondsSinceEpoch,
+    });
+    await ref.read(groupRepositoryProvider).addMembers(
+          groupId: widget.group.id,
+          userIds: [docRef.id],
+        );
+    if (mounted) {
+      setState(() {
+        _addingGuest = false;
+        _guestCtrl.clear();
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$name added as guest',
+              style: const TextStyle(color: Colors.white)),
+          backgroundColor: const Color(0xFF1E1E1E),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.75,
+      maxChildSize: 0.92,
+      minChildSize: 0.5,
+      builder: (_, scrollCtrl) => Container(
+        decoration: const BoxDecoration(
+          color: _surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            // Handle
+            Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 4),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: _textSecondary.withOpacity(0.4),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              child: Row(
+                children: [
+                  const Text('Add Members',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700)),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: _textSecondary),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+            TabBar(
+              controller: _tab,
+              indicatorColor: _green,
+              labelColor: _green,
+              unselectedLabelColor: _textSecondary,
+              tabs: const [
+                Tab(text: 'Search'),
+                Tab(text: 'Add Guest'),
+                Tab(text: 'Share'),
+              ],
+            ),
+            Expanded(
+              child: TabBarView(
+                controller: _tab,
+                children: [
+                  _SearchTab(
+                    ctrl: _searchCtrl,
+                    results: _results,
+                    searching: _searching,
+                    onSearch: _search,
+                    onAdd: _addUser,
+                  ),
+                  _GuestTab(
+                    ctrl: _guestCtrl,
+                    adding: _addingGuest,
+                    onAdd: _addGuest,
+                  ),
+                  _ShareTab(inviteUrl: _inviteUrl),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SearchTab extends StatelessWidget {
+  const _SearchTab({
+    required this.ctrl,
+    required this.results,
+    required this.searching,
+    required this.onSearch,
+    required this.onAdd,
+  });
+  final TextEditingController ctrl;
+  final List<({String id, String displayName, String? avatarUrl})> results;
+  final bool searching;
+  final ValueChanged<String> onSearch;
+  final void Function(String id, String name) onAdd;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          TextField(
+            controller: ctrl,
+            style: const TextStyle(color: Colors.white),
+            onChanged: onSearch,
+            decoration: InputDecoration(
+              hintText: 'Search by name…',
+              hintStyle: const TextStyle(color: _textSecondary),
+              prefixIcon: const Icon(Icons.search, color: _textSecondary),
+              filled: true,
+              fillColor: const Color(0xFF252525),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: _border),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: _border),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: _green),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (searching)
+            const Padding(
+              padding: EdgeInsets.only(top: 24),
+              child: CircularProgressIndicator(color: _green, strokeWidth: 2),
+            )
+          else if (results.isEmpty && ctrl.text.length >= 2)
+            const Padding(
+              padding: EdgeInsets.only(top: 24),
+              child: Text('No users found',
+                  style: TextStyle(color: _textSecondary)),
+            )
+          else
+            Expanded(
+              child: ListView.builder(
+                itemCount: results.length,
+                itemBuilder: (_, i) {
+                  final u = results[i];
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: CircleAvatar(
+                      backgroundColor: _green.withOpacity(0.15),
+                      child: Text(
+                        u.displayName.isNotEmpty
+                            ? u.displayName[0].toUpperCase()
+                            : '?',
+                        style: const TextStyle(
+                            color: _green, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                    title: Text(u.displayName,
+                        style: const TextStyle(color: Colors.white)),
+                    trailing: TextButton(
+                      onPressed: () => onAdd(u.id, u.displayName),
+                      style: TextButton.styleFrom(foregroundColor: _green),
+                      child: const Text('Add'),
+                    ),
+                  );
+                },
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GuestTab extends StatelessWidget {
+  const _GuestTab({
+    required this.ctrl,
+    required this.adding,
+    required this.onAdd,
+  });
+  final TextEditingController ctrl;
+  final bool adding;
+  final VoidCallback onAdd;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'Add someone without a Splitbo account. They\'ll appear as a member so you can split expenses with them.',
+            style: TextStyle(color: _textSecondary, fontSize: 13),
+          ),
+          const SizedBox(height: 20),
+          TextField(
+            controller: ctrl,
+            style: const TextStyle(color: Colors.white),
+            textCapitalization: TextCapitalization.words,
+            decoration: InputDecoration(
+              labelText: 'Guest name',
+              hintText: 'e.g. Rahul, Priya',
+              hintStyle: const TextStyle(color: _textSecondary),
+              labelStyle: const TextStyle(color: _textSecondary),
+              prefixIcon:
+                  const Icon(Icons.person_outline, color: _textSecondary),
+              filled: true,
+              fillColor: const Color(0xFF252525),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: _border),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: _border),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: _green),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            height: 52,
+            child: ElevatedButton(
+              onPressed: adding ? null : onAdd,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _green,
+                foregroundColor: Colors.black,
+                elevation: 0,
+                shape: const StadiumBorder(),
+              ),
+              child: adding
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2.5, color: Colors.black))
+                  : const Text('Add Guest',
+                      style: TextStyle(
+                          fontSize: 15, fontWeight: FontWeight.w700)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ShareTab extends StatelessWidget {
+  const _ShareTab({required this.inviteUrl});
+  final String inviteUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: QrImageView(
+              data: inviteUrl,
+              version: QrVersions.auto,
+              size: 200,
+              backgroundColor: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 20),
+          const Text('Share QR Code',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600)),
+          const SizedBox(height: 6),
+          const Text('Anyone who scans this can join your group',
+              style: TextStyle(color: _textSecondary, fontSize: 13)),
+          const SizedBox(height: 24),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFF252525),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: _border),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    inviteUrl,
+                    style: const TextStyle(
+                        color: _textSecondary, fontSize: 12),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () {
+                    Clipboard.setData(ClipboardData(text: inviteUrl));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Link copied!',
+                            style: TextStyle(color: Colors.white)),
+                        backgroundColor: Color(0xFF1E1E1E),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: _green,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text('Copy',
+                        style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
