@@ -6,6 +6,7 @@ import 'package:core/core.dart';
 import 'package:domain/domain.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../dto/user_dto.dart';
@@ -50,16 +51,25 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Result<UserEntity, AppError>> signInWithGoogle() async {
     try {
-      final account = await _googleSignIn.signIn();
-      if (account == null) {
-        return const Err(AuthError('Google sign-in was cancelled.'));
+      UserCredential result;
+
+      if (kIsWeb) {
+        // On web, use Firebase popup — avoids page redirect losing state
+        final provider = GoogleAuthProvider();
+        result = await _auth.signInWithPopup(provider);
+      } else {
+        final account = await _googleSignIn.signIn();
+        if (account == null) {
+          return const Err(AuthError('Google sign-in was cancelled.'));
+        }
+        final auth = await account.authentication;
+        final credential = GoogleAuthProvider.credential(
+          accessToken: auth.accessToken,
+          idToken: auth.idToken,
+        );
+        result = await _auth.signInWithCredential(credential);
       }
-      final auth = await account.authentication;
-      final credential = GoogleAuthProvider.credential(
-        accessToken: auth.accessToken,
-        idToken: auth.idToken,
-      );
-      final result = await _auth.signInWithCredential(credential);
+
       final entity = await _fetchOrCreateUser(result.user!);
       return Ok(entity);
     } on FirebaseAuthException catch (e) {
