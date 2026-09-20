@@ -138,7 +138,7 @@ class _AuthChangeNotifier extends ChangeNotifier {
   }
 }
 
-class _AppShell extends StatelessWidget {
+class _AppShell extends ConsumerWidget {
   const _AppShell({required this.shell});
   final StatefulNavigationShell shell;
 
@@ -147,7 +147,9 @@ class _AppShell extends StatelessWidget {
   static const _bg = Color(0xFF0A0A0A);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Save FCM token whenever signed-in user changes
+    ref.watch(saveFcmTokenProvider);
     return Scaffold(
       body: shell,
       floatingActionButton: shell.currentIndex == 0

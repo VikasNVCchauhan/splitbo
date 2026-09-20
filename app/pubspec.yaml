@@ -48,6 +48,7 @@ dependencies:
 
   # File / media
   image_picker: ^1.1.2              # [VERIFIED-STABLE]
+  firebase_messaging: ^15.1.0       # [VERIFIED-STABLE] web push notifications
 
 dev_dependencies:
   flutter_test:

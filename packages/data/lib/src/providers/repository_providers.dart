@@ -1,7 +1,9 @@
 // packages/data/lib/src/providers/repository_providers.dart
 // Manual Riverpod providers — no code-gen, no build_runner needed.
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:domain/domain.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../repositories/auth_repository_impl.dart';
@@ -48,7 +50,27 @@ final watchExpensesProvider =
     StreamProvider.family<List<ExpenseEntity>, String>((ref, groupId) =>
         ref.watch(expenseRepositoryProvider).watchExpenses(groupId));
 
-// ── Balances ──────────────────────────────────────────────────────────────────
+// ── FCM token ─────────────────────────────────────────────────────────────────
+
+// Watch auth state and save FCM token to user doc whenever user signs in.
+// Consumed in _AppShell so it auto-runs while the shell is mounted.
+final saveFcmTokenProvider = FutureProvider<void>((ref) async {
+  final user = ref.watch(authStateProvider).valueOrNull;
+  if (user == null) return;
+
+  final messaging = FirebaseMessaging.instance;
+  try {
+    final token = await messaging.getToken();
+    if (token == null) return;
+    await ref
+        .read(firebaseFirestoreProvider)
+        .collection('${dbPrefix}users')
+        .doc(user.id)
+        .update({'fcmTokens': FieldValue.arrayUnion([token])});
+  } catch (_) {
+    // Non-fatal — app works without push tokens
+  }
+});
 
 final balanceRepositoryProvider = Provider<BalanceRepository>((ref) =>
     BalanceRepositoryImpl(firestore: ref.watch(firebaseFirestoreProvider)));
