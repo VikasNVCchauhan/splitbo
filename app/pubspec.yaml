@@ -1,0 +1,62 @@
+name: app
+description: Splitbo — composition root. Wires packages, configures routing, bootstraps Firebase.
+version: 1.0.0+1
+publish_to: none
+
+resolution: workspace
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+  flutter: ">=3.24.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # Internal packages
+  core:
+    path: ../packages/core
+  domain:
+    path: ../packages/domain
+  data:
+    path: ../packages/data
+  design_system:
+    path: ../packages/design_system
+
+  # Features (each is a separate package)
+  feature_auth:
+    path: ../packages/features/auth
+  feature_groups:
+    path: ../packages/features/groups
+  feature_expenses:
+    path: ../packages/features/expenses
+  feature_balances:
+    path: ../packages/features/balances
+  feature_activity:
+    path: ../packages/features/activity
+  feature_settings:
+    path: ../packages/features/settings
+
+  # Navigation + State
+  flutter_riverpod: ^2.5.1          # [VERIFIED-STABLE]
+  go_router: ^14.2.0                # [VERIFIED-STABLE]
+
+  # i18n
+  intl: ^0.20.3                     # [VERIFIED-STABLE]
+
+  # File / media
+  image_picker: ^1.1.2              # [VERIFIED-STABLE]
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  generate: true          # enables flutter gen-l10n for ARB files
+
+  assets:
+    - assets/images/

@@ -1,0 +1,44 @@
+name: data
+description: Firebase implementations of domain repository interfaces. The ONLY package that may import firebase_*.
+version: 1.0.0
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+  flutter: ">=3.24.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  core:
+    path: ../core
+  domain:
+    path: ../domain
+
+  # ── Firebase (ALL firebase_* imports are BANNED outside this package) ──
+  firebase_core: ^3.4.0             # [VERIFIED-STABLE]
+  firebase_auth: ^5.1.0             # [VERIFIED-STABLE]
+  cloud_firestore: ^5.4.0           # [VERIFIED-STABLE]
+  firebase_storage: ^12.2.0         # [VERIFIED-STABLE]
+  cloud_functions: ^5.1.0           # [VERIFIED-STABLE]
+  firebase_messaging: ^15.1.0       # [VERIFIED-STABLE]
+  firebase_analytics: ^11.3.0       # [VERIFIED-STABLE]
+  firebase_crashlytics: ^4.1.0      # [VERIFIED-STABLE]
+  firebase_app_check: ^0.3.1        # [VERIFY-BEFORE-USE] — check for breaking changes
+  firebase_remote_config: ^5.1.0    # [VERIFIED-STABLE]
+
+  # ── Auth providers ─────────────────────────────────────────
+  google_sign_in: ^6.2.1            # [VERIFIED-STABLE]
+  sign_in_with_apple: ^6.1.0        # [VERIFIED-STABLE]
+
+  # ── Local secure storage ───────────────────────────────────
+  flutter_secure_storage: ^9.2.2    # [VERIFIED-STABLE]
+
+  # ── Utilities ──────────────────────────────────────────────
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  mocktail: ^1.0.4

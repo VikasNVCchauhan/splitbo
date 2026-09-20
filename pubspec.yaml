@@ -1,0 +1,18 @@
+name: splitbo_workspace
+publish_to: none
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+workspace:
+  - app
+  - packages/core
+  - packages/domain
+  - packages/data
+  - packages/design_system
+  - packages/features/auth
+  - packages/features/groups
+  - packages/features/expenses
+  - packages/features/balances
+  - packages/features/activity
+  - packages/features/settings

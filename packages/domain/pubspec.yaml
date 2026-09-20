@@ -1,0 +1,19 @@
+name: domain
+description: Pure Dart — entities, repository interfaces, use-cases. Zero Flutter, zero Firebase.
+version: 1.0.0
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+# No flutter SDK dep — this package is pure Dart.
+# A CI job must FAIL if any Firebase or Flutter import appears here.
+dependencies:
+  core:
+    path: ../core
+  equatable: ^2.0.5         # [VERIFIED-STABLE]
+  meta: ^1.15.0             # [VERIFIED-STABLE]
+
+dev_dependencies:
+  mocktail: ^1.0.4

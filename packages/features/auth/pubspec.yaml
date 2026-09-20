@@ -1,0 +1,26 @@
+name: feature_auth
+description: Authentication feature — sign-in, sign-up, onboarding.
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+  flutter: ">=3.24.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  core:
+    path: ../../core
+  domain:
+    path: ../../domain
+  data:
+    path: ../../data
+  design_system:
+    path: ../../design_system
+  flutter_riverpod: ^2.5.1
+  go_router: ^14.2.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter

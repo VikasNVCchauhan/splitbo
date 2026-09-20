@@ -1,0 +1,35 @@
+name: splitbo
+
+packages:
+  - app
+  - packages/**
+  - packages/features/**
+
+scripts:
+  g:
+    run: melos exec --depends-on="build_runner" -- dart run build_runner build --delete-conflicting-outputs
+    description: Run code-gen in all packages
+
+  t:
+    run: melos exec --dir-exists=test -- flutter test --coverage
+    description: Run all tests with coverage
+
+  a:
+    run: melos exec -- flutter analyze --fatal-infos
+    description: Analyze all packages
+
+  l:
+    run: melos exec --depends-on="custom_lint" -- dart run custom_lint
+    description: Run custom lint rules
+
+  fmt:
+    run: melos exec -- dart format . --set-exit-if-changed
+    description: Enforce formatting
+
+  tokens:
+    run: dart tools/tokens/generate_theme.dart
+    description: Regenerate design tokens
+
+  contrast:
+    run: dart tools/contrast_check/check_contrast.dart
+    description: WCAG 2.2 AA contrast gate

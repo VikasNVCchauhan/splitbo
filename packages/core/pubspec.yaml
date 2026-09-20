@@ -1,0 +1,23 @@
+name: core
+description: Result type, AppError, structured logger, correlationId, telemetry, Remote Config accessor, flavor config.
+version: 1.0.0
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+  flutter: ">=3.24.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # No Firebase imports here — firebase_remote_config is accessed via
+  # an interface; the data package provides the implementation.
+  equatable: ^2.0.5          # [VERIFIED-STABLE] — value equality for AppError
+  meta: ^1.15.0              # [VERIFIED-STABLE] — @immutable, @protected
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  mocktail: ^1.0.4
