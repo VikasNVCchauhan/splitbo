@@ -30,6 +30,10 @@ service cloud.firestore {
                        request.auth.uid == request.resource.data.paidBy;
     }
 
+    match /users/{userId}/contacts/{contactId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
     // Balances are server-managed — clients may only read their own.
     match /balances/{userId} {
       allow read: if request.auth != null && request.auth.uid == userId;
@@ -61,6 +65,10 @@ service cloud.firestore {
                      request.auth.uid == resource.data.paidBy;
       allow create: if request.auth != null &&
                        request.auth.uid == request.resource.data.paidBy;
+    }
+
+    match /dev_users/{userId}/contacts/{contactId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
     match /dev_balances/{userId} {

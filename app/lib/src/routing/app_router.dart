@@ -18,6 +18,7 @@ import 'package:go_router/go_router.dart';
 abstract final class AppRoutes {
   static const home       = '/home';
   static const groups     = '/groups';
+  static const friends    = '/friends';
   static const activity   = '/activity';
   static const settings   = '/settings';
   static const signIn     = '/auth/sign-in';
@@ -77,6 +78,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                   ),
                 ),
               ],
+            ),
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: AppRoutes.friends,
+              builder: (_, __) => const FriendsScreen(),
             ),
           ]),
           StatefulShellBranch(routes: [
@@ -158,104 +165,39 @@ class _AppShell extends ConsumerWidget {
     ref.watch(saveFcmTokenProvider);
     return Scaffold(
       body: shell,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push(AppRoutes.expenseNew),
-        backgroundColor: _brandGreen,
-        foregroundColor: Colors.black,
-        elevation: 4,
-        shape: const CircleBorder(),
-        child: const Icon(Icons.add_rounded, size: 28),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: BottomAppBar(
-        color: _bg,
-        elevation: 12,
-        height: 64,
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 8,
-        padding: EdgeInsets.zero,
-        child: Row(
-          children: [
-            _NavItem(
-              icon: Icons.home_outlined,
-              activeIcon: Icons.home_rounded,
-              label: 'Home',
-              selected: shell.currentIndex == 0,
-              onTap: () => shell.goBranch(0),
-            ),
-            _NavItem(
-              icon: Icons.group_outlined,
-              activeIcon: Icons.group_rounded,
-              label: 'Groups',
-              selected: shell.currentIndex == 1,
-              onTap: () => shell.goBranch(1),
-            ),
-            const Expanded(child: SizedBox()), // FAB notch
-            _NavItem(
-              icon: Icons.receipt_long_outlined,
-              activeIcon: Icons.receipt_long_rounded,
-              label: 'Activity',
-              selected: shell.currentIndex == 2,
-              onTap: () => shell.goBranch(2),
-            ),
-            _NavItem(
-              icon: Icons.person_outline_rounded,
-              activeIcon: Icons.person_rounded,
-              label: 'Profile',
-              selected: shell.currentIndex == 3,
-              onTap: () => shell.goBranch(3),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _NavItem extends StatelessWidget {
-  const _NavItem({
-    required this.icon,
-    required this.activeIcon,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final IconData activeIcon;
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  static const _brandGreen = Color(0xFFC3FD00);
-  static const _inactive = Color(0xFF757575);
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        splashColor: Colors.transparent,
-        highlightColor: Colors.transparent,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              selected ? activeIcon : icon,
-              color: selected ? _brandGreen : _inactive,
-              size: 24,
-            ),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                color: selected ? _brandGreen : _inactive,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-              ),
-            ),
-          ],
-        ),
+      bottomNavigationBar: NavigationBar(
+        backgroundColor: _bg,
+        indicatorColor: _brandGreen.withOpacity(0.15),
+        selectedIndex: shell.currentIndex,
+        onDestinationSelected: shell.goBranch,
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home_rounded, color: _brandGreen),
+            label: 'Home',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.group_outlined),
+            selectedIcon: Icon(Icons.group_rounded, color: _brandGreen),
+            label: 'Groups',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.people_outline_rounded),
+            selectedIcon: Icon(Icons.people_rounded, color: _brandGreen),
+            label: 'Friends',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.receipt_long_outlined),
+            selectedIcon: Icon(Icons.receipt_long_rounded, color: _brandGreen),
+            label: 'Activity',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline_rounded),
+            selectedIcon: Icon(Icons.person_rounded, color: _brandGreen),
+            label: 'Profile',
+          ),
+        ],
       ),
     );
   }

@@ -48,23 +48,23 @@ class HomeScreen extends ConsumerWidget {
 
             // ── Quick Action Rows ─────────────────────────────────
             _ActionRow(
-              icon: Icons.people_outline_rounded,
-              title: 'Split a Bill',
-              subtitle: 'Add friends and split in seconds',
+              icon: Icons.add_circle_outline_rounded,
+              title: 'Add Expense',
+              subtitle: 'Log a bill and split it with a group',
               onTap: () => context.push('/expense/new'),
             ),
             const SizedBox(height: 10),
             _ActionRow(
-              icon: Icons.receipt_long_outlined,
-              title: 'Add Expense',
-              subtitle: 'Keep track together',
-              onTap: () => context.push('/expense/new'),
+              icon: Icons.person_add_outlined,
+              title: 'Add Friend',
+              subtitle: 'Add someone to split expenses with',
+              onTap: () => context.go('/friends'),
             ),
             const SizedBox(height: 10),
             _ActionRow(
               icon: Icons.bolt_outlined,
               title: 'Settle Up',
-              subtitle: 'See who owes what',
+              subtitle: 'See who owes what across all groups',
               onTap: () => context.push('/balances'),
             ),
             const SizedBox(height: 20),
