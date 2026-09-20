@@ -41,28 +41,23 @@ class DefaultFirebaseOptions {
   // ── Android ───────────────────────────────────────────────────────────────
   // TODO: Add Android app in Firebase Console → + Add app → Android
   // Bundle ID: com.splitbo.app
-  // Download google-services.json → place in app/android/app/
-  // Then update these values from google-services.json
+  // ── Android ──────────────────────────────────────────────────────────────
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'PLACEHOLDER_ADD_ANDROID_APP_IN_FIREBASE_CONSOLE',
-    appId: 'PLACEHOLDER',
+    apiKey: 'AIzaSyAkb6vPlJsVD8qLv-5DilP3acuZ7a5TxNo',
+    appId: '1:715213443351:android:5f15bce55b147469382752',
     messagingSenderId: '715213443351',
     projectId: 'splitbo',
     storageBucket: 'splitbo.firebasestorage.app',
   );
 
   // ── iOS ───────────────────────────────────────────────────────────────────
-  // TODO: Add iOS app in Firebase Console → + Add app → iOS
-  // Bundle ID: com.splitbo.app
-  // Download GoogleService-Info.plist → place in app/ios/Runner/
-  // Then update these values from GoogleService-Info.plist
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'PLACEHOLDER_ADD_IOS_APP_IN_FIREBASE_CONSOLE',
-    appId: 'PLACEHOLDER',
+    apiKey: 'AIzaSyAqabp5A4UzE1HyQR8eO0jcHFDS_qzbBeI',
+    appId: '1:715213443351:ios:efb3bc04c4ab70a7382752',
     messagingSenderId: '715213443351',
     projectId: 'splitbo',
     storageBucket: 'splitbo.firebasestorage.app',
-    iosClientId: 'PLACEHOLDER',
+    iosClientId: '715213443351-to1vueged5gov6schhqe52oqd5bpl91r.apps.googleusercontent.com',
     iosBundleId: 'com.splitbo.app',
   );
 }
