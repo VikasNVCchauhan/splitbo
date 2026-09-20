@@ -108,6 +108,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
+        path: '/balances',
+        builder: (_, __) => const BalanceScreen(),
+      ),
+      GoRoute(
         path: AppRoutes.expenseNew,
         pageBuilder: (_, __) => const MaterialPage(
           fullscreenDialog: true,
@@ -116,8 +120,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/expense/:id',
-        builder: (_, state) => _PlaceholderScreen(
-          label: 'Expense: ${state.pathParameters['id']}',
+        builder: (_, state) => _ExpenseNotFoundScreen(
+          expenseId: state.pathParameters['id']!,
         ),
       ),
     ],
@@ -255,16 +259,41 @@ class _NavItem extends StatelessWidget {
   }
 }
 
-class _PlaceholderScreen extends StatelessWidget {
-  const _PlaceholderScreen({required this.label});
-  final String label;
+class _ExpenseNotFoundScreen extends StatelessWidget {
+  const _ExpenseNotFoundScreen({required this.expenseId});
+  final String expenseId;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(label)),
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        iconTheme: const IconThemeData(color: Color(0xFFC3FD00)),
+      ),
       body: Center(
-        child: Text(label, style: Theme.of(context).textTheme.headlineMedium),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.receipt_long_outlined,
+                color: Color(0xFF555555), size: 48),
+            const SizedBox(height: 16),
+            const Text('Expense not found',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            const Text('Open the group to view this expense.',
+                style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 13)),
+            const SizedBox(height: 24),
+            TextButton(
+              onPressed: () => context.go(AppRoutes.home),
+              child: const Text('Go Home',
+                  style: TextStyle(color: Color(0xFFC3FD00))),
+            ),
+          ],
+        ),
       ),
     );
   }

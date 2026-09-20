@@ -11,7 +11,7 @@ Splitbo is a modern expense-splitting app built with Flutter Web + Firebase. Tra
 ## Features
 
 - **Groups & Expenses** — Create groups, add expenses, and track who owes what in real time
-- **AI Receipt Scanning** — Photograph or upload a bill (image/PDF/DOCX) and Gemini 1.5 Flash auto-fills amount, merchant, and category by understanding full receipt context
+- **AI Receipt Scanning** — Photograph or upload a bill (image/PDF) and Gemini 1.5 Flash auto-fills amount, merchant, and category by understanding full receipt context
 - **Google Sign-In** — Firebase Authentication with Google OAuth
 - **Real-time Balances** — Firestore-backed live balance calculations across all group members
 - **Settle Up** — Clear balances with one tap
@@ -215,12 +215,12 @@ final authStateProvider = StreamProvider<UserEntity?>(...);
 
 On the Add Expense screen, tap **Scan Receipt** to:
 
-1. Take a photo, pick from gallery, or upload a PDF/DOCX
+1. Take a photo, pick from gallery, or upload a PDF
 2. The file is sent to **Gemini 1.5 Flash** with a structured prompt
 3. Gemini understands full receipt context and returns JSON: `{amount, description, category, notes}`
 4. Fields are auto-filled in the form — review and save
 
-The Gemini API key is bundled in the app (same Firebase project key). Enable the **Generative Language API** in Google Cloud Console if OCR returns errors.
+The Gemini API key is stored server-side in Firebase Secret Manager and accessed via a Firebase Cloud Function (`parseReceipt`). The key is never shipped in the app bundle. Enable the **Generative Language API** in Google Cloud Console if OCR returns errors.
 
 ---
 
@@ -281,38 +281,58 @@ No gradients, no shadows, flat and minimal.
 
 ## Roadmap
 
-### v1 — Core (current)
+### v1 — Core (current, ~30% of Splitwise)
 - [x] Google Sign-In + Firebase Auth
 - [x] Groups + Expenses + Real-time Firestore sync
-- [x] AI Receipt Scanning (Gemini 1.5 Flash)
+- [x] AI Receipt Scanning (Gemini 1.5 Flash) — ahead of Splitwise
 - [x] Activity feed + Settings/Profile
 - [x] Firestore security rules + composite indexes (auto-deploy via CI)
 - [x] Group detail screen with expense list
-- [x] Export expenses to CSV
+- [x] Export expenses to CSV (web download / mobile share sheet)
 - [x] Invite members via link (copy-to-clipboard + auto-join route)
+- [x] Push notifications infra (FCM web service worker + token saving)
+- [x] Android + iOS platform setup (Firebase config, package name, permissions)
 
-### v2 — Frictionless Imports
-- [ ] Push notifications (Firebase Cloud Messaging)
-- [ ] Gmail integration — auto-detect receipts from Uber, Ola, Rapido, MakeMyTrip, OYO, Swiggy, Zomato, Amazon, Flipkart in inbox
-- [ ] SMS parsing (Android) — auto-import from ride & food apps with zero effort
+### v1.5 — Daily Driver (next sprint, closes gap to 50%)
+- [ ] **Balance screen** — exact "who owes who ₹X" across all groups
+- [ ] **Settle up flow** — mark debt as paid, updates balances atomically
+- [ ] **Unequal splits** — by percentage, custom ₹ amounts, or exact shares
+- [ ] **Expense detail screen** — view/edit a single expense
+- [ ] **UPI/GPay deep link** — one tap to pay via any UPI app to settle up
+- [ ] **Cloud Functions** — auto-recalculate balances on every expense write (production-grade, not client-side)
+- [ ] App icons — Splitbo brand icon replacing Flutter default (required before store)
+
+### v2 — Frictionless Imports (closes gap to 65%)
+- [ ] Push notifications — notify group members when expense is added
+- [ ] Gmail integration — auto-detect receipts from Uber, Ola, Rapido, MakeMyTrip, OYO, Swiggy, Zomato, Amazon, Flipkart
+- [ ] SMS parsing (Android) — auto-import from ride and food apps with zero user effort
 - [ ] Share sheet target — share any confirmation PDF/email directly into Splitbo
-- [ ] Native iOS + Android builds
+- [ ] Deep links on mobile — invite URL opens app directly (uni_links)
+- [ ] Native iOS + Android builds pushed to stores
 
-### v3 — Enterprise / Reimbursements
-- [ ] Employee expense tracking — employees log work expenses (travel, meals, accommodation, client entertainment)
-- [ ] Reimbursement workflows — submit expense → manager approves → marked reimbursed
-- [ ] Policy enforcement — flag expenses that exceed per-diem limits
-- [ ] Cost-centre tagging — tag expenses to projects, clients, or departments
+### v2.5 — Social + Polish (closes gap to 80%)
+- [ ] Friend connections — add friends beyond groups, see shared history
+- [ ] Recurring expenses — auto-add monthly rent, subscriptions
+- [ ] Multi-currency per expense with live FX rates
+- [ ] Group chat / comments on expenses
+- [ ] Dark/light mode toggle
+- [ ] Offline mode — queue writes, sync on reconnect
+
+### v3 — Enterprise / Reimbursements (new market, beyond Splitwise)
+- [ ] Employee expense tracking — log work travel, meals, client entertainment
+- [ ] Reimbursement workflows — submit → manager approves → marked reimbursed
+- [ ] Policy enforcement — flag expenses exceeding per-diem limits
+- [ ] Cost-centre tagging — tag to projects, clients, or departments
 - [ ] Finance dashboard — manager view of pending approvals, monthly spend by team
-- [ ] Export to CSV/PDF for accounting (Tally, QuickBooks, SAP integration)
-- [ ] GST-aware split — separate taxable vs non-taxable amounts for corporate reporting
+- [ ] Export to CSV/PDF for accounting (Tally, QuickBooks, SAP)
+- [ ] GST-aware split — separate taxable vs non-taxable amounts
+- [ ] Organization accounts with role-based access
 
 ### v4 — Scale
 - [ ] Invite members via email
-- [ ] Offline support
-- [ ] Multi-currency with live FX rates
-- [ ] Recurring expenses
 - [ ] Audit trail for enterprise compliance
+- [ ] White-label version for corporate clients
+- [ ] API for third-party integrations
 
 ---
 

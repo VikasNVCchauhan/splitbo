@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:data/data.dart';
 import 'package:design_system/design_system.dart';
 import 'package:domain/domain.dart';
@@ -8,7 +9,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
 // ── Split mode ────────────────────────────────────────────────────────────────
@@ -183,10 +183,8 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
 
     setState(() => _saving = true);
 
-    final groupId = group?.id ?? 'personal_${user.id}';
-    final splits = group != null
-        ? _computeSplits(group, amount)
-        : [SplitEntity(userId: user.id, amount: amount)];
+    final groupId = group!.id; // group is always non-null: _isFormValid guards this
+    final splits = _computeSplits(group, amount);
 
     final result = await ref.read(expenseRepositoryProvider).addExpense(
           groupId: groupId,
@@ -327,67 +325,31 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
           duration: Duration(seconds: 3),
         ),
       );
-    } catch (_) {
-      if (mounted) setState(() => _scanHint = 'Scan failed');
+    } catch (e) {
+      // ignore: avoid_print
+      print('OCR error: $e');
+      if (mounted) setState(() => _scanHint = 'Scan failed: ${e.toString().substring(0, e.toString().length.clamp(0, 80))}');
       _toastError('Scan failed — please try again.');
     } finally {
       if (mounted) setState(() => _scanning = false);
     }
   }
 
-  // Gemini 1.5 Flash multimodal receipt parser.
+  // Calls the parseReceipt Cloud Function — key never touches the client.
   Future<_OcrResult?> _callGeminiVision(Uint8List bytes, String mime) async {
-    const apiKey = 'AIzaSyDLWgzUy_UYUcyg0Rp5RBO-lxQMmpM10WU';
-    const prompt = r'''
-You are a receipt/bill parser. Analyze the image and return ONLY a JSON object (no markdown, no explanation):
-{
-  "amount": <final total as a number, e.g. 1250.50>,
-  "description": "<vendor/merchant name, concise, max 40 chars>",
-  "category": "<exactly one of: food, transport, accommodation, entertainment, utilities, shopping, medical, education, other>",
-  "notes": "<one short phrase>"
-}
-If you cannot read something, use null. Return ONLY the JSON.
-''';
+    final callable =
+        FirebaseFunctions.instance.httpsCallable('parseReceipt');
+    final result = await callable.call<Map<Object?, Object?>>({
+      'imageBase64': base64Encode(bytes),
+      'mimeType': mime,
+    });
 
-    final response = await http
-        .post(
-          Uri.parse(
-            'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey',
-          ),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({
-            'contents': [
-              {
-                'parts': [
-                  {'text': prompt},
-                  {
-                    'inline_data': {
-                      'mime_type': mime,
-                      'data': base64Encode(bytes),
-                    }
-                  },
-                ]
-              }
-            ],
-            'generationConfig': {
-              'temperature': 0.1,
-              'maxOutputTokens': 512,
-            },
-          }),
-        )
-        .timeout(const Duration(seconds: 25));
-
-    if (response.statusCode != 200) {
-      throw Exception('Gemini API error (${response.statusCode})');
-    }
-
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final data = Map<String, dynamic>.from(result.data);
     final candidates = data['candidates'] as List?;
     if (candidates == null || candidates.isEmpty) return null;
 
-    // Null-safe extraction of response text
-    final candidate = candidates[0] as Map?;
-    final content = candidate?['content'] as Map?;
+    final candidate = (candidates[0] as Map?)?.cast<String, dynamic>();
+    final content = (candidate?['content'] as Map?)?.cast<String, dynamic>();
     final parts = content?['parts'] as List?;
     final rawText = parts
             ?.whereType<Map>()
