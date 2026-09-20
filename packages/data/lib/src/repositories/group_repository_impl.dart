@@ -21,14 +21,11 @@ class GroupRepositoryImpl implements GroupRepository {
   @override
   Stream<List<GroupEntity>> watchGroups(String userId) => _groups
       .where('memberIds', arrayContains: userId)
+      .orderBy('createdAt', descending: true)
       .snapshots()
-      .map((snap) {
-        final list = snap.docs
-            .map((d) => GroupDto.fromFirestore(d).toEntity())
-            .toList();
-        list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-        return list;
-      });
+      .map((snap) => snap.docs
+          .map((d) => GroupDto.fromFirestore(d).toEntity())
+          .toList());
 
   @override
   Future<Result<GroupEntity, AppError>> getGroup(String groupId) async {
