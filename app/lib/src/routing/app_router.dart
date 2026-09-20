@@ -9,6 +9,7 @@ import 'package:feature_balances/feature_balances.dart';
 import 'package:feature_expenses/feature_expenses.dart';
 import 'package:feature_groups/feature_groups.dart';
 import 'package:feature_settings/feature_settings.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -36,6 +37,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     debugLogDiagnostics: true,
     refreshListenable: authNotifier,
     redirect: (context, state) {
+      // Debug mode: skip auth guard for local UI testing
+      if (kDebugMode) return null;
+
       final container = ProviderScope.containerOf(context);
       final userAsync = container.read(authStateProvider);
 
