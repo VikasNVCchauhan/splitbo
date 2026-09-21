@@ -3,6 +3,7 @@
 
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:data/data.dart';
 import 'package:feature_activity/feature_activity.dart';
 import 'package:feature_auth/feature_auth.dart';
@@ -10,6 +11,7 @@ import 'package:feature_balances/feature_balances.dart';
 import 'package:feature_expenses/feature_expenses.dart';
 import 'package:feature_groups/feature_groups.dart';
 import 'package:feature_settings/feature_settings.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -52,7 +54,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final isSignedIn = userAsync.valueOrNull != null;
       final onAuthPage = state.matchedLocation.startsWith('/auth');
 
-      if (!isSignedIn && !onAuthPage) return AppRoutes.signIn;
+      final onJoinPage = state.matchedLocation.startsWith('/join');
+      if (!isSignedIn && !onAuthPage && !onJoinPage) return AppRoutes.signIn;
       if (isSignedIn && onAuthPage) return AppRoutes.home;
       return null;
     },
@@ -113,6 +116,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (_, state) => _InviteScreen(
           groupId: state.pathParameters['id']!,
         ),
+      ),
+      GoRoute(
+        path: '/join/:code',
+        builder: (_, state) => _JoinScreen(code: state.pathParameters['code']!),
       ),
       GoRoute(
         path: '/balances',
@@ -295,6 +302,265 @@ class _InviteScreenState extends ConsumerState<_InviteScreen> {
               style: const TextStyle(color: Colors.white, fontSize: 15),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// Opens when someone scans a QR invite code — no login, just name entry.
+class _JoinScreen extends ConsumerStatefulWidget {
+  const _JoinScreen({required this.code});
+  final String code;
+
+  @override
+  ConsumerState<_JoinScreen> createState() => _JoinScreenState();
+}
+
+class _JoinScreenState extends ConsumerState<_JoinScreen> {
+  final _nameCtrl = TextEditingController();
+  bool _loading = true;
+  bool _submitting = false;
+  bool _done = false;
+  String? _error;
+  String? _groupId;
+  String? _groupName;
+
+  static const _green = Color(0xFFC3FD00);
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInvite();
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadInvite() async {
+    try {
+      final db = FirebaseFirestore.instance;
+      final prefix = kDebugMode ? 'dev_' : '';
+      final doc = await db.collection('${prefix}invites').doc(widget.code).get();
+      if (!doc.exists) {
+        setState(() { _error = 'Invite not found.'; _loading = false; });
+        return;
+      }
+      final data = doc.data()!;
+      final expiresAt = (data['expiresAt'] as Timestamp?)?.toDate();
+      if (expiresAt != null && DateTime.now().isAfter(expiresAt)) {
+        setState(() { _error = 'This invite has expired.'; _loading = false; });
+        return;
+      }
+      if (data['status'] != 'pending') {
+        setState(() { _error = 'This invite has already been used.'; _loading = false; });
+        return;
+      }
+      final gid = data['groupId'] as String?;
+      String? gName;
+      if (gid != null) {
+        final gDoc = await db.collection('${prefix}groups').doc(gid).get();
+        gName = gDoc.data()?['name'] as String?;
+      }
+      setState(() {
+        _groupId = gid;
+        _groupName = gName;
+        _loading = false;
+      });
+    } catch (e) {
+      setState(() { _error = 'Could not load invite.'; _loading = false; });
+    }
+  }
+
+  Future<void> _submit() async {
+    final name = _nameCtrl.text.trim();
+    if (name.isEmpty || _groupId == null) return;
+    setState(() => _submitting = true);
+    try {
+      final prefix = kDebugMode ? 'dev_' : '';
+      final db = FirebaseFirestore.instance;
+      // Sign in anonymously (silent — no UI shown)
+      final userAsync = ref.read(authStateProvider).valueOrNull;
+      String uid;
+      if (userAsync != null) {
+        uid = userAsync.id;
+      } else {
+        final cred = await firebase_auth.FirebaseAuth.instance.signInAnonymously();
+        uid = cred.user!.uid;
+      }
+      // Create / update user doc with name
+      await db.collection('${prefix}users').doc(uid).set({
+        'displayName': name,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+      // Add to group
+      await ref.read(groupRepositoryProvider).addMembers(
+        groupId: _groupId!,
+        userIds: [uid],
+      );
+      // Mark invite accepted
+      await db.collection('${prefix}invites').doc(widget.code).update({
+        'status': 'accepted',
+        'acceptedBy': uid,
+        'acceptedAt': FieldValue.serverTimestamp(),
+      });
+      setState(() { _done = true; _submitting = false; });
+    } catch (e) {
+      setState(() { _error = 'Something went wrong. Try again.'; _submitting = false; });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: _loading
+              ? const Center(
+                  child: CircularProgressIndicator(
+                      color: _green, strokeWidth: 2))
+              : _error != null
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.error_outline,
+                              color: Color(0xFF9E9E9E), size: 48),
+                          const SizedBox(height: 16),
+                          Text(_error!,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 16)),
+                        ],
+                      ),
+                    )
+                  : _done
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  color: _green.withOpacity(0.15),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.check_rounded,
+                                    color: _green, size: 48),
+                              ),
+                              const SizedBox(height: 24),
+                              Text(
+                                'You\'ve joined${_groupName != null ? '\n$_groupName' : ''}!',
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              const Text(
+                                'Ask the group creator to open the app\nand you\'ll appear in the Members list.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                    color: Color(0xFF9E9E9E), fontSize: 14),
+                              ),
+                            ],
+                          ),
+                        )
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 24),
+                            if (_groupName != null) ...[
+                              Text(
+                                'Join $_groupName',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Enter your name to join the group.',
+                                style: TextStyle(
+                                    color: Color(0xFF9E9E9E), fontSize: 15),
+                              ),
+                            ] else ...[
+                              const Text(
+                                'You\'ve been invited',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Enter your name to join.',
+                                style: TextStyle(
+                                    color: Color(0xFF9E9E9E), fontSize: 15),
+                              ),
+                            ],
+                            const SizedBox(height: 36),
+                            TextField(
+                              controller: _nameCtrl,
+                              autofocus: true,
+                              textCapitalization: TextCapitalization.words,
+                              style: const TextStyle(color: Colors.white),
+                              decoration: InputDecoration(
+                                hintText: 'Your name',
+                                hintStyle: const TextStyle(
+                                    color: Color(0xFF555555)),
+                                filled: true,
+                                fillColor: const Color(0xFF1A1A1A),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                      color: _green, width: 1.5),
+                                ),
+                              ),
+                              onSubmitted: (_) => _submit(),
+                            ),
+                            const SizedBox(height: 20),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: _submitting ? null : _submit,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: _green,
+                                  foregroundColor: Colors.black,
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: _submitting
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                            color: Colors.black,
+                                            strokeWidth: 2))
+                                    : const Text('Join Group',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 16)),
+                              ),
+                            ),
+                          ],
+                        ),
         ),
       ),
     );

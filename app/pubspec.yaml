@@ -43,6 +43,10 @@ dependencies:
   flutter_riverpod: ^2.5.1          # [VERIFIED-STABLE]
   go_router: ^14.2.0                # [VERIFIED-STABLE]
 
+  # Firebase (direct — used in app_router _JoinScreen)
+  firebase_auth: ^5.3.1
+  cloud_firestore: ^5.4.4
+
   # i18n
   intl: ^0.20.3                     # [VERIFIED-STABLE]
 

@@ -1,5 +1,8 @@
 // packages/features/groups/lib/src/group_detail_screen.dart
 
+import 'dart:async';
+import 'dart:math';
+
 import 'package:data/data.dart';
 import 'package:design_system/design_system.dart';
 import 'package:domain/domain.dart';
@@ -61,11 +64,12 @@ class _GroupDetailBody extends ConsumerStatefulWidget {
 class _GroupDetailBodyState extends ConsumerState<_GroupDetailBody>
     with SingleTickerProviderStateMixin {
   late final TabController _tab;
+  bool _scrolled = false;
 
   @override
   void initState() {
     super.initState();
-    _tab = TabController(length: 5, vsync: this);
+    _tab = TabController(length: 6, vsync: this);
     _tab.addListener(() => setState(() {}));
   }
 
@@ -80,28 +84,40 @@ class _GroupDetailBodyState extends ConsumerState<_GroupDetailBody>
   @override
   Widget build(BuildContext context) {
     final expensesAsync = ref.watch(watchExpensesProvider(group.id));
+    final expenses = expensesAsync.valueOrNull ?? [];
+    final computedTotal = expenses.fold<double>(0.0, (sum, e) => sum + e.amount);
+    final onMembersTab = _tab.index == 5;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0A),
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+        backgroundColor: _scrolled
+            ? const Color(0xFF0A0A0A)
+            : Colors.transparent,
+        elevation: _scrolled ? 4 : 0,
+        shadowColor: Colors.black54,
         iconTheme: const IconThemeData(color: Colors.white),
         centerTitle: true,
-        title: Text(
-          group.name,
-          style: const TextStyle(
-              color: Colors.white,
-              fontSize: 17,
-              fontWeight: FontWeight.w700),
+        title: AnimatedOpacity(
+          duration: const Duration(milliseconds: 200),
+          opacity: _scrolled ? 1.0 : 0.0,
+          child: Text(
+            group.name,
+            style: const TextStyle(
+                color: Colors.white,
+                fontSize: 17,
+                fontWeight: FontWeight.w700),
+          ),
         ),
         actions: [
           IconButton(
             icon: Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: const Color(0xFF0A0A0A).withOpacity(0.4),
+                color: _scrolled
+                    ? _surface
+                    : const Color(0xFF0A0A0A).withOpacity(0.4),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.settings_outlined,
@@ -112,96 +128,100 @@ class _GroupDetailBodyState extends ConsumerState<_GroupDetailBody>
           const SizedBox(width: 8),
         ],
       ),
-      floatingActionButton: _tab.index == 0
-          ? FloatingActionButton.extended(
-              onPressed: () =>
-                  context.push('/expense/new?groupId=${group.id}'),
-              backgroundColor: _green,
-              foregroundColor: Colors.black,
-              elevation: 2,
-              icon: const Icon(Icons.add),
-              label: const Text('Add Expense',
-                  style:
-                      TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-            )
-          : null,
-      body: NestedScrollView(
-        headerSliverBuilder: (_, __) => [
-          SliverToBoxAdapter(
-            child: _LinkedInHeader(
-              group: group,
-              onEditPhoto: () => _showGroupSettings(context),
-            ),
-          ),
-          SliverPersistentHeader(
-            pinned: true,
-            delegate: _TabBarDelegate(
-              TabBar(
-                controller: _tab,
-                isScrollable: true,
-                tabAlignment: TabAlignment.start,
-                indicatorColor: _green,
-                labelColor: _green,
-                unselectedLabelColor: _textSecondary,
-                labelStyle: const TextStyle(
-                    fontSize: 13, fontWeight: FontWeight.w600),
-                tabs: const [
-                  Tab(text: 'Expenses'),
-                  Tab(text: 'Balances'),
-                  Tab(text: 'Charts'),
-                  Tab(text: 'Totals'),
-                  Tab(text: 'Whiteboard'),
-                ],
+      floatingActionButton: onMembersTab
+          ? null
+          : (_tab.index == 0
+              ? FloatingActionButton.extended(
+                  heroTag: 'addExpense',
+                  onPressed: () =>
+                      context.push('/expense/new?groupId=${group.id}'),
+                  backgroundColor: _green,
+                  foregroundColor: Colors.black,
+                  elevation: 2,
+                  icon: const Icon(Icons.add),
+                  label: const Text('Add Expense',
+                      style: TextStyle(
+                          fontWeight: FontWeight.w700, fontSize: 14)),
+                )
+              : null),
+      body: NotificationListener<ScrollNotification>(
+        onNotification: (n) {
+          if (n.depth == 0) {
+            final scrolled = n.metrics.pixels > 180;
+            if (scrolled != _scrolled) setState(() => _scrolled = scrolled);
+          }
+          return false;
+        },
+        child: NestedScrollView(
+          headerSliverBuilder: (_, __) => [
+            SliverToBoxAdapter(
+              child: _LinkedInHeader(
+                group: group,
+                computedTotal: computedTotal,
+                onEditPhoto: () => _showGroupSettings(context),
               ),
             ),
-          ),
-        ],
-        body: TabBarView(
-          controller: _tab,
-          children: [
-            // ── Expenses ─────────────────────────────────────────
-            expensesAsync.when(
-              loading: () => const Center(
-                  child:
-                      CircularProgressIndicator(color: _green, strokeWidth: 2)),
-              error: (e, _) => Center(
-                  child: Text(e.toString(),
-                      style: const TextStyle(color: Colors.white))),
-              data: (expenses) => expenses.isEmpty
-                  ? _EmptyExpenses(groupId: group.id)
-                  : _ExpenseList(expenses: expenses, group: group),
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: _PillTabDelegate(
+                controller: _tab,
+                selectedIndex: _tab.index,
+              ),
             ),
-            // ── Balances ─────────────────────────────────────────
-            expensesAsync.when(
-              loading: () => const Center(
-                  child:
-                      CircularProgressIndicator(color: _green, strokeWidth: 2)),
-              error: (_, __) => const _ComingSoon(label: 'Balances'),
-              data: (expenses) => _BalancesTab(expenses: expenses, group: group),
-            ),
-            // ── Charts ───────────────────────────────────────────
-            expensesAsync.when(
-              loading: () => const Center(
-                  child:
-                      CircularProgressIndicator(color: _green, strokeWidth: 2)),
-              error: (_, __) => const _ComingSoon(label: 'Charts'),
-              data: (expenses) => expenses.isEmpty
-                  ? const _ComingSoon(label: 'Charts')
-                  : _ChartsTab(expenses: expenses, group: group),
-            ),
-            // ── Totals ───────────────────────────────────────────
-            expensesAsync.when(
-              loading: () => const Center(
-                  child:
-                      CircularProgressIndicator(color: _green, strokeWidth: 2)),
-              error: (_, __) => const _ComingSoon(label: 'Totals'),
-              data: (expenses) => expenses.isEmpty
-                  ? const _ComingSoon(label: 'Totals')
-                  : _TotalsTab(expenses: expenses, group: group),
-            ),
-            // ── Whiteboard ───────────────────────────────────────
-            _WhiteboardTab(groupId: group.id),
           ],
+          body: TabBarView(
+            controller: _tab,
+            children: [
+              // ── Expenses ──────────────────────────────────────
+              expensesAsync.when(
+                loading: () => const Center(
+                    child: CircularProgressIndicator(
+                        color: _green, strokeWidth: 2)),
+                error: (e, _) => Center(
+                    child: Text(e.toString(),
+                        style: const TextStyle(color: Colors.white))),
+                data: (expenses) => expenses.isEmpty
+                    ? _EmptyExpenses(groupId: group.id)
+                    : _ExpenseList(expenses: expenses, group: group),
+              ),
+              // ── Balances ──────────────────────────────────────
+              expensesAsync.when(
+                loading: () => const Center(
+                    child: CircularProgressIndicator(
+                        color: _green, strokeWidth: 2)),
+                error: (_, __) => const _ComingSoon(label: 'Balances'),
+                data: (expenses) =>
+                    _BalancesTab(expenses: expenses, group: group),
+              ),
+              // ── Charts ────────────────────────────────────────
+              expensesAsync.when(
+                loading: () => const Center(
+                    child: CircularProgressIndicator(
+                        color: _green, strokeWidth: 2)),
+                error: (_, __) => const _ComingSoon(label: 'Charts'),
+                data: (expenses) => expenses.isEmpty
+                    ? const _ComingSoon(label: 'Charts')
+                    : _ChartsTab(expenses: expenses, group: group),
+              ),
+              // ── Totals ────────────────────────────────────────
+              expensesAsync.when(
+                loading: () => const Center(
+                    child: CircularProgressIndicator(
+                        color: _green, strokeWidth: 2)),
+                error: (_, __) => const _ComingSoon(label: 'Totals'),
+                data: (expenses) => expenses.isEmpty
+                    ? const _ComingSoon(label: 'Totals')
+                    : _TotalsTab(expenses: expenses, group: group),
+              ),
+              // ── Whiteboard ────────────────────────────────────
+              _WhiteboardTab(groupId: group.id),
+              // ── Members ───────────────────────────────────────
+              _MembersTab(
+                group: group,
+                onAddMember: () => _showAddMemberSheet(context),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -242,39 +262,101 @@ class _GroupDetailBodyState extends ConsumerState<_GroupDetailBody>
       );
     }
   }
+
+  void _showAddMemberSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => ProviderScope(
+        parent: ProviderScope.containerOf(context),
+        child: _AddMemberSheet(group: group),
+      ),
+    );
+  }
 }
 
-// ── Pinned tab bar delegate ───────────────────────────────────────────────────
-class _TabBarDelegate extends SliverPersistentHeaderDelegate {
-  const _TabBarDelegate(this.tabBar);
-  final TabBar tabBar;
+// ── Pill tab bar delegate ─────────────────────────────────────────────────────
+class _PillTabDelegate extends SliverPersistentHeaderDelegate {
+  const _PillTabDelegate({
+    required this.controller,
+    required this.selectedIndex,
+  });
+  final TabController controller;
+  final int selectedIndex;
+
+  static const _labels = [
+    'Expenses', 'Balances', 'Charts', 'Totals', 'Whiteboard', 'Members'
+  ];
+  static const _height = 56.0;
 
   @override
-  double get minExtent => tabBar.preferredSize.height + 1;
+  double get minExtent => _height;
   @override
-  double get maxExtent => tabBar.preferredSize.height + 1;
+  double get maxExtent => _height;
 
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Container(
       color: const Color(0xFF0A0A0A),
-      child: Column(
-        children: [
-          tabBar,
-          const Divider(height: 1, color: _border),
-        ],
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        itemCount: _labels.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, i) {
+          final sel = i == selectedIndex;
+          return GestureDetector(
+            onTap: () => controller.animateTo(i),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              decoration: BoxDecoration(
+                color: sel ? _green : _surface,
+                borderRadius: BorderRadius.circular(20),
+                border: sel
+                    ? null
+                    : Border.all(color: _border, width: 1),
+                boxShadow: sel
+                    ? [
+                        BoxShadow(
+                          color: _green.withOpacity(0.25),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        )
+                      ]
+                    : null,
+              ),
+              child: Text(
+                _labels[i],
+                style: TextStyle(
+                  color: sel ? Colors.black : _textSecondary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
 
   @override
-  bool shouldRebuild(_TabBarDelegate old) => old.tabBar != tabBar;
+  bool shouldRebuild(_PillTabDelegate old) =>
+      old.selectedIndex != selectedIndex;
 }
 
 // ── LinkedIn-style group header ───────────────────────────────────────────────
 class _LinkedInHeader extends StatelessWidget {
-  const _LinkedInHeader({required this.group, required this.onEditPhoto});
+  const _LinkedInHeader({
+    required this.group,
+    required this.computedTotal,
+    required this.onEditPhoto,
+  });
   final GroupEntity group;
+  final double computedTotal;
   final VoidCallback onEditPhoto;
 
   static const _memberColors = [
@@ -418,7 +500,7 @@ class _LinkedInHeader extends StatelessWidget {
                                 fontWeight: FontWeight.w700)),
                         const SizedBox(height: 3),
                         Text(
-                          '$symbol${group.totalExpenses.toStringAsFixed(0)} total · ${group.memberCount} member${group.memberCount == 1 ? '' : 's'}',
+                          '$symbol${computedTotal.toStringAsFixed(0)} total · ${group.memberCount} member${group.memberCount == 1 ? '' : 's'}',
                           style: const TextStyle(
                               color: _textSecondary, fontSize: 12),
                         ),
@@ -1265,6 +1347,153 @@ class _ComingSoon extends StatelessWidget {
     );
   }
 }
+// ── Members tab ───────────────────────────────────────────────────────────────
+class _MembersTab extends StatelessWidget {
+  const _MembersTab({required this.group, required this.onAddMember});
+  final GroupEntity group;
+  final VoidCallback onAddMember;
+
+  static const _memberColors = [
+    Color(0xFFC3FD00), Color(0xFF00D4FF), Color(0xFFFF6B9D),
+    Color(0xFFFFB347), Color(0xFF9B59B6), Color(0xFF2ECC71),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final members = group.memberIds;
+    return Column(
+      children: [
+        // Add member header row
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: Row(
+            children: [
+              Text(
+                '${members.length} Member${members.length == 1 ? '' : 's'}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const Spacer(),
+              GestureDetector(
+                onTap: onAddMember,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: _green,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.person_add_outlined,
+                          color: Colors.black, size: 16),
+                      SizedBox(width: 6),
+                      Text('Add Member',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          )),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const Divider(height: 1, color: _border),
+        Expanded(
+          child: members.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.people_outline,
+                          color: _textSecondary, size: 40),
+                      const SizedBox(height: 12),
+                      const Text('No members yet',
+                          style:
+                              TextStyle(color: _textSecondary, fontSize: 14)),
+                      const SizedBox(height: 16),
+                      GestureDetector(
+                        onTap: onAddMember,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: _green,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Text('+ Add First Member',
+                              style: TextStyle(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.w700)),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  itemCount: members.length,
+                  itemBuilder: (context, i) {
+                    final memberId = members[i];
+                    final color =
+                        _memberColors[i % _memberColors.length];
+                    final initials = memberId.length >= 2
+                        ? memberId.substring(0, 2).toUpperCase()
+                        : memberId.toUpperCase();
+                    return ListTile(
+                      leading: CircleAvatar(
+                        radius: 20,
+                        backgroundColor: color.withOpacity(0.15),
+                        child: Text(
+                          initials,
+                          style: TextStyle(
+                            color: color,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                      title: Text(
+                        memberId,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      trailing: i == 0
+                          ? Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: _green.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Text(
+                                'Admin',
+                                style: TextStyle(
+                                  color: _green,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            )
+                          : null,
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+}
 // ── Add Member Sheet ──────────────────────────────────────────────────────────
 class _AddMemberSheet extends ConsumerStatefulWidget {
   const _AddMemberSheet({required this.group});
@@ -1278,12 +1507,12 @@ class _AddMemberSheetState extends ConsumerState<_AddMemberSheet>
     with SingleTickerProviderStateMixin {
   late final TabController _tab;
   final _searchCtrl = TextEditingController();
-  final _guestCtrl = TextEditingController();
+  final _nameCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
   List<({String id, String displayName, String? avatarUrl})> _results = [];
   bool _searching = false;
   bool _addingGuest = false;
-
-  static const _inviteBase = 'https://vikasnvcchauhan.github.io/splitbo';
 
   @override
   void initState() {
@@ -1295,11 +1524,11 @@ class _AddMemberSheetState extends ConsumerState<_AddMemberSheet>
   void dispose() {
     _tab.dispose();
     _searchCtrl.dispose();
-    _guestCtrl.dispose();
+    _nameCtrl.dispose();
+    _emailCtrl.dispose();
+    _phoneCtrl.dispose();
     super.dispose();
   }
-
-  String get _inviteUrl => '$_inviteBase/#/invite/${widget.group.id}';
 
   Future<void> _search(String q) async {
     if (q.trim().length < 2) {
@@ -1339,14 +1568,51 @@ class _AddMemberSheetState extends ConsumerState<_AddMemberSheet>
   }
 
   Future<void> _addGuest() async {
-    final name = _guestCtrl.text.trim();
+    final name = _nameCtrl.text.trim();
     if (name.isEmpty) return;
+    final email = _emailCtrl.text.trim().toLowerCase();
+    final phone = _phoneCtrl.text.trim();
     setState(() => _addingGuest = true);
     final firestore = ref.read(firebaseFirestoreProvider);
+
+    // Try to find existing user by email or phone
+    if (email.isNotEmpty || phone.isNotEmpty) {
+      final query = email.isNotEmpty ? email : phone;
+      final result = await ref.read(groupRepositoryProvider).searchUsers(query);
+      final match = result.fold(
+        ok: (list) => list.where((u) => !widget.group.memberIds.contains(u.id)).firstOrNull,
+        err: (_) => null,
+      );
+      if (match != null) {
+        await ref.read(groupRepositoryProvider).addMembers(
+              groupId: widget.group.id,
+              userIds: [match.id],
+            );
+        if (mounted) {
+          setState(() {
+            _addingGuest = false;
+            _nameCtrl.clear();
+            _emailCtrl.clear();
+            _phoneCtrl.clear();
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${match.displayName} found on Splitbo and added!',
+                  style: const TextStyle(color: Colors.white)),
+              backgroundColor: const Color(0xFF1E1E1E),
+            ),
+          );
+        }
+        return;
+      }
+    }
+
+    // No existing user — create guest
     final docRef = firestore.collection('${dbPrefix}users').doc();
     await docRef.set({
       'displayName': name,
-      'email': null,
+      if (email.isNotEmpty) 'email': email,
+      if (phone.isNotEmpty) 'phoneNumber': phone,
       'isGuest': true,
       'createdAt': DateTime.now().millisecondsSinceEpoch,
     });
@@ -1357,7 +1623,9 @@ class _AddMemberSheetState extends ConsumerState<_AddMemberSheet>
     if (mounted) {
       setState(() {
         _addingGuest = false;
-        _guestCtrl.clear();
+        _nameCtrl.clear();
+        _emailCtrl.clear();
+        _phoneCtrl.clear();
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1415,17 +1683,19 @@ class _AddMemberSheetState extends ConsumerState<_AddMemberSheet>
               labelColor: _green,
               unselectedLabelColor: _textSecondary,
               tabs: const [
-                Tab(text: 'Add Guest'),
+                Tab(text: 'Manual'),
                 Tab(text: 'Search'),
-                Tab(text: 'Share'),
+                Tab(text: 'QR Invite'),
               ],
             ),
             Expanded(
               child: TabBarView(
                 controller: _tab,
                 children: [
-                  _GuestTab(
-                    ctrl: _guestCtrl,
+                  _ManualTab(
+                    nameCtrl: _nameCtrl,
+                    emailCtrl: _emailCtrl,
+                    phoneCtrl: _phoneCtrl,
                     adding: _addingGuest,
                     onAdd: _addGuest,
                   ),
@@ -1436,7 +1706,7 @@ class _AddMemberSheetState extends ConsumerState<_AddMemberSheet>
                     onSearch: _search,
                     onAdd: _addUser,
                   ),
-                  _ShareTab(inviteUrl: _inviteUrl),
+                  _QrInviteTab(group: widget.group),
                 ],
               ),
             ),
@@ -1538,54 +1808,74 @@ class _SearchTab extends StatelessWidget {
   }
 }
 
-class _GuestTab extends StatelessWidget {
-  const _GuestTab({
-    required this.ctrl,
+class _ManualTab extends StatelessWidget {
+  const _ManualTab({
+    required this.nameCtrl,
+    required this.emailCtrl,
+    required this.phoneCtrl,
     required this.adding,
     required this.onAdd,
   });
-  final TextEditingController ctrl;
+  final TextEditingController nameCtrl;
+  final TextEditingController emailCtrl;
+  final TextEditingController phoneCtrl;
   final bool adding;
   final VoidCallback onAdd;
 
+  static InputDecoration _fieldDeco(String label, String hint, IconData icon) =>
+      InputDecoration(
+        labelText: label,
+        hintText: hint,
+        hintStyle: const TextStyle(color: _textSecondary),
+        labelStyle: const TextStyle(color: _textSecondary),
+        prefixIcon: Icon(icon, color: _textSecondary),
+        filled: true,
+        fillColor: const Color(0xFF252525),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: _border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: _border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: _green),
+        ),
+      );
+
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Text(
-            'Add someone without a Splitbo account. They\'ll appear as a member so you can split expenses with them.',
+            'Add by name. Provide email or phone to link an existing Splitbo account automatically.',
             style: TextStyle(color: _textSecondary, fontSize: 13),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           TextField(
-            controller: ctrl,
+            controller: nameCtrl,
             style: const TextStyle(color: Colors.white),
             textCapitalization: TextCapitalization.words,
-            decoration: InputDecoration(
-              labelText: 'Guest name',
-              hintText: 'e.g. Rahul, Priya',
-              hintStyle: const TextStyle(color: _textSecondary),
-              labelStyle: const TextStyle(color: _textSecondary),
-              prefixIcon:
-                  const Icon(Icons.person_outline, color: _textSecondary),
-              filled: true,
-              fillColor: const Color(0xFF252525),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: _border),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: _border),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: _green),
-              ),
-            ),
+            decoration: _fieldDeco('Name *', 'e.g. Rahul, Priya', Icons.person_outline),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: emailCtrl,
+            style: const TextStyle(color: Colors.white),
+            keyboardType: TextInputType.emailAddress,
+            decoration: _fieldDeco('Email (optional)', 'email@example.com', Icons.email_outlined),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: phoneCtrl,
+            style: const TextStyle(color: Colors.white),
+            keyboardType: TextInputType.phone,
+            decoration: _fieldDeco('Phone (optional)', '+91 98765 43210', Icons.phone_outlined),
           ),
           const SizedBox(height: 20),
           SizedBox(
@@ -1604,7 +1894,7 @@ class _GuestTab extends StatelessWidget {
                       height: 20,
                       child: CircularProgressIndicator(
                           strokeWidth: 2.5, color: Colors.black))
-                  : const Text('Add Guest',
+                  : const Text('Add',
                       style: TextStyle(
                           fontSize: 15, fontWeight: FontWeight.w700)),
             ),
@@ -1615,12 +1905,96 @@ class _GuestTab extends StatelessWidget {
   }
 }
 
-class _ShareTab extends StatelessWidget {
-  const _ShareTab({required this.inviteUrl});
-  final String inviteUrl;
+class _QrInviteTab extends ConsumerStatefulWidget {
+  const _QrInviteTab({required this.group});
+  final GroupEntity group;
+
+  @override
+  ConsumerState<_QrInviteTab> createState() => _QrInviteTabState();
+}
+
+class _QrInviteTabState extends ConsumerState<_QrInviteTab> {
+  static const _inviteBase = 'https://vikasnvcchauhan.github.io/splitbo';
+  static const _ttlSeconds = 600; // 10 minutes
+
+  String? _code;
+  bool _generating = false;
+  int _secondsLeft = _ttlSeconds;
+  Timer? _timer;
+
+  static String _randomCode() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    final rng = Random.secure();
+    return List.generate(8, (_) => chars[rng.nextInt(chars.length)]).join();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _generateCode();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _generateCode() async {
+    setState(() { _generating = true; _secondsLeft = _ttlSeconds; });
+    _timer?.cancel();
+    final code = _randomCode();
+    final expiresAt = DateTime.now().add(const Duration(seconds: _ttlSeconds));
+    try {
+      final firestore = ref.read(firebaseFirestoreProvider);
+      final user = ref.read(authStateProvider).valueOrNull;
+      await firestore.collection('${dbPrefix}invites').doc(code).set({
+        'groupId': widget.group.id,
+        'createdBy': user?.id ?? '',
+        'expiresAt': expiresAt.millisecondsSinceEpoch,
+        'status': 'pending',
+      });
+    } catch (_) {}
+    if (!mounted) return;
+    setState(() { _code = code; _generating = false; });
+    _timer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) { t.cancel(); return; }
+      setState(() {
+        _secondsLeft--;
+        if (_secondsLeft <= 0) {
+          t.cancel();
+          _code = null;
+        }
+      });
+    });
+  }
+
+  String get _inviteUrl => '$_inviteBase/#/join/${_code ?? ''}';
+
+  String _fmt(int s) =>
+      '${(s ~/ 60).toString().padLeft(2, '0')}:${(s % 60).toString().padLeft(2, '0')}';
 
   @override
   Widget build(BuildContext context) {
+    if (_generating) {
+      return const Center(child: CircularProgressIndicator(color: _green, strokeWidth: 2));
+    }
+    if (_code == null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('QR code expired', style: TextStyle(color: _textSecondary, fontSize: 14)),
+            const SizedBox(height: 16),
+            TextButton.icon(
+              onPressed: _generateCode,
+              icon: const Icon(Icons.refresh, color: _green),
+              label: const Text('Generate new code', style: TextStyle(color: _green)),
+            ),
+          ],
+        ),
+      );
+    }
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -1632,22 +2006,41 @@ class _ShareTab extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
             ),
             child: QrImageView(
-              data: inviteUrl,
+              data: _inviteUrl,
               version: QrVersions.auto,
               size: 200,
               backgroundColor: Colors.white,
             ),
           ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.timer_outlined, color: _green, size: 16),
+              const SizedBox(width: 6),
+              Text(
+                'Expires in ${_fmt(_secondsLeft)}',
+                style: TextStyle(
+                  color: _secondsLeft < 60 ? const Color(0xFFFF6B6B) : _green,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const Spacer(),
+              TextButton.icon(
+                onPressed: _generateCode,
+                icon: const Icon(Icons.refresh, color: _textSecondary, size: 14),
+                label: const Text('Refresh', style: TextStyle(color: _textSecondary, fontSize: 12)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Scan to join — no account needed. Shows only a name entry screen.',
+            style: TextStyle(color: _textSecondary, fontSize: 12),
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: 20),
-          const Text('Share QR Code',
-              style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600)),
-          const SizedBox(height: 6),
-          const Text('Anyone who scans this can join your group',
-              style: TextStyle(color: _textSecondary, fontSize: 13)),
-          const SizedBox(height: 24),
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
@@ -1659,16 +2052,15 @@ class _ShareTab extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    inviteUrl,
-                    style: const TextStyle(
-                        color: _textSecondary, fontSize: 12),
+                    _inviteUrl,
+                    style: const TextStyle(color: _textSecondary, fontSize: 12),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 const SizedBox(width: 8),
                 GestureDetector(
                   onTap: () {
-                    Clipboard.setData(ClipboardData(text: inviteUrl));
+                    Clipboard.setData(ClipboardData(text: _inviteUrl));
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Link copied!',
@@ -1679,8 +2071,7 @@ class _ShareTab extends StatelessWidget {
                     );
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: _green,
                       borderRadius: BorderRadius.circular(8),
