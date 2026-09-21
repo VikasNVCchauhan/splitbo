@@ -113,7 +113,7 @@ class AuthRepositoryImpl implements AuthRepository {
     } on FirebaseAuthException catch (e) {
       return Err(_mapAuthError(e));
     } catch (e) {
-      return Err(AppError(message: e.toString()));
+      return Err(UnknownError(e.toString()));
     }
   }
 
