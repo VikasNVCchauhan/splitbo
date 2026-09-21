@@ -3,6 +3,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../tokens/app_tokens.g.dart';
 import '../typography/app_text_styles.dart';
@@ -66,8 +67,8 @@ abstract final class AppTheme {
       extensions: [colors, spacing, radii, motion],
 
       // ── Typography ──────────────────────────────────────────
-      fontFamily: AppFonts.inter,
-      textTheme: _buildTextTheme(colors),
+      fontFamily: GoogleFonts.sora().fontFamily,
+      textTheme: GoogleFonts.soraTextTheme(_buildTextTheme(colors)),
 
       // ── AppBar ──────────────────────────────────────────────
       appBarTheme: AppBarTheme(

@@ -17,6 +17,10 @@ abstract interface class AuthRepository {
 
   Future<Result<UserEntity, AppError>> signInWithApple();
 
+  /// Sends a passwordless sign-in link to [email].
+  /// The user taps the link from their email app; the app handles it via deep link.
+  Future<Result<void, AppError>> sendEmailSignInLink(String email);
+
   /// OTP-based phone sign-in — Phase 1 MVP for India.
   Future<Result<void, AppError>> sendPhoneOtp(String phoneNumber);
   Future<Result<UserEntity, AppError>> verifyPhoneOtp(

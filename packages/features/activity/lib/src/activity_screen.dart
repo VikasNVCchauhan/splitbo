@@ -3,6 +3,7 @@ import 'package:design_system/design_system.dart';
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 class ActivityScreen extends ConsumerWidget {
   const ActivityScreen({super.key});
@@ -23,6 +24,15 @@ class ActivityScreen extends ConsumerWidget {
           style: TextStyle(
               color: colors.textPrimary, fontSize: 20, fontWeight: FontWeight.w800),
         ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.push('/expense/new'),
+        backgroundColor: const Color(0xFFC3FD00),
+        foregroundColor: Colors.black,
+        elevation: 2,
+        icon: const Icon(Icons.add),
+        label: const Text('Add Expense',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
       ),
       body: groupsAsync.when(
         loading: () => Center(
@@ -117,26 +127,38 @@ class _ActivityTile extends ConsumerWidget {
     final colors = context.colors;
     final currentUser = ref.watch(authStateProvider).valueOrNull;
     final icon = _categoryIcons[expense.category] ?? Icons.receipt_long_outlined;
-    final formattedDate = _formatDate(expense.createdAt);
-    final paidByLabel = currentUser?.id == expense.paidBy
-        ? 'Paid by you'
-        : 'Paid by member';
-    final splitLabel = expense.splits.isNotEmpty
-        ? 'Split ${expense.splits.length} ways'
-        : '';
+    final symbol = expense.currency == 'INR' ? '₹' : expense.currency;
+    final isPaidByMe = currentUser?.id == expense.paidBy;
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    final dateStr = '${expense.createdAt.day} ${months[expense.createdAt.month - 1]} ${expense.createdAt.year}';
+
+    // Net for current user: if I paid, I get back (total - my share); if someone else paid, I owe my share
+    double? netForMe;
+    if (currentUser != null && expense.splits.isNotEmpty) {
+      final myShare = expense.splits
+          .where((s) => s.userId == currentUser.id)
+          .fold(0.0, (sum, s) => sum + s.amount);
+      if (isPaidByMe) {
+        netForMe = expense.amount - myShare; // positive = others owe me
+      } else if (myShare > 0) {
+        netForMe = -myShare; // negative = I owe
+      }
+    }
 
     return GestureDetector(
       onTap: () => _showActions(context, ref),
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
         decoration: BoxDecoration(
           color: colors.surfaceRaised,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: colors.borderDefault),
         ),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Category icon
             Container(
               width: 40,
               height: 40,
@@ -151,36 +173,73 @@ class _ActivityTile extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    expense.description,
-                    style: TextStyle(
-                        color: colors.textPrimary,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600),
+                  // Sentence: "You added "Dinner" in "Goa Trip""
+                  Text.rich(
+                    TextSpan(children: [
+                      TextSpan(
+                        text: isPaidByMe ? 'You' : 'Member',
+                        style: TextStyle(
+                            color: colors.textPrimary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600),
+                      ),
+                      TextSpan(
+                        text: ' added ',
+                        style: TextStyle(
+                            color: colors.textSecondary, fontSize: 13),
+                      ),
+                      TextSpan(
+                        text: '"${expense.description}"',
+                        style: TextStyle(
+                            color: colors.textPrimary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600),
+                      ),
+                      TextSpan(
+                        text: ' in ',
+                        style: TextStyle(
+                            color: colors.textSecondary, fontSize: 13),
+                      ),
+                      TextSpan(
+                        text: '"$groupName"',
+                        style: const TextStyle(
+                            color: Color(0xFFC3FD00),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600),
+                      ),
+                    ]),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    groupName,
-                    style: TextStyle(
-                        color: colors.brandPrimary,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 1),
-                  Text(
-                    [paidByLabel, if (splitLabel.isNotEmpty) splitLabel, formattedDate].join(' · '),
-                    style: TextStyle(color: colors.textSecondary, fontSize: 11),
-                  ),
+                  const SizedBox(height: 3),
+                  Text(dateStr,
+                      style: TextStyle(
+                          color: colors.textSecondary, fontSize: 11)),
+                  // Balance line
+                  if (netForMe != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      netForMe > 0
+                          ? 'You get back $symbol${netForMe.toStringAsFixed(0)}'
+                          : 'You owe $symbol${netForMe.abs().toStringAsFixed(0)}',
+                      style: TextStyle(
+                        color: netForMe > 0
+                            ? const Color(0xFFC3FD00)
+                            : const Color(0xFFFF6B6B),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
+            // Amount
             Text(
-              '${expense.currency} ${expense.amount.toStringAsFixed(0)}',
+              '$symbol${expense.amount.toStringAsFixed(0)}',
               style: TextStyle(
-                  color: colors.brandPrimary, fontSize: 14, fontWeight: FontWeight.w700),
+                  color: colors.brandPrimary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700),
             ),
-            const SizedBox(width: 4),
-            Icon(Icons.more_vert, color: colors.textSecondary, size: 16),
           ],
         ),
       ),

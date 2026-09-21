@@ -19,3 +19,4 @@ export 'src/repositories/balance_repository_impl.dart';
 // Riverpod providers — the primary API surface for app/
 export 'src/providers/firebase_providers.dart';
 export 'src/providers/repository_providers.dart';
+export 'src/providers/theme_providers.dart';

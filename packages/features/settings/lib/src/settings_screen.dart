@@ -21,7 +21,7 @@ class SettingsScreen extends ConsumerWidget {
         automaticallyImplyLeading: false,
         titleSpacing: 20,
         title: Text(
-          'Profile',
+          'Account',
           style: TextStyle(
               fontWeight: FontWeight.w700,
               fontSize: 20,
@@ -43,7 +43,7 @@ class SettingsScreen extends ConsumerWidget {
                     children: [
                       CircleAvatar(
                         radius: 44,
-                        backgroundColor: colors.brandPrimary,
+                        backgroundColor: const Color(0xFFC3FD00).withOpacity(0.15),
                         backgroundImage: user?.avatarUrl != null
                             ? NetworkImage(user!.avatarUrl!)
                             : null,
@@ -53,7 +53,7 @@ class SettingsScreen extends ConsumerWidget {
                                 style: const TextStyle(
                                   fontSize: 32,
                                   fontWeight: FontWeight.w800,
-                                  color: Colors.black,
+                                  color: Color(0xFFC3FD00),
                                 ),
                               )
                             : null,
@@ -117,9 +117,9 @@ class SettingsScreen extends ConsumerWidget {
 
           const SizedBox(height: 32),
 
-          // ── Payment methods ───────────────────────────────────
+          // ── Data ─────────────────────────────────────────────
           _Section(
-            title: 'PAYMENT',
+            title: 'DATA',
             children: [
               _Row(
                 icon: Icons.currency_rupee_rounded,
@@ -127,15 +127,39 @@ class SettingsScreen extends ConsumerWidget {
                 subtitle: 'Used for one-tap settle-up',
                 onTap: () => _showEditProfile(context, ref, user),
               ),
+              _Row(
+                icon: Icons.chat_rounded,
+                label: 'WhatsApp Number',
+                subtitle: 'Share your number for quick settlements',
+                onTap: () => _showWhatsAppSheet(context, ref, user),
+              ),
+              _Row(
+                icon: Icons.download_outlined,
+                label: 'Export Expenses',
+                subtitle: 'Download all expenses as CSV',
+                onTap: () => _comingSoon(context),
+              ),
             ],
           ),
 
           const SizedBox(height: 20),
 
-          // ── Account ───────────────────────────────────────────
+          // ── Preferences ──────────────────────────────────────
           _Section(
-            title: 'ACCOUNT',
+            title: 'PREFERENCES',
             children: [
+              _Row(
+                icon: Icons.camera_alt_outlined,
+                label: 'Update Profile Photo',
+                subtitle: 'Change your profile picture',
+                onTap: () => _showUpdatePhoto(context, ref, user),
+              ),
+              _Row(
+                icon: Icons.palette_outlined,
+                label: 'Appearance',
+                subtitle: 'Light / Dark / System',
+                onTap: () => _showAppearance(context, ref),
+              ),
               _Row(
                 icon: Icons.notifications_outlined,
                 label: 'Notifications',
@@ -153,7 +177,7 @@ class SettingsScreen extends ConsumerWidget {
 
           // ── Support ───────────────────────────────────────────
           _Section(
-            title: 'SUPPORT',
+            title: 'HELP',
             children: [
               _Row(
                 icon: Icons.help_outline_rounded,
@@ -202,6 +226,73 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
+  void _showUpdatePhoto(
+      BuildContext context, WidgetRef ref, UserEntity? user) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        margin: const EdgeInsets.all(12),
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A1A1A),
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: const Color(0xFF9E9E9E).withOpacity(0.4),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const Text(
+              'Update Profile Photo',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 20),
+            _PhotoOption(
+              icon: Icons.camera_alt_outlined,
+              label: 'Take a Photo',
+              onTap: () {
+                Navigator.pop(context);
+                _comingSoon(context);
+              },
+            ),
+            const SizedBox(height: 10),
+            _PhotoOption(
+              icon: Icons.photo_library_outlined,
+              label: 'Choose from Library',
+              onTap: () {
+                Navigator.pop(context);
+                _comingSoon(context);
+              },
+            ),
+            if (user?.avatarUrl != null) ...[
+              const SizedBox(height: 10),
+              _PhotoOption(
+                icon: Icons.delete_outline_rounded,
+                label: 'Remove Photo',
+                color: const Color(0xFFFF6B6B),
+                onTap: () {
+                  Navigator.pop(context);
+                  _comingSoon(context);
+                },
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   void _comingSoon(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -230,38 +321,34 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
+  void _showWhatsAppSheet(BuildContext context, WidgetRef ref, UserEntity? user) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => ProviderScope(
+        parent: ProviderScope.containerOf(context),
+        child: _WhatsAppSheet(ref: ref, user: user),
+      ),
+    );
+  }
+
   void _showSecurity(BuildContext context) {
-    _showInfoSheet(
-      context,
-      title: 'Security',
-      icon: Icons.security_outlined,
-      items: const [
-        _InfoItem(
-          label: 'Authentication',
-          value: 'Google Sign-In via Firebase Auth. No passwords stored.',
-        ),
-        _InfoItem(
-          label: 'Data in transit',
-          value: 'All data is encrypted in transit (HTTPS/TLS). Firebase enforces this.',
-        ),
-        _InfoItem(
-          label: 'Data at rest',
-          value: 'Firestore encrypts all data at rest by default using AES-256.',
-        ),
-        _InfoItem(
-          label: 'Access control',
-          value: 'Firestore Security Rules ensure you can only read/write your own groups and expenses. Other users\' data is inaccessible.',
-        ),
-        _InfoItem(
-          label: 'API keys',
-          value: 'AI service keys are stored in Google Cloud Secret Manager — never in the app bundle.',
-        ),
-        _InfoItem(
-          label: 'Session',
-          value: 'Sessions are managed by Firebase Auth tokens with automatic expiry and refresh.',
-        ),
-      ],
-      footer: 'Splitbo does not sell or share your data with third parties.',
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const _SecuritySheet(),
+    );
+  }
+
+  void _showAppearance(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => ProviderScope(
+        parent: ProviderScope.containerOf(context),
+        child: const _AppearanceSheet(),
+      ),
     );
   }
 
@@ -739,6 +826,467 @@ class _Row extends StatelessWidget {
             Icon(Icons.chevron_right_rounded,
                 color: colors.textSecondary, size: 20),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PhotoOption extends StatelessWidget {
+  const _PhotoOption({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.color = Colors.white,
+  });
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: const Color(0xFF252525),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 22),
+            const SizedBox(width: 14),
+            Text(label,
+                style: TextStyle(
+                    color: color,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Security sheet ────────────────────────────────────────────────────────────
+class _SecuritySheet extends StatefulWidget {
+  const _SecuritySheet();
+
+  @override
+  State<_SecuritySheet> createState() => _SecuritySheetState();
+}
+
+class _SecuritySheetState extends State<_SecuritySheet> {
+  bool _biometricEnabled = false;
+
+  @override
+  Widget build(BuildContext context) {
+    const green = Color(0xFFC3FD00);
+    const surface = Color(0xFF1A1A1A);
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: surface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 12),
+          Center(
+            child: Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text('Security',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700)),
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Face ID / biometric toggle row
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: const Color(0xFF141414),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFF2C2C2C)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 38, height: 38,
+                    decoration: BoxDecoration(
+                      color: green.withOpacity(0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Center(
+                      child: Icon(Icons.fingerprint_rounded,
+                          color: green, size: 20),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Authenticate with Face ID',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600)),
+                        Text(
+                          _biometricEnabled
+                              ? 'App requires Face ID / fingerprint to open'
+                              : 'Require biometrics to open Splitbo',
+                          style: const TextStyle(
+                              color: Color(0xFF9E9E9E), fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Switch(
+                    value: _biometricEnabled,
+                    onChanged: (val) {
+                      setState(() => _biometricEnabled = val);
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text(
+                          val
+                              ? 'Biometric lock enabled'
+                              : 'Biometric lock disabled',
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                        backgroundColor: const Color(0xFF1E1E1E),
+                        duration: const Duration(seconds: 2),
+                      ));
+                    },
+                    activeColor: green,
+                    activeTrackColor: green.withOpacity(0.3),
+                    inactiveThumbColor: const Color(0xFF757575),
+                    inactiveTrackColor: const Color(0xFF2C2C2C),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: Text(
+              'Splitbo uses Firebase Auth with automatic session expiry. All data is encrypted in transit and at rest.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Color(0xFF4A4A4A), fontSize: 12),
+            ),
+          ),
+          const SizedBox(height: 28),
+        ],
+      ),
+    );
+  }
+}
+
+// ── WhatsApp number sheet ─────────────────────────────────────────────────────
+class _WhatsAppSheet extends StatefulWidget {
+  const _WhatsAppSheet({required this.ref, required this.user});
+  final WidgetRef ref;
+  final UserEntity? user;
+
+  @override
+  State<_WhatsAppSheet> createState() => _WhatsAppSheetState();
+}
+
+class _WhatsAppSheetState extends State<_WhatsAppSheet> {
+  late final TextEditingController _ctrl;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final existing = widget.user?.phoneNumber ?? '';
+    _ctrl = TextEditingController(text: existing);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final number = _ctrl.text.trim();
+    if (number.isEmpty) return;
+    final userId = widget.user?.id;
+    if (userId == null) return;
+    setState(() => _saving = true);
+    try {
+      final fs = widget.ref.read(firebaseFirestoreProvider);
+      await fs
+          .collection('${dbPrefix}users')
+          .doc(userId)
+          .update({'whatsappNumber': number});
+      if (mounted) {
+        setState(() => _saving = false);
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('WhatsApp number saved',
+              style: TextStyle(color: Colors.white)),
+          backgroundColor: Color(0xFF1E1E1E),
+        ));
+      }
+    } catch (_) {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const green = Color(0xFFC3FD00);
+    const surface = Color(0xFF1A1A1A);
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Center(
+              child: Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text('WhatsApp Number',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700)),
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Friends will be able to send you settle-up reminders on WhatsApp',
+                  style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 13),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: TextField(
+                controller: _ctrl,
+                keyboardType: TextInputType.phone,
+                autofocus: true,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  hintText: '+91 98765 43210',
+                  hintStyle: const TextStyle(color: Color(0xFF9E9E9E)),
+                  prefixIcon: const Icon(Icons.chat_rounded, color: green, size: 20),
+                  filled: true,
+                  fillColor: const Color(0xFF141414),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFF2C2C2C)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFF2C2C2C)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: green),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: _saving ? null : _save,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: green,
+                    foregroundColor: Colors.black,
+                    elevation: 0,
+                    shape: const StadiumBorder(),
+                  ),
+                  child: _saving
+                      ? const SizedBox(
+                          width: 20, height: 20,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.black))
+                      : const Text('Save',
+                          style: TextStyle(
+                              fontSize: 15, fontWeight: FontWeight.w700)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Appearance sheet ──────────────────────────────────────────────────────────
+class _AppearanceSheet extends ConsumerWidget {
+  const _AppearanceSheet();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final current = ref.watch(themeModeProvider);
+    const surface = Color(0xFF1A1A1A);
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: surface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 12),
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Appearance',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              children: [
+                _ThemeOption(
+                  icon: Icons.light_mode_rounded,
+                  label: 'Light',
+                  selected: current == ThemeMode.light,
+                  onTap: () => ref.read(themeModeProvider.notifier).state =
+                      ThemeMode.light,
+                ),
+                const SizedBox(width: 10),
+                _ThemeOption(
+                  icon: Icons.dark_mode_rounded,
+                  label: 'Dark',
+                  selected: current == ThemeMode.dark,
+                  onTap: () => ref.read(themeModeProvider.notifier).state =
+                      ThemeMode.dark,
+                ),
+                const SizedBox(width: 10),
+                _ThemeOption(
+                  icon: Icons.phone_iphone_rounded,
+                  label: 'System',
+                  selected: current == ThemeMode.system,
+                  onTap: () => ref.read(themeModeProvider.notifier).state =
+                      ThemeMode.system,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
+}
+
+class _ThemeOption extends StatelessWidget {
+  const _ThemeOption({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    const green = Color(0xFFC3FD00);
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+            color: selected ? green.withOpacity(0.12) : const Color(0xFF141414),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: selected ? green : const Color(0xFF2C2C2C),
+              width: selected ? 1.5 : 1,
+            ),
+          ),
+          child: Column(
+            children: [
+              Icon(icon,
+                  color: selected ? green : const Color(0xFF9E9E9E), size: 26),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  color: selected ? green : const Color(0xFF9E9E9E),
+                  fontSize: 13,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

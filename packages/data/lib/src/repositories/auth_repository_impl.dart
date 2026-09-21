@@ -97,6 +97,27 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<Result<void, AppError>> sendEmailSignInLink(String email) async {
+    try {
+      final settings = ActionCodeSettings(
+        // Update this URL to your Firebase Hosting domain once configured.
+        url: 'https://splitbo-7cbe0f307bfe.firebaseapp.com/auth/link',
+        handleCodeInApp: true,
+        iOSBundleId: 'com.splitbo.app',
+        androidPackageName: 'com.splitbo.app',
+        androidInstallApp: true,
+        androidMinimumVersion: '21',
+      );
+      await _auth.sendSignInLinkToEmail(email: email, actionCodeSettings: settings);
+      return const Ok(null);
+    } on FirebaseAuthException catch (e) {
+      return Err(_mapAuthError(e));
+    } catch (e) {
+      return Err(AppError(message: e.toString()));
+    }
+  }
+
+  @override
   Future<Result<void, AppError>> sendPhoneOtp(String phoneNumber) {
     final completer = Completer<Result<void, AppError>>();
     _auth.verifyPhoneNumber(

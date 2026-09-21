@@ -820,6 +820,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
                 group: _selectedGroup!,
                 mode: _splitMode,
                 controllers: _splitControllers,
+                totalAmount: double.tryParse(_amountCtrl.text.replaceAll(',', '')) ?? 0,
                 onModeChanged: (mode) {
                   setState(() => _splitMode = mode);
                   _prefillSplitControllers();
@@ -981,17 +982,35 @@ class _SplitSection extends StatelessWidget {
     required this.mode,
     required this.controllers,
     required this.onModeChanged,
+    this.totalAmount = 0,
   });
 
   final GroupEntity group;
   final _SplitMode mode;
   final Map<String, TextEditingController> controllers;
   final ValueChanged<_SplitMode> onModeChanged;
+  final double totalAmount;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
     const brandGreen = Color(0xFFC3FD00);
+
+    // Compute entered total for tracker
+    double enteredTotal = 0;
+    if (mode == _SplitMode.byAmount) {
+      enteredTotal = controllers.values
+          .map((c) => double.tryParse(c.text.replaceAll(',', '')) ?? 0)
+          .fold(0, (a, b) => a + b);
+    } else if (mode == _SplitMode.byPercent) {
+      final totalPct = controllers.values
+          .map((c) => double.tryParse(c.text) ?? 0)
+          .fold(0.0, (a, b) => a + b);
+      enteredTotal = totalAmount * totalPct / 100;
+    }
+
+    final remaining = totalAmount - enteredTotal;
+    final isOver = remaining < -0.5;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -1003,7 +1022,7 @@ class _SplitSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Mode selector row
+          // ── Split label + 5 icon pills ────────────────────────────
           Row(
             children: [
               const Icon(Icons.call_split_rounded,
@@ -1018,33 +1037,56 @@ class _SplitSection extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              ..._SplitMode.values.map((m) {
-                final sel = mode == m;
-                return GestureDetector(
-                  onTap: () => onModeChanged(m),
-                  child: Container(
-                    margin: const EdgeInsets.only(left: 6),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: sel ? brandGreen : colors.backgroundSubtle,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      switch (m) {
-                        _SplitMode.equal => 'Equal',
-                        _SplitMode.byAmount => '₹ Amount',
-                        _SplitMode.byPercent => '%',
-                      },
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: sel ? Colors.black : colors.textSecondary,
-                      ),
-                    ),
+              // Equal (=)
+              _SplitPill(
+                label: '=',
+                selected: mode == _SplitMode.equal,
+                onTap: () => onModeChanged(_SplitMode.equal),
+              ),
+              const SizedBox(width: 6),
+              // Exact amount (1.23)
+              _SplitPill(
+                label: '1.23',
+                selected: mode == _SplitMode.byAmount,
+                onTap: () => onModeChanged(_SplitMode.byAmount),
+              ),
+              const SizedBox(width: 6),
+              // Percent (%)
+              _SplitPill(
+                label: '%',
+                selected: mode == _SplitMode.byPercent,
+                onTap: () => onModeChanged(_SplitMode.byPercent),
+              ),
+              const SizedBox(width: 6),
+              // Shares (disabled stub)
+              _SplitPill(
+                icon: Icons.bar_chart_rounded,
+                selected: false,
+                disabled: true,
+                onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Shares split — coming soon',
+                        style: TextStyle(color: Colors.white)),
+                    backgroundColor: Color(0xFF1E1E1E),
+                    duration: Duration(seconds: 2),
                   ),
-                );
-              }),
+                ),
+              ),
+              const SizedBox(width: 6),
+              // Adjustment +/-  (disabled stub)
+              _SplitPill(
+                label: '±',
+                selected: false,
+                disabled: true,
+                onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Adjustment split — coming soon',
+                        style: TextStyle(color: Colors.white)),
+                    backgroundColor: Color(0xFF1E1E1E),
+                    duration: Duration(seconds: 2),
+                  ),
+                ),
+              ),
             ],
           ),
 
@@ -1139,7 +1181,112 @@ class _SplitSection extends StatelessWidget {
                 );
               }).toList(),
             ),
+
+          // ── Running tracker ───────────────────────────────────────
+          if (mode != _SplitMode.equal && totalAmount > 0) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0A0A0A),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    '₹${enteredTotal.toStringAsFixed(2)} of ₹${totalAmount.toStringAsFixed(2)}',
+                    style: const TextStyle(
+                      color: brandGreen,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const Text('  ·  ',
+                      style: TextStyle(
+                          color: Color(0xFF9E9E9E), fontSize: 13)),
+                  Expanded(
+                    child: Text(
+                      remaining >= 0
+                          ? '₹${remaining.toStringAsFixed(2)} left'
+                          : '₹${remaining.abs().toStringAsFixed(2)} over',
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        color: isOver
+                            ? const Color(0xFFFF6B6B)
+                            : const Color(0xFF9E9E9E),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
+      ),
+    );
+  }
+}
+
+// ── Split pill button ─────────────────────────────────────────────────────────
+class _SplitPill extends StatelessWidget {
+  const _SplitPill({
+    this.label,
+    this.icon,
+    required this.selected,
+    required this.onTap,
+    this.disabled = false,
+  }) : assert(label != null || icon != null);
+
+  final String? label;
+  final IconData? icon;
+  final bool selected;
+  final VoidCallback onTap;
+  final bool disabled;
+
+  @override
+  Widget build(BuildContext context) {
+    const brandGreen = Color(0xFFC3FD00);
+    return GestureDetector(
+      onTap: disabled ? onTap : onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected
+              ? brandGreen
+              : disabled
+                  ? const Color(0xFF1A1A1A)
+                  : const Color(0xFF1A1A1A),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: selected
+                ? brandGreen
+                : disabled
+                    ? const Color(0xFF2C2C2C)
+                    : const Color(0xFF2C2C2C),
+          ),
+        ),
+        child: icon != null
+            ? Icon(icon,
+                size: 14,
+                color: selected
+                    ? Colors.black
+                    : disabled
+                        ? const Color(0xFF4A4A4A)
+                        : const Color(0xFF9E9E9E))
+            : Text(
+                label!,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: selected
+                      ? Colors.black
+                      : disabled
+                          ? const Color(0xFF4A4A4A)
+                          : const Color(0xFF9E9E9E),
+                ),
+              ),
       ),
     );
   }

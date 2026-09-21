@@ -50,90 +50,120 @@ class GroupDetailScreen extends ConsumerWidget {
   }
 }
 
-class _GroupDetailBody extends ConsumerWidget {
+class _GroupDetailBody extends ConsumerStatefulWidget {
   const _GroupDetailBody({required this.group});
   final GroupEntity group;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_GroupDetailBody> createState() => _GroupDetailBodyState();
+}
+
+class _GroupDetailBodyState extends ConsumerState<_GroupDetailBody>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tab;
+
+  @override
+  void initState() {
+    super.initState();
+    _tab = TabController(length: 5, vsync: this);
+    _tab.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _tab.dispose();
+    super.dispose();
+  }
+
+  GroupEntity get group => widget.group;
+
+  @override
+  Widget build(BuildContext context) {
     final expensesAsync = ref.watch(watchExpensesProvider(group.id));
 
     return Scaffold(
       backgroundColor: Colors.black,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: _green),
+        iconTheme: const IconThemeData(color: Colors.white),
+        centerTitle: true,
         title: Text(
           group.name,
           style: const TextStyle(
-              color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+              color: Colors.white,
+              fontSize: 17,
+              fontWeight: FontWeight.w700),
         ),
         actions: [
-          expensesAsync.whenOrNull(
-            data: (expenses) => IconButton(
-              icon: const Icon(Icons.download_outlined, color: _green),
-              tooltip: 'Export CSV',
-              onPressed: () => _exportCsv(expenses, group, context),
-            ),
-          ) ?? const SizedBox.shrink(),
           IconButton(
-            icon: const Icon(Icons.person_add_outlined, color: _green),
-            tooltip: 'Add Member',
-            onPressed: () => _showAddMemberSheet(context, ref),
-          ),
-          PopupMenuButton<String>(
-            color: _surface,
-            icon: const Icon(Icons.more_vert, color: Colors.white),
-            onSelected: (v) {
-              if (v == 'delete') _confirmDeleteGroup(context, ref);
-              if (v == 'edit') _showEditGroupSheet(context, ref);
-            },
-            itemBuilder: (_) => [
-              const PopupMenuItem(
-                value: 'edit',
-                child: Row(
-                  children: [
-                    Icon(Icons.edit_outlined, color: Colors.white, size: 18),
-                    SizedBox(width: 10),
-                    Text('Edit Group',
-                        style: TextStyle(color: Colors.white)),
-                  ],
-                ),
+            icon: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.4),
+                shape: BoxShape.circle,
               ),
-              const PopupMenuItem(
-                value: 'delete',
-                child: Row(
-                  children: [
-                    Icon(Icons.delete_outline, color: Color(0xFFFF6B6B), size: 18),
-                    SizedBox(width: 10),
-                    Text('Delete Group',
-                        style: TextStyle(color: Color(0xFFFF6B6B))),
-                  ],
-                ),
-              ),
-            ],
+              child: const Icon(Icons.settings_outlined,
+                  color: Colors.white, size: 20),
+            ),
+            onPressed: () => _showGroupSettings(context),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 8),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/expense/new?groupId=${group.id}'),
-        backgroundColor: _green,
-        foregroundColor: Colors.black,
-        elevation: 2,
-        icon: const Icon(Icons.add),
-        label: const Text('Add Expense',
-            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-      ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _GroupBanner(group: group),
-          Expanded(
-            child: expensesAsync.when(
+      floatingActionButton: _tab.index == 0
+          ? FloatingActionButton.extended(
+              onPressed: () =>
+                  context.push('/expense/new?groupId=${group.id}'),
+              backgroundColor: _green,
+              foregroundColor: Colors.black,
+              elevation: 2,
+              icon: const Icon(Icons.add),
+              label: const Text('Add Expense',
+                  style:
+                      TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+            )
+          : null,
+      body: NestedScrollView(
+        headerSliverBuilder: (_, __) => [
+          SliverToBoxAdapter(
+            child: _LinkedInHeader(
+              group: group,
+              onEditPhoto: () => _showGroupSettings(context),
+            ),
+          ),
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: _TabBarDelegate(
+              TabBar(
+                controller: _tab,
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
+                indicatorColor: _green,
+                labelColor: _green,
+                unselectedLabelColor: _textSecondary,
+                labelStyle: const TextStyle(
+                    fontSize: 13, fontWeight: FontWeight.w600),
+                tabs: const [
+                  Tab(text: 'Expenses'),
+                  Tab(text: 'Balances'),
+                  Tab(text: 'Charts'),
+                  Tab(text: 'Totals'),
+                  Tab(text: 'Whiteboard'),
+                ],
+              ),
+            ),
+          ),
+        ],
+        body: TabBarView(
+          controller: _tab,
+          children: [
+            // ── Expenses ─────────────────────────────────────────
+            expensesAsync.when(
               loading: () => const Center(
-                  child: CircularProgressIndicator(color: _green, strokeWidth: 2)),
+                  child:
+                      CircularProgressIndicator(color: _green, strokeWidth: 2)),
               error: (e, _) => Center(
                   child: Text(e.toString(),
                       style: const TextStyle(color: Colors.white))),
@@ -141,13 +171,499 @@ class _GroupDetailBody extends ConsumerWidget {
                   ? _EmptyExpenses(groupId: group.id)
                   : _ExpenseList(expenses: expenses, group: group),
             ),
-          ),
+            // ── Balances ─────────────────────────────────────────
+            expensesAsync.when(
+              loading: () => const Center(
+                  child:
+                      CircularProgressIndicator(color: _green, strokeWidth: 2)),
+              error: (_, __) => const _ComingSoon(label: 'Balances'),
+              data: (expenses) => _BalancesTab(expenses: expenses, group: group),
+            ),
+            // ── Charts ───────────────────────────────────────────
+            expensesAsync.when(
+              loading: () => const Center(
+                  child:
+                      CircularProgressIndicator(color: _green, strokeWidth: 2)),
+              error: (_, __) => const _ComingSoon(label: 'Charts'),
+              data: (expenses) => expenses.isEmpty
+                  ? const _ComingSoon(label: 'Charts')
+                  : _ChartsTab(expenses: expenses, group: group),
+            ),
+            // ── Totals ───────────────────────────────────────────
+            expensesAsync.when(
+              loading: () => const Center(
+                  child:
+                      CircularProgressIndicator(color: _green, strokeWidth: 2)),
+              error: (_, __) => const _ComingSoon(label: 'Totals'),
+              data: (expenses) => expenses.isEmpty
+                  ? const _ComingSoon(label: 'Totals')
+                  : _TotalsTab(expenses: expenses, group: group),
+            ),
+            // ── Whiteboard ───────────────────────────────────────
+            _WhiteboardTab(groupId: group.id),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showGroupSettings(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => ProviderScope(
+        parent: ProviderScope.containerOf(context),
+        child: _GroupSettingsSheet(group: group),
+      ),
+    );
+  }
+
+  Future<void> _exportCsv(
+      List<ExpenseEntity> expenses, BuildContext context) async {
+    if (expenses.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No expenses to export')),
+      );
+      return;
+    }
+    final buf = StringBuffer();
+    buf.writeln('Date,Description,Category,Amount,Currency,Paid By');
+    for (final e in expenses) {
+      final date = e.createdAt.toIso8601String().substring(0, 10);
+      final desc = '"${e.description.replaceAll('"', '""')}"';
+      buf.writeln(
+          '$date,$desc,${e.category.label},${e.amount.toStringAsFixed(2)},${e.currency},${e.paidBy}');
+    }
+    await downloadCsv(buf.toString(), '${group.name}_expenses.csv');
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Exported ${expenses.length} expenses')),
+      );
+    }
+  }
+}
+
+// ── Pinned tab bar delegate ───────────────────────────────────────────────────
+class _TabBarDelegate extends SliverPersistentHeaderDelegate {
+  const _TabBarDelegate(this.tabBar);
+  final TabBar tabBar;
+
+  @override
+  double get minExtent => tabBar.preferredSize.height + 1;
+  @override
+  double get maxExtent => tabBar.preferredSize.height + 1;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(
+      color: Colors.black,
+      child: Column(
+        children: [
+          tabBar,
+          const Divider(height: 1, color: _border),
         ],
       ),
     );
   }
 
-  void _showEditGroupSheet(BuildContext context, WidgetRef ref) {
+  @override
+  bool shouldRebuild(_TabBarDelegate old) => old.tabBar != tabBar;
+}
+
+// ── LinkedIn-style group header ───────────────────────────────────────────────
+class _LinkedInHeader extends StatelessWidget {
+  const _LinkedInHeader({required this.group, required this.onEditPhoto});
+  final GroupEntity group;
+  final VoidCallback onEditPhoto;
+
+  static const _memberColors = [
+    Color(0xFFC3FD00), Color(0xFF00D4FF), Color(0xFFFF6B9D),
+    Color(0xFFFFB347), Color(0xFF9B59B6), Color(0xFF2ECC71),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final symbol = group.currency == 'INR' ? '₹' : group.currency;
+    final members = group.memberIds;
+    final visibleMembers = members.length.clamp(0, 5);
+    final overflow = members.length - visibleMembers;
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        // ── Cover banner ─────────────────────────────────────────
+        GestureDetector(
+          onTap: onEditPhoto,
+          child: Container(
+            height: 140,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  _green.withOpacity(0.25),
+                  const Color(0xFF0A0A0A),
+                ],
+              ),
+            ),
+            child: Stack(
+              children: [
+                // Subtle pattern
+                Positioned.fill(
+                  child: Opacity(
+                    opacity: 0.06,
+                    child: Image.asset(
+                      'assets/images/logo_icon.jpg',
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  right: 12,
+                  bottom: 12,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.camera_alt_outlined,
+                            color: Colors.white, size: 12),
+                        SizedBox(width: 4),
+                        Text('Edit',
+                            style: TextStyle(
+                                color: Colors.white, fontSize: 11)),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // ── Info row (below banner) ───────────────────────────────
+        Padding(
+          padding: const EdgeInsets.only(top: 100),
+          child: Container(
+            color: Colors.black,
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Group avatar overlapping banner
+                Transform.translate(
+                  offset: const Offset(0, -28),
+                  child: GestureDetector(
+                    onTap: onEditPhoto,
+                    child: Container(
+                      width: 76,
+                      height: 76,
+                      decoration: BoxDecoration(
+                        color: _green.withOpacity(0.12),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.black, width: 3),
+                      ),
+                      child: Stack(
+                        children: [
+                          Center(
+                            child: Text(
+                              group.name.isNotEmpty
+                                  ? group.name[0].toUpperCase()
+                                  : '?',
+                              style: const TextStyle(
+                                  fontSize: 30,
+                                  fontWeight: FontWeight.w800,
+                                  color: _green),
+                            ),
+                          ),
+                          Positioned(
+                            right: 0,
+                            bottom: 0,
+                            child: Container(
+                              width: 22,
+                              height: 22,
+                              decoration: const BoxDecoration(
+                                color: _green,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.edit,
+                                  color: Colors.black, size: 12),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+
+                // Name + stats
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(group.name,
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700)),
+                        const SizedBox(height: 3),
+                        Text(
+                          '$symbol${group.totalExpenses.toStringAsFixed(0)} total · ${group.memberCount} member${group.memberCount == 1 ? '' : 's'}',
+                          style: const TextStyle(
+                              color: _textSecondary, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Member avatars stack (right side)
+                if (members.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: Column(
+                      children: [
+                        SizedBox(
+                          height: 32,
+                          width: visibleMembers * 22.0 +
+                              (overflow > 0 ? 24 : 0) +
+                              8,
+                          child: Stack(
+                            children: [
+                              for (int i = 0; i < visibleMembers; i++)
+                                Positioned(
+                                  left: i * 22.0,
+                                  child: Container(
+                                    width: 32,
+                                    height: 32,
+                                    decoration: BoxDecoration(
+                                      color: _memberColors[
+                                              i % _memberColors.length]
+                                          .withOpacity(0.2),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                          color: Colors.black, width: 2),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        String.fromCharCode(65 + i),
+                                        style: TextStyle(
+                                            color: _memberColors[
+                                                i % _memberColors.length],
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w800),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              if (overflow > 0)
+                                Positioned(
+                                  left: visibleMembers * 22.0,
+                                  child: Container(
+                                    width: 32,
+                                    height: 32,
+                                    decoration: BoxDecoration(
+                                      color:
+                                          _textSecondary.withOpacity(0.1),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                          color: Colors.black, width: 2),
+                                    ),
+                                    child: Center(
+                                      child: Text('+$overflow',
+                                          style: const TextStyle(
+                                              color: _textSecondary,
+                                              fontSize: 9)),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text('Members',
+                            style: TextStyle(
+                                color: _textSecondary,
+                                fontSize: 10,
+                                letterSpacing: 0.3)),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Group Settings sheet (replaces popup menu) ────────────────────────────────
+class _GroupSettingsSheet extends ConsumerStatefulWidget {
+  const _GroupSettingsSheet({required this.group});
+  final GroupEntity group;
+
+  @override
+  ConsumerState<_GroupSettingsSheet> createState() =>
+      _GroupSettingsSheetState();
+}
+
+class _GroupSettingsSheetState extends ConsumerState<_GroupSettingsSheet> {
+  GroupEntity get group => widget.group;
+
+  static const _inviteBase = 'https://vikasnvcchauhan.github.io/splitbo';
+  String get _inviteUrl => '$_inviteBase/#/invite/${group.id}';
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.65,
+      maxChildSize: 0.9,
+      minChildSize: 0.4,
+      builder: (_, ctrl) => Container(
+        decoration: const BoxDecoration(
+          color: _surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 4),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: _textSecondary.withOpacity(0.4),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 8),
+              child: Row(
+                children: [
+                  const Text('Group Settings',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700)),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: _textSecondary),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1, color: _border),
+            Expanded(
+              child: ListView(
+                controller: ctrl,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                children: [
+                  _SettingsRow(
+                    icon: Icons.camera_alt_outlined,
+                    label: 'Edit Group Photo',
+                    onTap: () {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Photo upload coming soon',
+                              style: TextStyle(color: Colors.white)),
+                          backgroundColor: Color(0xFF1E1E1E),
+                        ),
+                      );
+                    },
+                  ),
+                  _SettingsRow(
+                    icon: Icons.edit_outlined,
+                    label: 'Edit Group Name',
+                    onTap: () {
+                      Navigator.pop(context);
+                      _showEditName(context);
+                    },
+                  ),
+                  const Divider(height: 1, color: _border,
+                      indent: 20, endIndent: 20),
+                  _SettingsRow(
+                    icon: Icons.person_add_outlined,
+                    label: 'Add Members',
+                    onTap: () {
+                      Navigator.pop(context);
+                      _showAddMemberSheet(context);
+                    },
+                  ),
+                  _SettingsRow(
+                    icon: Icons.link_rounded,
+                    label: 'Invite via Link',
+                    onTap: () {
+                      Clipboard.setData(ClipboardData(text: _inviteUrl));
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Invite link copied',
+                              style: TextStyle(color: Colors.white)),
+                          backgroundColor: Color(0xFF1E1E1E),
+                        ),
+                      );
+                    },
+                  ),
+                  _SettingsRow(
+                    icon: Icons.qr_code_rounded,
+                    label: 'Share QR Code',
+                    onTap: () {
+                      Navigator.pop(context);
+                      _showQrCode(context);
+                    },
+                  ),
+                  const Divider(height: 1, color: _border,
+                      indent: 20, endIndent: 20),
+                  _SettingsRow(
+                    icon: Icons.people_outline_rounded,
+                    label: 'View Members',
+                    trailing: Text('${group.memberCount}',
+                        style: const TextStyle(
+                            color: _textSecondary, fontSize: 14)),
+                    onTap: () => _showMembers(context),
+                  ),
+                  const Divider(height: 1, color: _border,
+                      indent: 20, endIndent: 20),
+                  _SettingsRow(
+                    icon: Icons.logout_rounded,
+                    label: 'Leave Group',
+                    color: const Color(0xFFFFB347),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _confirmLeave(context);
+                    },
+                  ),
+                  _SettingsRow(
+                    icon: Icons.delete_outline_rounded,
+                    label: 'Delete Group',
+                    color: const Color(0xFFFF6B6B),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _confirmDeleteGroup(context);
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showEditName(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -159,7 +675,185 @@ class _GroupDetailBody extends ConsumerWidget {
     );
   }
 
-  void _confirmDeleteGroup(BuildContext context, WidgetRef ref) {
+  void _showAddMemberSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => ProviderScope(
+        parent: ProviderScope.containerOf(context),
+        child: _AddMemberSheet(group: group),
+      ),
+    );
+  }
+
+  void _showQrCode(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        margin: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: _surface,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Invite via QR',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700)),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: QrImageView(
+                data: _inviteUrl,
+                version: QrVersions.auto,
+                size: 200,
+                backgroundColor: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text('Scan to join "${group.name}"',
+                style: const TextStyle(color: _textSecondary, fontSize: 13)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showMembers(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.5,
+        maxChildSize: 0.85,
+        minChildSize: 0.3,
+        builder: (_, ctrl) => Container(
+          decoration: const BoxDecoration(
+            color: _surface,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            children: [
+              Container(
+                margin: const EdgeInsets.only(top: 12, bottom: 8),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: _textSecondary.withOpacity(0.4),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+                child: Row(
+                  children: [
+                    Text('Members (${group.memberCount})',
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700)),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: _textSecondary),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1, color: _border),
+              Expanded(
+                child: ListView.builder(
+                  controller: ctrl,
+                  itemCount: group.memberIds.length,
+                  itemBuilder: (_, i) {
+                    const colors = [
+                      Color(0xFFC3FD00), Color(0xFF00D4FF),
+                      Color(0xFFFF6B9D), Color(0xFFFFB347),
+                      Color(0xFF9B59B6), Color(0xFF2ECC71),
+                    ];
+                    final c = colors[i % colors.length];
+                    return ListTile(
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: c.withOpacity(0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Text(
+                            String.fromCharCode(65 + i),
+                            style: TextStyle(
+                                color: c,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14),
+                          ),
+                        ),
+                      ),
+                      title: Text('Member ${i + 1}',
+                          style: const TextStyle(color: Colors.white)),
+                      subtitle: Text(
+                          i == 0 ? 'Admin' : 'Member',
+                          style: const TextStyle(
+                              color: _textSecondary, fontSize: 12)),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _confirmLeave(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: _surface,
+        title: const Text('Leave Group',
+            style: TextStyle(color: Colors.white)),
+        content: Text('Leave "${group.name}"?',
+            style: const TextStyle(color: _textSecondary)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel',
+                style: TextStyle(color: _textSecondary)),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // TODO: implement leave group
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Leave group coming soon',
+                      style: TextStyle(color: Colors.white)),
+                  backgroundColor: Color(0xFF1E1E1E),
+                ),
+              );
+            },
+            child: const Text('Leave',
+                style: TextStyle(color: Color(0xFFFFB347))),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDeleteGroup(BuildContext context) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -202,61 +896,375 @@ class _GroupDetailBody extends ConsumerWidget {
       ),
     );
   }
+}
 
-  Future<void> _exportCsv(
-      List<ExpenseEntity> expenses, GroupEntity group, BuildContext context) async {
-    if (expenses.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No expenses to export')),
-      );
-      return;
-    }
+class _SettingsRow extends StatelessWidget {
+  const _SettingsRow({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.color = Colors.white,
+    this.trailing,
+  });
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final Color color;
+  final Widget? trailing;
 
-    final buf = StringBuffer();
-    buf.writeln('Date,Description,Category,Amount,Currency,Paid By');
-    for (final e in expenses) {
-      final date = e.createdAt.toIso8601String().substring(0, 10);
-      final desc = '"${e.description.replaceAll('"', '""')}"';
-      buf.writeln(
-          '$date,$desc,${e.category.label},${e.amount.toStringAsFixed(2)},${e.currency},${e.paidBy}');
-    }
-
-    await downloadCsv(buf.toString(), '${group.name}_expenses.csv');
-
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Exported ${expenses.length} expenses')),
-      );
-    }
-  }
-
-  void _showAddMemberSheet(BuildContext context, WidgetRef ref) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => ProviderScope(
-        parent: ProviderScope.containerOf(context),
-        child: _AddMemberSheet(group: group),
-      ),
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      onTap: onTap,
+      leading: Icon(icon, color: color, size: 22),
+      title: Text(label, style: TextStyle(color: color, fontSize: 15)),
+      trailing: trailing ?? const Icon(Icons.chevron_right, color: _textSecondary, size: 20),
     );
   }
+}
 
-  void _copyInviteLink(String groupId, BuildContext context) {
-    const base = 'https://vikasnvcchauhan.github.io/splitbo';
-    final link = '$base/#/invite/$groupId';
-    Clipboard.setData(ClipboardData(text: link));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Invite link copied to clipboard',
-            style: TextStyle(color: Colors.white)),
-        backgroundColor: Color(0xFF1E1E1E),
-        duration: Duration(seconds: 2),
+// ── Charts tab ────────────────────────────────────────────────────────────────
+class _ChartsTab extends StatelessWidget {
+  const _ChartsTab({required this.expenses, required this.group});
+  final List<ExpenseEntity> expenses;
+  final GroupEntity group;
+
+  @override
+  Widget build(BuildContext context) {
+    final symbol = group.currency == 'INR' ? '₹' : group.currency;
+    final byCategory = <ExpenseCategory, double>{};
+    for (final e in expenses) {
+      byCategory[e.category] = (byCategory[e.category] ?? 0) + e.amount;
+    }
+    final sorted = byCategory.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final max = sorted.isEmpty ? 1.0 : sorted.first.value;
+
+    const barColors = [
+      Color(0xFFC3FD00), Color(0xFF00D4FF), Color(0xFFFF6B9D),
+      Color(0xFFFFB347), Color(0xFF9B59B6), Color(0xFF2ECC71),
+      Color(0xFFFF6B6B), Color(0xFFE91E63), Color(0xFF03A9F4),
+    ];
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
+      children: [
+        const Text('Spending by Category',
+            style: TextStyle(
+                color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 20),
+        ...sorted.asMap().entries.map((entry) {
+          final i = entry.key;
+          final cat = entry.value.key;
+          final amount = entry.value.value;
+          final pct = amount / max;
+          final color = barColors[i % barColors.length];
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(cat.label,
+                        style: const TextStyle(
+                            color: Colors.white, fontSize: 13)),
+                    Text('$symbol${amount.toStringAsFixed(0)}',
+                        style: TextStyle(
+                            color: color,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700)),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: Stack(
+                    children: [
+                      Container(height: 8, color: const Color(0xFF252525)),
+                      FractionallySizedBox(
+                        widthFactor: pct.clamp(0.02, 1.0),
+                        child: Container(height: 8, color: color),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+      ],
+    );
+  }
+}
+
+// ── Balances tab ──────────────────────────────────────────────────────────────
+class _BalancesTab extends StatelessWidget {
+  const _BalancesTab({required this.expenses, required this.group});
+  final List<ExpenseEntity> expenses;
+  final GroupEntity group;
+
+  @override
+  Widget build(BuildContext context) {
+    final symbol = group.currency == 'INR' ? '₹' : group.currency;
+    // Simple net balance per member: paid - fair share
+    final total = expenses.fold(0.0, (s, e) => s + e.amount);
+    final memberCount = group.memberIds.length;
+    if (memberCount == 0) return const _ComingSoon(label: 'Balances');
+    final fairShare = total / memberCount;
+
+    final paid = <String, double>{};
+    for (final e in expenses) {
+      paid[e.paidBy] = (paid[e.paidBy] ?? 0) + e.amount;
+    }
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
+      children: [
+        const Text('Who paid what',
+            style: TextStyle(
+                color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 4),
+        Text('Fair share per person: $symbol${fairShare.toStringAsFixed(0)}',
+            style: const TextStyle(color: _textSecondary, fontSize: 13)),
+        const SizedBox(height: 20),
+        ...paid.entries.map((entry) {
+          final net = entry.value - fairShare;
+          final isPositive = net > 0;
+          return Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: _surface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: _border),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: _green.withOpacity(0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Center(
+                    child: Icon(Icons.person_outline, color: _green, size: 18),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                          group.memberDisplayNames[entry.key] ??
+                              'Member (${entry.key.substring(0, 6)}…)',
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 13)),
+                      Text('Paid $symbol${entry.value.toStringAsFixed(0)}',
+                          style: const TextStyle(
+                              color: _textSecondary, fontSize: 12)),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      isPositive ? 'gets back' : 'owes',
+                      style: TextStyle(
+                          color: isPositive
+                              ? _green
+                              : const Color(0xFFFF6B6B),
+                          fontSize: 11),
+                    ),
+                    Text(
+                      '$symbol${net.abs().toStringAsFixed(0)}',
+                      style: TextStyle(
+                          color: isPositive
+                              ? _green
+                              : const Color(0xFFFF6B6B),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        }),
+        const SizedBox(height: 8),
+        // Settle Up CTA
+        if (paid.isNotEmpty)
+          SizedBox(
+            height: 50,
+            child: ElevatedButton(
+              onPressed: () => context.push('/balances'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _green,
+                foregroundColor: Colors.black,
+                elevation: 0,
+                shape: const StadiumBorder(),
+              ),
+              child: const Text('Settle Up',
+                  style: TextStyle(
+                      fontWeight: FontWeight.w700, fontSize: 15)),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+// ── Totals tab ────────────────────────────────────────────────────────────────
+class _TotalsTab extends StatelessWidget {
+  const _TotalsTab({required this.expenses, required this.group});
+  final List<ExpenseEntity> expenses;
+  final GroupEntity group;
+
+  @override
+  Widget build(BuildContext context) {
+    final symbol = group.currency == 'INR' ? '₹' : group.currency;
+    final total = expenses.fold(0.0, (s, e) => s + e.amount);
+    final byCategory = <ExpenseCategory, double>{};
+    for (final e in expenses) {
+      byCategory[e.category] = (byCategory[e.category] ?? 0) + e.amount;
+    }
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
+      children: [
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: _green.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: _green.withOpacity(0.2)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Grand Total',
+                  style: TextStyle(color: _textSecondary, fontSize: 12)),
+              const SizedBox(height: 4),
+              Text('$symbol${total.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                      color: _green,
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800)),
+              Text('${expenses.length} expense${expenses.length == 1 ? '' : 's'}',
+                  style: const TextStyle(color: _textSecondary, fontSize: 13)),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        const Text('By Category',
+            style: TextStyle(
+                color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 12),
+        ...byCategory.entries.map((e) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(e.key.label,
+                      style: const TextStyle(color: Colors.white, fontSize: 14)),
+                  Text('$symbol${e.value.toStringAsFixed(0)}',
+                      style: const TextStyle(
+                          color: _green,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600)),
+                ],
+              ),
+            )),
+      ],
+    );
+  }
+}
+
+// ── Whiteboard tab ────────────────────────────────────────────────────────────
+class _WhiteboardTab extends StatefulWidget {
+  const _WhiteboardTab({required this.groupId});
+  final String groupId;
+
+  @override
+  State<_WhiteboardTab> createState() => _WhiteboardTabState();
+}
+
+class _WhiteboardTabState extends State<_WhiteboardTab> {
+  final _ctrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: _green.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: _green.withOpacity(0.15)),
+            ),
+            child: const Text('Shared notes — visible to all group members',
+                style: TextStyle(color: _green, fontSize: 11)),
+          ),
+          const SizedBox(height: 12),
+          Expanded(
+            child: TextField(
+              controller: _ctrl,
+              maxLines: null,
+              expands: true,
+              textAlignVertical: TextAlignVertical.top,
+              style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.5),
+              decoration: const InputDecoration(
+                hintText: 'Write anything… grocery list, trip notes, reminders.',
+                hintStyle: TextStyle(color: _textSecondary, fontSize: 14),
+                border: InputBorder.none,
+                filled: true,
+                fillColor: _surface,
+                contentPadding: EdgeInsets.all(14),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
+// ── Coming soon placeholder ───────────────────────────────────────────────────
+class _ComingSoon extends StatelessWidget {
+  const _ComingSoon({required this.label});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.construction_outlined,
+              color: _textSecondary, size: 40),
+          const SizedBox(height: 12),
+          Text('$label coming soon',
+              style: const TextStyle(
+                  color: _textSecondary, fontSize: 14)),
+        ],
+      ),
+    );
+  }
+}
 // ── Add Member Sheet ──────────────────────────────────────────────────────────
 class _AddMemberSheet extends ConsumerStatefulWidget {
   const _AddMemberSheet({required this.group});
@@ -693,151 +1701,6 @@ class _ShareTab extends StatelessWidget {
   }
 }
 
-class _GroupBanner extends StatelessWidget {
-  const _GroupBanner({required this.group});
-  final GroupEntity group;
-
-  static const _memberColors = [
-    Color(0xFFC3FD00), Color(0xFF00D4FF), Color(0xFFFF6B9D),
-    Color(0xFFFFB347), Color(0xFF9B59B6), Color(0xFF2ECC71),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final symbol = group.currency == 'INR' ? '₹' : group.currency;
-    final members = group.memberIds;
-    final visibleCount = members.length.clamp(0, 6);
-    final overflow = members.length - visibleCount;
-    const avatarSize = 36.0;
-    const overlap = 14.0;
-    final stackWidth = visibleCount > 0
-        ? avatarSize + (visibleCount - 1) * (avatarSize - overlap) + (overflow > 0 ? avatarSize - overlap : 0)
-        : 0.0;
-
-    return Container(
-      color: _surface,
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── Top row: avatar + info ──────────────────────────────
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 68,
-                height: 68,
-                decoration: BoxDecoration(
-                  color: _green.withOpacity(0.12),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: _green.withOpacity(0.35), width: 2),
-                ),
-                child: Center(
-                  child: Text(
-                    group.name.isNotEmpty ? group.name[0].toUpperCase() : '?',
-                    style: const TextStyle(
-                        fontSize: 28, fontWeight: FontWeight.w800, color: _green),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(group.name,
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 6),
-                    // Instagram-style overlapping member avatars
-                    if (members.isNotEmpty)
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          SizedBox(
-                            width: stackWidth,
-                            height: avatarSize,
-                            child: Stack(
-                              children: [
-                                for (int i = 0; i < visibleCount; i++)
-                                  Positioned(
-                                    left: i * (avatarSize - overlap),
-                                    child: Container(
-                                      width: avatarSize,
-                                      height: avatarSize,
-                                      decoration: BoxDecoration(
-                                        color: _memberColors[i % _memberColors.length]
-                                            .withOpacity(0.18),
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                            color: Colors.black, width: 2),
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          String.fromCharCode(65 + i), // A, B, C…
-                                          style: TextStyle(
-                                              color: _memberColors[
-                                                  i % _memberColors.length],
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w800),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                if (overflow > 0)
-                                  Positioned(
-                                    left: visibleCount * (avatarSize - overlap),
-                                    child: Container(
-                                      width: avatarSize,
-                                      height: avatarSize,
-                                      decoration: BoxDecoration(
-                                        color: _textSecondary.withOpacity(0.1),
-                                        shape: BoxShape.circle,
-                                        border:
-                                            Border.all(color: Colors.black, width: 2),
-                                      ),
-                                      child: Center(
-                                        child: Text('+$overflow',
-                                            style: const TextStyle(
-                                                color: _textSecondary, fontSize: 10)),
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '${group.memberCount} member${group.memberCount == 1 ? '' : 's'}',
-                            style: const TextStyle(
-                                color: _textSecondary, fontSize: 12),
-                          ),
-                        ],
-                      ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '$symbol${group.totalExpenses.toStringAsFixed(0)} total',
-                      style: const TextStyle(
-                          color: _green,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          // ── Action row ──────────────────────────────────────────
-          const SizedBox(height: 16),
-          const Divider(height: 1, color: _border),
-        ],
-      ),
-    );
-  }
-}
-
 // ── Edit Group Sheet ──────────────────────────────────────────────────────────
 class _EditGroupSheet extends ConsumerStatefulWidget {
   const _EditGroupSheet({required this.group});
@@ -1000,11 +1863,9 @@ class _ExpenseList extends ConsumerWidget {
         final e = expenses[i];
         final icon = _categoryIcons[e.category] ?? Icons.receipt_long_outlined;
         final diff = DateTime.now().difference(e.createdAt);
-        final when = diff.inDays > 0
-            ? '${diff.inDays}d ago'
-            : diff.inHours > 0
-                ? '${diff.inHours}h ago'
-                : '${diff.inMinutes}m ago';
+        final _ = diff; // unused after subtitle change
+        const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        final dateStr = '${e.createdAt.day} ${months[e.createdAt.month - 1]} ${e.createdAt.year}';
 
         return GestureDetector(
           onTap: () => _showExpenseActions(context, ref, e),
@@ -1037,7 +1898,7 @@ class _ExpenseList extends ConsumerWidget {
                               color: Colors.white,
                               fontSize: 14,
                               fontWeight: FontWeight.w600)),
-                      Text('$when · ${e.category.label}',
+                      Text('$dateStr · Split among ${group.memberCount}',
                           style: const TextStyle(
                               color: _textSecondary, fontSize: 12)),
                     ],
