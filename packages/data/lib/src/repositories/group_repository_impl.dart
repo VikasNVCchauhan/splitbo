@@ -60,6 +60,8 @@ class GroupRepositoryImpl implements GroupRepository {
         currency: currency,
       );
       await docRef.set(dto.toFirestore());
+      // Write nameLower for prefix search queries
+      await docRef.update({'nameLower': name.toLowerCase()});
       return Ok(dto.toEntity());
     } on FirebaseException catch (e) {
       return Err(_mapError(e));
@@ -78,6 +80,7 @@ class GroupRepositoryImpl implements GroupRepository {
     try {
       final updates = <String, dynamic>{
         if (name != null) 'name': name,
+        if (name != null) 'nameLower': name.toLowerCase(),
         if (description != null) 'description': description,
         if (avatarUrl != null) 'avatarUrl': avatarUrl,
       };

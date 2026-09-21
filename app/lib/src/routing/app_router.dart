@@ -104,6 +104,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ],
       ),
       GoRoute(
+        path: '/search',
+        pageBuilder: (_, __) => const MaterialPage(
+          fullscreenDialog: true,
+          child: SearchScreen(),
+        ),
+      ),
+      GoRoute(
         path: AppRoutes.signIn,
         builder: (_, __) => const SignInScreen(),
       ),
@@ -394,6 +401,7 @@ class _JoinScreenState extends ConsumerState<_JoinScreen> {
       // Create / update user doc with name
       await db.collection('${prefix}users').doc(uid).set({
         'displayName': name,
+        'nameLower': name.toLowerCase(),
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
       // Add to group

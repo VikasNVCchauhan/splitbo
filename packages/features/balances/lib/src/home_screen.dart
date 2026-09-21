@@ -54,6 +54,28 @@ class HomeScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 28),
 
+            // ── Search bar (tap to open full search) ──────────────
+            GestureDetector(
+              onTap: () => context.push('/search'),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: _surface,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFF2C2C2C)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.search_rounded, color: Color(0xFF555555), size: 20),
+                    SizedBox(width: 10),
+                    Text('Search groups, people, expenses…',
+                        style: TextStyle(color: Color(0xFF555555), fontSize: 14)),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
             // ── Balance summary chip ──────────────────────────────
             balancesAsync.whenData((balances) {
               final totalNet = balances.fold(0.0, (sum, b) => sum + b.net);
@@ -275,6 +297,11 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
         ],
       ),
       actions: [
+        // Search
+        IconButton(
+          icon: const Icon(Icons.search_rounded, color: Colors.white, size: 24),
+          onPressed: () => context.push('/search'),
+        ),
         // Profile avatar → settings
         Padding(
           padding: const EdgeInsets.only(right: 16),
