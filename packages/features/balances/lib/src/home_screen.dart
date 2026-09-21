@@ -1,4 +1,5 @@
 import 'package:data/data.dart';
+import 'package:design_system/design_system.dart';
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -248,19 +249,12 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
       backgroundColor: Colors.black,
       elevation: 0,
       automaticallyImplyLeading: false,
+      centerTitle: false,
       titleSpacing: 20,
       title: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Logo — ClipOval removes white JPEG matte corners
-          ClipOval(
-            child: Image.asset(
-              'assets/images/logo_icon.jpg',
-              height: 32,
-              width: 32,
-              fit: BoxFit.cover,
-            ),
-          ),
+          const SplitboLogoMark(size: 32),
           const SizedBox(width: 10),
           const Text.rich(
             TextSpan(children: [

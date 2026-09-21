@@ -20,6 +20,8 @@ dependencies:
     path: ../../design_system
   flutter_riverpod: ^2.5.1
   go_router: ^14.2.0
+  path_provider: ^2.1.0
+  share_plus: ^10.0.0
 
 dev_dependencies:
   flutter_test:

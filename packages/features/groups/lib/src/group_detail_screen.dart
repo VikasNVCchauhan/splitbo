@@ -28,19 +28,19 @@ class GroupDetailScreen extends ConsumerWidget {
     final groupAsync = ref.watch(watchGroupsProvider);
     return groupAsync.when(
       loading: () => const Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: Color(0xFF0A0A0A),
         body: Center(child: CircularProgressIndicator(color: _green)),
       ),
       error: (e, _) => Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: Color(0xFF0A0A0A),
         body: Center(child: Text(e.toString(), style: const TextStyle(color: Colors.white))),
       ),
       data: (groups) {
         final group = groups.where((g) => g.id == groupId).firstOrNull;
         if (group == null) {
           return Scaffold(
-            backgroundColor: Colors.black,
-            appBar: AppBar(backgroundColor: Colors.black, iconTheme: const IconThemeData(color: Colors.white)),
+            backgroundColor: const Color(0xFF0A0A0A),
+            appBar: AppBar(backgroundColor: const Color(0xFF0A0A0A), iconTheme: const IconThemeData(color: Colors.white)),
             body: const Center(child: Text('Group not found', style: TextStyle(color: Colors.white))),
           );
         }
@@ -82,7 +82,7 @@ class _GroupDetailBodyState extends ConsumerState<_GroupDetailBody>
     final expensesAsync = ref.watch(watchExpensesProvider(group.id));
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: const Color(0xFF0A0A0A),
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -101,7 +101,7 @@ class _GroupDetailBodyState extends ConsumerState<_GroupDetailBody>
             icon: Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.4),
+                color: const Color(0xFF0A0A0A).withOpacity(0.4),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.settings_outlined,
@@ -257,7 +257,7 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Container(
-      color: Colors.black,
+      color: const Color(0xFF0A0A0A),
       child: Column(
         children: [
           tabBar,
@@ -327,7 +327,7 @@ class _LinkedInHeader extends StatelessWidget {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.5),
+                      color: const Color(0xFF0A0A0A).withOpacity(0.5),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: const Row(
@@ -352,7 +352,7 @@ class _LinkedInHeader extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(top: 100),
           child: Container(
-            color: Colors.black,
+            color: const Color(0xFF0A0A0A),
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -368,7 +368,7 @@ class _LinkedInHeader extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: _green.withOpacity(0.12),
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.black, width: 3),
+                        border: Border.all(color: const Color(0xFF0A0A0A), width: 3),
                       ),
                       child: Stack(
                         children: [
@@ -452,7 +452,7 @@ class _LinkedInHeader extends StatelessWidget {
                                           .withOpacity(0.2),
                                       shape: BoxShape.circle,
                                       border: Border.all(
-                                          color: Colors.black, width: 2),
+                                          color: const Color(0xFF0A0A0A), width: 2),
                                     ),
                                     child: Center(
                                       child: Text(
@@ -477,7 +477,7 @@ class _LinkedInHeader extends StatelessWidget {
                                           _textSecondary.withOpacity(0.1),
                                       shape: BoxShape.circle,
                                       border: Border.all(
-                                          color: Colors.black, width: 2),
+                                          color: const Color(0xFF0A0A0A), width: 2),
                                     ),
                                     child: Center(
                                       child: Text('+$overflow',

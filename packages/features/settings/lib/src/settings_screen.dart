@@ -5,6 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'csv_export_stub.dart'
+    if (dart.library.html) 'csv_export_web.dart'
+    if (dart.library.io) 'csv_export_io.dart';
+
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
@@ -137,7 +141,7 @@ class SettingsScreen extends ConsumerWidget {
                 icon: Icons.download_outlined,
                 label: 'Export Expenses',
                 subtitle: 'Download all expenses as CSV',
-                onTap: () => _comingSoon(context),
+                onTap: () => _exportAllExpenses(context, ref),
               ),
             ],
           ),
@@ -302,6 +306,50 @@ class SettingsScreen extends ConsumerWidget {
         duration: Duration(seconds: 2),
       ),
     );
+  }
+
+  Future<void> _exportAllExpenses(BuildContext context, WidgetRef ref) async {
+    final groups = ref.read(watchGroupsProvider).valueOrNull ?? [];
+    if (groups.isEmpty) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No groups or expenses to export')),
+        );
+      }
+      return;
+    }
+    final buf = StringBuffer();
+    buf.writeln('Group,Date,Description,Category,Amount,Currency,Paid By');
+    int total = 0;
+    for (final group in groups) {
+      final expenses =
+          ref.read(watchExpensesProvider(group.id)).valueOrNull ?? [];
+      for (final e in expenses) {
+        final date = e.createdAt.toIso8601String().substring(0, 10);
+        final groupName = '"${group.name.replaceAll('"', '""')}"';
+        final desc = '"${e.description.replaceAll('"', '""')}"';
+        buf.writeln(
+            '$groupName,$date,$desc,${e.category.label},${e.amount.toStringAsFixed(2)},${e.currency},${e.paidBy}');
+        total++;
+      }
+    }
+    if (total == 0) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No expenses to export')),
+        );
+      }
+      return;
+    }
+    final now = DateTime.now();
+    final filename =
+        'splitbo_${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}.csv';
+    await downloadCsv(buf.toString(), filename);
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Exported $total expenses')),
+      );
+    }
   }
 
   void _showAbout(BuildContext context) {
