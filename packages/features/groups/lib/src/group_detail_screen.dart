@@ -18,9 +18,6 @@ import 'csv_export_stub.dart'
     if (dart.library.io) 'csv_export_io.dart';
 
 const _green = Color(0xFFC3FD00);
-const _surface = Color(0xFF1A1A1A);
-const _border = Color(0xFF2C2C2C);
-const _textSecondary = Color(0xFF9E9E9E);
 
 class GroupDetailScreen extends ConsumerWidget {
   const GroupDetailScreen({super.key, required this.groupId});
@@ -28,22 +25,23 @@ class GroupDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.colors;
     final groupAsync = ref.watch(watchGroupsProvider);
     return groupAsync.when(
-      loading: () => const Scaffold(
-        backgroundColor: Color(0xFF0A0A0A),
-        body: Center(child: CircularProgressIndicator(color: _green)),
+      loading: () => Scaffold(
+        backgroundColor: colors.backgroundDefault,
+        body: const Center(child: CircularProgressIndicator(color: _green)),
       ),
       error: (e, _) => Scaffold(
-        backgroundColor: Color(0xFF0A0A0A),
+        backgroundColor: colors.backgroundDefault,
         body: Center(child: Text(e.toString(), style: const TextStyle(color: Colors.white))),
       ),
       data: (groups) {
         final group = groups.where((g) => g.id == groupId).firstOrNull;
         if (group == null) {
           return Scaffold(
-            backgroundColor: const Color(0xFF0A0A0A),
-            appBar: AppBar(backgroundColor: const Color(0xFF0A0A0A), iconTheme: const IconThemeData(color: Colors.white)),
+            backgroundColor: colors.backgroundDefault,
+            appBar: AppBar(backgroundColor: colors.backgroundDefault, iconTheme: const IconThemeData(color: Colors.white)),
             body: const Center(child: Text('Group not found', style: TextStyle(color: Colors.white))),
           );
         }
@@ -83,17 +81,18 @@ class _GroupDetailBodyState extends ConsumerState<_GroupDetailBody>
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final expensesAsync = ref.watch(watchExpensesProvider(group.id));
     final expenses = expensesAsync.valueOrNull ?? [];
     final computedTotal = expenses.fold<double>(0.0, (sum, e) => sum + e.amount);
     final onMembersTab = _tab.index == 5;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0A),
+      backgroundColor: colors.backgroundDefault,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: _scrolled
-            ? const Color(0xFF0A0A0A)
+            ? colors.backgroundDefault
             : Colors.transparent,
         elevation: _scrolled ? 4 : 0,
         shadowColor: Colors.black54,
@@ -116,8 +115,8 @@ class _GroupDetailBodyState extends ConsumerState<_GroupDetailBody>
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
                 color: _scrolled
-                    ? _surface
-                    : const Color(0xFF0A0A0A).withOpacity(0.4),
+                    ? colors.surfaceDefault
+                    : colors.backgroundDefault.withOpacity(0.4),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.settings_outlined,
@@ -297,8 +296,9 @@ class _PillTabDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    final colors = context.colors;
     return Container(
-      color: const Color(0xFF0A0A0A),
+      color: colors.backgroundDefault,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -313,11 +313,11 @@ class _PillTabDelegate extends SliverPersistentHeaderDelegate {
               padding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               decoration: BoxDecoration(
-                color: sel ? _green : _surface,
+                color: sel ? _green : colors.surfaceDefault,
                 borderRadius: BorderRadius.circular(20),
                 border: sel
                     ? null
-                    : Border.all(color: _border, width: 1),
+                    : Border.all(color: colors.borderDefault, width: 1),
                 boxShadow: sel
                     ? [
                         BoxShadow(
@@ -331,7 +331,7 @@ class _PillTabDelegate extends SliverPersistentHeaderDelegate {
               child: Text(
                 _labels[i],
                 style: TextStyle(
-                  color: sel ? Colors.black : _textSecondary,
+                  color: sel ? Colors.black : colors.textSecondary,
                   fontWeight: FontWeight.w600,
                   fontSize: 13,
                 ),
@@ -366,6 +366,7 @@ class _LinkedInHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final symbol = group.currency == 'INR' ? '₹' : group.currency;
     final members = group.memberIds;
     final visibleMembers = members.length.clamp(0, 5);
@@ -386,7 +387,7 @@ class _LinkedInHeader extends StatelessWidget {
                 end: Alignment.bottomRight,
                 colors: [
                   _green.withOpacity(0.25),
-                  const Color(0xFF0A0A0A),
+                  colors.backgroundDefault,
                 ],
               ),
             ),
@@ -409,7 +410,7 @@ class _LinkedInHeader extends StatelessWidget {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0A0A0A).withOpacity(0.5),
+                      color: colors.backgroundDefault.withOpacity(0.5),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: const Row(
@@ -434,7 +435,7 @@ class _LinkedInHeader extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(top: 100),
           child: Container(
-            color: const Color(0xFF0A0A0A),
+            color: colors.backgroundDefault,
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -450,7 +451,7 @@ class _LinkedInHeader extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: _green.withOpacity(0.12),
                         shape: BoxShape.circle,
-                        border: Border.all(color: const Color(0xFF0A0A0A), width: 3),
+                        border: Border.all(color: colors.backgroundDefault, width: 3),
                       ),
                       child: Stack(
                         children: [
@@ -501,8 +502,8 @@ class _LinkedInHeader extends StatelessWidget {
                         const SizedBox(height: 3),
                         Text(
                           '$symbol${computedTotal.toStringAsFixed(0)} total · ${group.memberCount} member${group.memberCount == 1 ? '' : 's'}',
-                          style: const TextStyle(
-                              color: _textSecondary, fontSize: 12),
+                          style: TextStyle(
+                              color: colors.textSecondary, fontSize: 12),
                         ),
                       ],
                     ),
@@ -534,7 +535,7 @@ class _LinkedInHeader extends StatelessWidget {
                                           .withOpacity(0.2),
                                       shape: BoxShape.circle,
                                       border: Border.all(
-                                          color: const Color(0xFF0A0A0A), width: 2),
+                                          color: colors.backgroundDefault, width: 2),
                                     ),
                                     child: Center(
                                       child: Text(
@@ -556,15 +557,15 @@ class _LinkedInHeader extends StatelessWidget {
                                     height: 32,
                                     decoration: BoxDecoration(
                                       color:
-                                          _textSecondary.withOpacity(0.1),
+                                          colors.textSecondary.withOpacity(0.1),
                                       shape: BoxShape.circle,
                                       border: Border.all(
-                                          color: const Color(0xFF0A0A0A), width: 2),
+                                          color: colors.backgroundDefault, width: 2),
                                     ),
                                     child: Center(
                                       child: Text('+$overflow',
-                                          style: const TextStyle(
-                                              color: _textSecondary,
+                                          style: TextStyle(
+                                              color: colors.textSecondary,
                                               fontSize: 9)),
                                     ),
                                   ),
@@ -573,9 +574,9 @@ class _LinkedInHeader extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 4),
-                        const Text('Members',
+                        Text('Members',
                             style: TextStyle(
-                                color: _textSecondary,
+                                color: colors.textSecondary,
                                 fontSize: 10,
                                 letterSpacing: 0.3)),
                       ],
@@ -608,14 +609,15 @@ class _GroupSettingsSheetState extends ConsumerState<_GroupSettingsSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return DraggableScrollableSheet(
       initialChildSize: 0.65,
       maxChildSize: 0.9,
       minChildSize: 0.4,
       builder: (_, ctrl) => Container(
-        decoration: const BoxDecoration(
-          color: _surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        decoration: BoxDecoration(
+          color: colors.surfaceDefault,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
           children: [
@@ -624,7 +626,7 @@ class _GroupSettingsSheetState extends ConsumerState<_GroupSettingsSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: _textSecondary.withOpacity(0.4),
+                color: colors.textSecondary.withOpacity(0.4),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -639,13 +641,13 @@ class _GroupSettingsSheetState extends ConsumerState<_GroupSettingsSheet> {
                           fontWeight: FontWeight.w700)),
                   const Spacer(),
                   IconButton(
-                    icon: const Icon(Icons.close, color: _textSecondary),
+                    icon: Icon(Icons.close, color: colors.textSecondary),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
               ),
             ),
-            const Divider(height: 1, color: _border),
+            Divider(height: 1, color: colors.borderDefault),
             Expanded(
               child: ListView(
                 controller: ctrl,
@@ -657,10 +659,10 @@ class _GroupSettingsSheetState extends ConsumerState<_GroupSettingsSheet> {
                     onTap: () {
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Photo upload coming soon',
+                        SnackBar(
+                          content: const Text('Photo upload coming soon',
                               style: TextStyle(color: Colors.white)),
-                          backgroundColor: Color(0xFF1E1E1E),
+                          backgroundColor: colors.surfaceRaised,
                         ),
                       );
                     },
@@ -673,7 +675,7 @@ class _GroupSettingsSheetState extends ConsumerState<_GroupSettingsSheet> {
                       _showEditName(context);
                     },
                   ),
-                  const Divider(height: 1, color: _border,
+                  Divider(height: 1, color: colors.borderDefault,
                       indent: 20, endIndent: 20),
                   _SettingsRow(
                     icon: Icons.person_add_outlined,
@@ -690,10 +692,10 @@ class _GroupSettingsSheetState extends ConsumerState<_GroupSettingsSheet> {
                       Clipboard.setData(ClipboardData(text: _inviteUrl));
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Invite link copied',
+                        SnackBar(
+                          content: const Text('Invite link copied',
                               style: TextStyle(color: Colors.white)),
-                          backgroundColor: Color(0xFF1E1E1E),
+                          backgroundColor: colors.surfaceRaised,
                         ),
                       );
                     },
@@ -706,17 +708,17 @@ class _GroupSettingsSheetState extends ConsumerState<_GroupSettingsSheet> {
                       _showQrCode(context);
                     },
                   ),
-                  const Divider(height: 1, color: _border,
+                  Divider(height: 1, color: colors.borderDefault,
                       indent: 20, endIndent: 20),
                   _SettingsRow(
                     icon: Icons.people_outline_rounded,
                     label: 'View Members',
                     trailing: Text('${group.memberCount}',
-                        style: const TextStyle(
-                            color: _textSecondary, fontSize: 14)),
+                        style: TextStyle(
+                            color: colors.textSecondary, fontSize: 14)),
                     onTap: () => _showMembers(context),
                   ),
-                  const Divider(height: 1, color: _border,
+                  Divider(height: 1, color: colors.borderDefault,
                       indent: 20, endIndent: 20),
                   _SettingsRow(
                     icon: Icons.logout_rounded,
@@ -770,6 +772,7 @@ class _GroupSettingsSheetState extends ConsumerState<_GroupSettingsSheet> {
   }
 
   void _showQrCode(BuildContext context) {
+    final colors = context.colors;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -777,7 +780,7 @@ class _GroupSettingsSheetState extends ConsumerState<_GroupSettingsSheet> {
         margin: const EdgeInsets.all(12),
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: _surface,
+          color: colors.surfaceDefault,
           borderRadius: BorderRadius.circular(24),
         ),
         child: Column(
@@ -804,7 +807,7 @@ class _GroupSettingsSheetState extends ConsumerState<_GroupSettingsSheet> {
             ),
             const SizedBox(height: 16),
             Text('Scan to join "${group.name}"',
-                style: const TextStyle(color: _textSecondary, fontSize: 13)),
+                style: TextStyle(color: colors.textSecondary, fontSize: 13)),
           ],
         ),
       ),
@@ -812,6 +815,7 @@ class _GroupSettingsSheetState extends ConsumerState<_GroupSettingsSheet> {
   }
 
   void _showMembers(BuildContext context) {
+    final colors = context.colors;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -821,9 +825,9 @@ class _GroupSettingsSheetState extends ConsumerState<_GroupSettingsSheet> {
         maxChildSize: 0.85,
         minChildSize: 0.3,
         builder: (_, ctrl) => Container(
-          decoration: const BoxDecoration(
-            color: _surface,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          decoration: BoxDecoration(
+            color: colors.surfaceDefault,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(
             children: [
@@ -832,7 +836,7 @@ class _GroupSettingsSheetState extends ConsumerState<_GroupSettingsSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: _textSecondary.withOpacity(0.4),
+                  color: colors.textSecondary.withOpacity(0.4),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -847,24 +851,24 @@ class _GroupSettingsSheetState extends ConsumerState<_GroupSettingsSheet> {
                             fontWeight: FontWeight.w700)),
                     const Spacer(),
                     IconButton(
-                      icon: const Icon(Icons.close, color: _textSecondary),
+                      icon: Icon(Icons.close, color: colors.textSecondary),
                       onPressed: () => Navigator.pop(context),
                     ),
                   ],
                 ),
               ),
-              const Divider(height: 1, color: _border),
+              Divider(height: 1, color: colors.borderDefault),
               Expanded(
                 child: ListView.builder(
                   controller: ctrl,
                   itemCount: group.memberIds.length,
                   itemBuilder: (_, i) {
-                    const colors = [
+                    const memberColors = [
                       Color(0xFFC3FD00), Color(0xFF00D4FF),
                       Color(0xFFFF6B9D), Color(0xFFFFB347),
                       Color(0xFF9B59B6), Color(0xFF2ECC71),
                     ];
-                    final c = colors[i % colors.length];
+                    final c = memberColors[i % memberColors.length];
                     return ListTile(
                       leading: Container(
                         width: 40,
@@ -887,8 +891,8 @@ class _GroupSettingsSheetState extends ConsumerState<_GroupSettingsSheet> {
                           style: const TextStyle(color: Colors.white)),
                       subtitle: Text(
                           i == 0 ? 'Admin' : 'Member',
-                          style: const TextStyle(
-                              color: _textSecondary, fontSize: 12)),
+                          style: TextStyle(
+                              color: colors.textSecondary, fontSize: 12)),
                     );
                   },
                 ),
@@ -901,29 +905,30 @@ class _GroupSettingsSheetState extends ConsumerState<_GroupSettingsSheet> {
   }
 
   void _confirmLeave(BuildContext context) {
+    final colors = context.colors;
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: _surface,
+        backgroundColor: colors.surfaceDefault,
         title: const Text('Leave Group',
             style: TextStyle(color: Colors.white)),
         content: Text('Leave "${group.name}"?',
-            style: const TextStyle(color: _textSecondary)),
+            style: TextStyle(color: colors.textSecondary)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel',
-                style: TextStyle(color: _textSecondary)),
+            child: Text('Cancel',
+                style: TextStyle(color: colors.textSecondary)),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               // TODO: implement leave group
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Leave group coming soon',
+                SnackBar(
+                  content: const Text('Leave group coming soon',
                       style: TextStyle(color: Colors.white)),
-                  backgroundColor: Color(0xFF1E1E1E),
+                  backgroundColor: colors.surfaceRaised,
                 ),
               );
             },
@@ -936,21 +941,22 @@ class _GroupSettingsSheetState extends ConsumerState<_GroupSettingsSheet> {
   }
 
   void _confirmDeleteGroup(BuildContext context) {
+    final colors = context.colors;
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: _surface,
+        backgroundColor: colors.surfaceDefault,
         title: const Text('Delete Group',
             style: TextStyle(color: Colors.white)),
         content: Text(
           'Delete "${group.name}"? This cannot be undone.',
-          style: const TextStyle(color: _textSecondary),
+          style: TextStyle(color: colors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel',
-                style: TextStyle(color: _textSecondary)),
+            child: Text('Cancel',
+                style: TextStyle(color: colors.textSecondary)),
           ),
           TextButton(
             onPressed: () async {
@@ -965,7 +971,7 @@ class _GroupSettingsSheetState extends ConsumerState<_GroupSettingsSheet> {
                     SnackBar(
                       content: Text(e.message,
                           style: const TextStyle(color: Colors.white)),
-                      backgroundColor: const Color(0xFF1E1E1E),
+                      backgroundColor: colors.surfaceRaised,
                     ),
                   ),
                 );
@@ -996,11 +1002,12 @@ class _SettingsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return ListTile(
       onTap: onTap,
       leading: Icon(icon, color: color, size: 22),
       title: Text(label, style: TextStyle(color: color, fontSize: 15)),
-      trailing: trailing ?? const Icon(Icons.chevron_right, color: _textSecondary, size: 20),
+      trailing: trailing ?? Icon(Icons.chevron_right, color: colors.textSecondary, size: 20),
     );
   }
 }
@@ -1089,6 +1096,7 @@ class _BalancesTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final symbol = group.currency == 'INR' ? '₹' : group.currency;
     // Simple net balance per member: paid - fair share
     final total = expenses.fold(0.0, (s, e) => s + e.amount);
@@ -1109,7 +1117,7 @@ class _BalancesTab extends StatelessWidget {
                 color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
         const SizedBox(height: 4),
         Text('Fair share per person: $symbol${fairShare.toStringAsFixed(0)}',
-            style: const TextStyle(color: _textSecondary, fontSize: 13)),
+            style: TextStyle(color: colors.textSecondary, fontSize: 13)),
         const SizedBox(height: 20),
         ...paid.entries.map((entry) {
           final net = entry.value - fairShare;
@@ -1118,9 +1126,9 @@ class _BalancesTab extends StatelessWidget {
             margin: const EdgeInsets.only(bottom: 10),
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: _surface,
+              color: colors.surfaceDefault,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: _border),
+              border: Border.all(color: colors.borderDefault),
             ),
             child: Row(
               children: [
@@ -1146,8 +1154,8 @@ class _BalancesTab extends StatelessWidget {
                           style: const TextStyle(
                               color: Colors.white, fontSize: 13)),
                       Text('Paid $symbol${entry.value.toStringAsFixed(0)}',
-                          style: const TextStyle(
-                              color: _textSecondary, fontSize: 12)),
+                          style: TextStyle(
+                              color: colors.textSecondary, fontSize: 12)),
                     ],
                   ),
                 ),
@@ -1208,6 +1216,7 @@ class _TotalsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final symbol = group.currency == 'INR' ? '₹' : group.currency;
     final total = expenses.fold(0.0, (s, e) => s + e.amount);
     final byCategory = <ExpenseCategory, double>{};
@@ -1228,8 +1237,8 @@ class _TotalsTab extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Grand Total',
-                  style: TextStyle(color: _textSecondary, fontSize: 12)),
+              Text('Grand Total',
+                  style: TextStyle(color: colors.textSecondary, fontSize: 12)),
               const SizedBox(height: 4),
               Text('$symbol${total.toStringAsFixed(2)}',
                   style: const TextStyle(
@@ -1237,7 +1246,7 @@ class _TotalsTab extends StatelessWidget {
                       fontSize: 28,
                       fontWeight: FontWeight.w800)),
               Text('${expenses.length} expense${expenses.length == 1 ? '' : 's'}',
-                  style: const TextStyle(color: _textSecondary, fontSize: 13)),
+                  style: TextStyle(color: colors.textSecondary, fontSize: 13)),
             ],
           ),
         ),
@@ -1286,6 +1295,7 @@ class _WhiteboardTabState extends State<_WhiteboardTab> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
       child: Column(
@@ -1309,13 +1319,13 @@ class _WhiteboardTabState extends State<_WhiteboardTab> {
               expands: true,
               textAlignVertical: TextAlignVertical.top,
               style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.5),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: 'Write anything… grocery list, trip notes, reminders.',
-                hintStyle: TextStyle(color: _textSecondary, fontSize: 14),
+                hintStyle: TextStyle(color: colors.textSecondary, fontSize: 14),
                 border: InputBorder.none,
                 filled: true,
-                fillColor: _surface,
-                contentPadding: EdgeInsets.all(14),
+                fillColor: colors.surfaceDefault,
+                contentPadding: const EdgeInsets.all(14),
               ),
             ),
           ),
@@ -1332,16 +1342,17 @@ class _ComingSoon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.construction_outlined,
-              color: _textSecondary, size: 40),
+          Icon(Icons.construction_outlined,
+              color: colors.textSecondary, size: 40),
           const SizedBox(height: 12),
           Text('$label coming soon',
-              style: const TextStyle(
-                  color: _textSecondary, fontSize: 14)),
+              style: TextStyle(
+                  color: colors.textSecondary, fontSize: 14)),
         ],
       ),
     );
@@ -1360,6 +1371,7 @@ class _MembersTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final members = group.memberIds;
     return Column(
       children: [
@@ -1405,19 +1417,19 @@ class _MembersTab extends StatelessWidget {
             ],
           ),
         ),
-        const Divider(height: 1, color: _border),
+        Divider(height: 1, color: colors.borderDefault),
         Expanded(
           child: members.isEmpty
               ? Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.people_outline,
-                          color: _textSecondary, size: 40),
+                      Icon(Icons.people_outline,
+                          color: colors.textSecondary, size: 40),
                       const SizedBox(height: 12),
-                      const Text('No members yet',
+                      Text('No members yet',
                           style:
-                              TextStyle(color: _textSecondary, fontSize: 14)),
+                              TextStyle(color: colors.textSecondary, fontSize: 14)),
                       const SizedBox(height: 16),
                       GestureDetector(
                         onTap: onAddMember,
@@ -1560,7 +1572,7 @@ class _AddMemberSheetState extends ConsumerState<_AddMemberSheet>
         SnackBar(
           content: Text('$displayName added to group',
               style: const TextStyle(color: Colors.white)),
-          backgroundColor: const Color(0xFF1E1E1E),
+          backgroundColor: context.colors.surfaceRaised,
         ),
       );
       setState(() => _results.removeWhere((r) => r.id == userId));
@@ -1599,7 +1611,7 @@ class _AddMemberSheetState extends ConsumerState<_AddMemberSheet>
             SnackBar(
               content: Text('${match.displayName} found on Splitbo and added!',
                   style: const TextStyle(color: Colors.white)),
-              backgroundColor: const Color(0xFF1E1E1E),
+              backgroundColor: context.colors.surfaceRaised,
             ),
           );
         }
@@ -1631,7 +1643,7 @@ class _AddMemberSheetState extends ConsumerState<_AddMemberSheet>
         SnackBar(
           content: Text('$name added as guest',
               style: const TextStyle(color: Colors.white)),
-          backgroundColor: const Color(0xFF1E1E1E),
+          backgroundColor: context.colors.surfaceRaised,
         ),
       );
     }
@@ -1639,14 +1651,15 @@ class _AddMemberSheetState extends ConsumerState<_AddMemberSheet>
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return DraggableScrollableSheet(
       initialChildSize: 0.75,
       maxChildSize: 0.92,
       minChildSize: 0.5,
       builder: (_, scrollCtrl) => Container(
-        decoration: const BoxDecoration(
-          color: _surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        decoration: BoxDecoration(
+          color: colors.surfaceDefault,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
           children: [
@@ -1656,7 +1669,7 @@ class _AddMemberSheetState extends ConsumerState<_AddMemberSheet>
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: _textSecondary.withOpacity(0.4),
+                color: colors.textSecondary.withOpacity(0.4),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -1671,7 +1684,7 @@ class _AddMemberSheetState extends ConsumerState<_AddMemberSheet>
                           fontWeight: FontWeight.w700)),
                   const Spacer(),
                   IconButton(
-                    icon: const Icon(Icons.close, color: _textSecondary),
+                    icon: Icon(Icons.close, color: colors.textSecondary),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -1681,7 +1694,7 @@ class _AddMemberSheetState extends ConsumerState<_AddMemberSheet>
               controller: _tab,
               indicatorColor: _green,
               labelColor: _green,
-              unselectedLabelColor: _textSecondary,
+              unselectedLabelColor: colors.textSecondary,
               tabs: const [
                 Tab(text: 'Manual'),
                 Tab(text: 'Search'),
@@ -1733,6 +1746,7 @@ class _SearchTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -1743,17 +1757,17 @@ class _SearchTab extends StatelessWidget {
             onChanged: onSearch,
             decoration: InputDecoration(
               hintText: 'Search by name…',
-              hintStyle: const TextStyle(color: _textSecondary),
-              prefixIcon: const Icon(Icons.search, color: _textSecondary),
+              hintStyle: TextStyle(color: colors.textSecondary),
+              prefixIcon: Icon(Icons.search, color: colors.textSecondary),
               filled: true,
               fillColor: const Color(0xFF252525),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: _border),
+                borderSide: BorderSide(color: colors.borderDefault),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: _border),
+                borderSide: BorderSide(color: colors.borderDefault),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -1768,10 +1782,10 @@ class _SearchTab extends StatelessWidget {
               child: CircularProgressIndicator(color: _green, strokeWidth: 2),
             )
           else if (results.isEmpty && ctrl.text.length >= 2)
-            const Padding(
-              padding: EdgeInsets.only(top: 24),
+            Padding(
+              padding: const EdgeInsets.only(top: 24),
               child: Text('No users found',
-                  style: TextStyle(color: _textSecondary)),
+                  style: TextStyle(color: colors.textSecondary)),
             )
           else
             Expanded(
@@ -1822,22 +1836,25 @@ class _ManualTab extends StatelessWidget {
   final bool adding;
   final VoidCallback onAdd;
 
-  static InputDecoration _fieldDeco(String label, String hint, IconData icon) =>
+  static InputDecoration _fieldDeco(String label, String hint, IconData icon, {
+    required Color textSecondary,
+    required Color borderColor,
+  }) =>
       InputDecoration(
         labelText: label,
         hintText: hint,
-        hintStyle: const TextStyle(color: _textSecondary),
-        labelStyle: const TextStyle(color: _textSecondary),
-        prefixIcon: Icon(icon, color: _textSecondary),
+        hintStyle: TextStyle(color: textSecondary),
+        labelStyle: TextStyle(color: textSecondary),
+        prefixIcon: Icon(icon, color: textSecondary),
         filled: true,
         fillColor: const Color(0xFF252525),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: _border),
+          borderSide: BorderSide(color: borderColor),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: _border),
+          borderSide: BorderSide(color: borderColor),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -1847,35 +1864,39 @@ class _ManualTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
+          Text(
             'Add by name. Provide email or phone to link an existing Splitbo account automatically.',
-            style: TextStyle(color: _textSecondary, fontSize: 13),
+            style: TextStyle(color: colors.textSecondary, fontSize: 13),
           ),
           const SizedBox(height: 16),
           TextField(
             controller: nameCtrl,
             style: const TextStyle(color: Colors.white),
             textCapitalization: TextCapitalization.words,
-            decoration: _fieldDeco('Name *', 'e.g. Rahul, Priya', Icons.person_outline),
+            decoration: _fieldDeco('Name *', 'e.g. Rahul, Priya', Icons.person_outline,
+                textSecondary: colors.textSecondary, borderColor: colors.borderDefault),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: emailCtrl,
             style: const TextStyle(color: Colors.white),
             keyboardType: TextInputType.emailAddress,
-            decoration: _fieldDeco('Email (optional)', 'email@example.com', Icons.email_outlined),
+            decoration: _fieldDeco('Email (optional)', 'email@example.com', Icons.email_outlined,
+                textSecondary: colors.textSecondary, borderColor: colors.borderDefault),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: phoneCtrl,
             style: const TextStyle(color: Colors.white),
             keyboardType: TextInputType.phone,
-            decoration: _fieldDeco('Phone (optional)', '+91 98765 43210', Icons.phone_outlined),
+            decoration: _fieldDeco('Phone (optional)', '+91 98765 43210', Icons.phone_outlined,
+                textSecondary: colors.textSecondary, borderColor: colors.borderDefault),
           ),
           const SizedBox(height: 20),
           SizedBox(
@@ -1976,6 +1997,7 @@ class _QrInviteTabState extends ConsumerState<_QrInviteTab> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     if (_generating) {
       return const Center(child: CircularProgressIndicator(color: _green, strokeWidth: 2));
     }
@@ -1984,7 +2006,7 @@ class _QrInviteTabState extends ConsumerState<_QrInviteTab> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('QR code expired', style: TextStyle(color: _textSecondary, fontSize: 14)),
+            Text('QR code expired', style: TextStyle(color: colors.textSecondary, fontSize: 14)),
             const SizedBox(height: 16),
             TextButton.icon(
               onPressed: _generateCode,
@@ -2029,15 +2051,15 @@ class _QrInviteTabState extends ConsumerState<_QrInviteTab> {
               const Spacer(),
               TextButton.icon(
                 onPressed: _generateCode,
-                icon: const Icon(Icons.refresh, color: _textSecondary, size: 14),
-                label: const Text('Refresh', style: TextStyle(color: _textSecondary, fontSize: 12)),
+                icon: Icon(Icons.refresh, color: colors.textSecondary, size: 14),
+                label: Text('Refresh', style: TextStyle(color: colors.textSecondary, fontSize: 12)),
               ),
             ],
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Scan to join — no account needed. Shows only a name entry screen.',
-            style: TextStyle(color: _textSecondary, fontSize: 12),
+            style: TextStyle(color: colors.textSecondary, fontSize: 12),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 20),
@@ -2046,14 +2068,14 @@ class _QrInviteTabState extends ConsumerState<_QrInviteTab> {
             decoration: BoxDecoration(
               color: const Color(0xFF252525),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: _border),
+              border: Border.all(color: colors.borderDefault),
             ),
             child: Row(
               children: [
                 Expanded(
                   child: Text(
                     _inviteUrl,
-                    style: const TextStyle(color: _textSecondary, fontSize: 12),
+                    style: TextStyle(color: colors.textSecondary, fontSize: 12),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -2062,11 +2084,11 @@ class _QrInviteTabState extends ConsumerState<_QrInviteTab> {
                   onTap: () {
                     Clipboard.setData(ClipboardData(text: _inviteUrl));
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Link copied!',
+                      SnackBar(
+                        content: const Text('Link copied!',
                             style: TextStyle(color: Colors.white)),
-                        backgroundColor: Color(0xFF1E1E1E),
-                        duration: Duration(seconds: 2),
+                        backgroundColor: colors.surfaceRaised,
+                        duration: const Duration(seconds: 2),
                       ),
                     );
                   },
@@ -2130,16 +2152,16 @@ class _EditGroupSheetState extends ConsumerState<_EditGroupSheet> {
       ok: (_) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Group updated', style: TextStyle(color: Colors.white)),
-            backgroundColor: Color(0xFF1E1E1E),
+          SnackBar(
+            content: const Text('Group updated', style: TextStyle(color: Colors.white)),
+            backgroundColor: context.colors.surfaceRaised,
           ),
         );
       },
       err: (e) => ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.message, style: const TextStyle(color: Colors.white)),
-          backgroundColor: const Color(0xFF1E1E1E),
+          backgroundColor: context.colors.surfaceRaised,
         ),
       ),
     );
@@ -2147,13 +2169,14 @@ class _EditGroupSheetState extends ConsumerState<_EditGroupSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
         margin: const EdgeInsets.all(12),
         padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
         decoration: BoxDecoration(
-          color: _surface,
+          color: colors.surfaceDefault,
           borderRadius: BorderRadius.circular(24),
         ),
         child: Column(
@@ -2169,7 +2192,7 @@ class _EditGroupSheetState extends ConsumerState<_EditGroupSheet> {
                         fontWeight: FontWeight.w700)),
                 const Spacer(),
                 IconButton(
-                  icon: const Icon(Icons.close, color: _textSecondary),
+                  icon: Icon(Icons.close, color: colors.textSecondary),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
@@ -2182,16 +2205,16 @@ class _EditGroupSheetState extends ConsumerState<_EditGroupSheet> {
               onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
                 labelText: 'Group name',
-                labelStyle: const TextStyle(color: _textSecondary),
-                prefixIcon: const Icon(Icons.group_outlined, color: _textSecondary),
+                labelStyle: TextStyle(color: colors.textSecondary),
+                prefixIcon: Icon(Icons.group_outlined, color: colors.textSecondary),
                 filled: true,
                 fillColor: const Color(0xFF252525),
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: _border)),
+                    borderSide: BorderSide(color: colors.borderDefault)),
                 enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: _border)),
+                    borderSide: BorderSide(color: colors.borderDefault)),
                 focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(color: _green)),
@@ -2246,6 +2269,7 @@ class _ExpenseList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.colors;
     final symbol = group.currency == 'INR' ? '₹' : group.currency;
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -2264,9 +2288,9 @@ class _ExpenseList extends ConsumerWidget {
             margin: const EdgeInsets.only(bottom: 10),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
-              color: _surface,
+              color: colors.surfaceDefault,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: _border),
+              border: Border.all(color: colors.borderDefault),
             ),
             child: Row(
               children: [
@@ -2290,8 +2314,8 @@ class _ExpenseList extends ConsumerWidget {
                               fontSize: 14,
                               fontWeight: FontWeight.w600)),
                       Text('$dateStr · Split among ${group.memberCount}',
-                          style: const TextStyle(
-                              color: _textSecondary, fontSize: 12)),
+                          style: TextStyle(
+                              color: colors.textSecondary, fontSize: 12)),
                     ],
                   ),
                 ),
@@ -2301,7 +2325,7 @@ class _ExpenseList extends ConsumerWidget {
                       color: _green, fontSize: 14, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(width: 4),
-                const Icon(Icons.more_vert, color: _textSecondary, size: 16),
+                Icon(Icons.more_vert, color: colors.textSecondary, size: 16),
               ],
             ),
           ),
@@ -2312,6 +2336,7 @@ class _ExpenseList extends ConsumerWidget {
 
   void _showExpenseActions(
       BuildContext context, WidgetRef ref, ExpenseEntity e) {
+    final colors = context.colors;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -2319,7 +2344,7 @@ class _ExpenseList extends ConsumerWidget {
         margin: const EdgeInsets.all(12),
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
         decoration: BoxDecoration(
-          color: _surface,
+          color: colors.surfaceDefault,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Column(
@@ -2336,7 +2361,7 @@ class _ExpenseList extends ConsumerWidget {
             const SizedBox(height: 4),
             Text(
               '${group.currency == 'INR' ? '₹' : group.currency}${e.amount.toStringAsFixed(2)} · ${e.category.label}',
-              style: const TextStyle(color: _textSecondary, fontSize: 13),
+              style: TextStyle(color: colors.textSecondary, fontSize: 13),
             ),
             const SizedBox(height: 20),
             _ActionTile(
@@ -2366,21 +2391,22 @@ class _ExpenseList extends ConsumerWidget {
 
   void _confirmDelete(
       BuildContext context, WidgetRef ref, ExpenseEntity e) {
+    final colors = context.colors;
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: _surface,
+        backgroundColor: colors.surfaceDefault,
         title: const Text('Delete Expense',
             style: TextStyle(color: Colors.white)),
         content: Text(
           'Delete "${e.description}"?',
-          style: const TextStyle(color: _textSecondary),
+          style: TextStyle(color: colors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel',
-                style: TextStyle(color: _textSecondary)),
+            child: Text('Cancel',
+                style: TextStyle(color: colors.textSecondary)),
           ),
           TextButton(
             onPressed: () async {
@@ -2391,17 +2417,17 @@ class _ExpenseList extends ConsumerWidget {
               if (context.mounted) {
                 result.fold(
                   ok: (_) => ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Expense deleted',
+                    SnackBar(
+                      content: const Text('Expense deleted',
                           style: TextStyle(color: Colors.white)),
-                      backgroundColor: Color(0xFF1E1E1E),
+                      backgroundColor: colors.surfaceRaised,
                     ),
                   ),
                   err: (err) => ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(err.message,
                           style: const TextStyle(color: Colors.white)),
-                      backgroundColor: const Color(0xFF1E1E1E),
+                      backgroundColor: colors.surfaceRaised,
                     ),
                   ),
                 );
@@ -2435,12 +2461,13 @@ class _EmptyExpenses extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.receipt_long_outlined,
-              color: _textSecondary, size: 48),
+          Icon(Icons.receipt_long_outlined,
+              color: colors.textSecondary, size: 48),
           const SizedBox(height: 16),
           const Text('No expenses yet',
               style: TextStyle(
@@ -2448,8 +2475,8 @@ class _EmptyExpenses extends StatelessWidget {
                   fontSize: 16,
                   fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
-          const Text('Tap + to add the first expense',
-              style: TextStyle(color: _textSecondary, fontSize: 13)),
+          Text('Tap + to add the first expense',
+              style: TextStyle(color: colors.textSecondary, fontSize: 13)),
         ],
       ),
     );
@@ -2545,10 +2572,10 @@ class _EditExpenseSheetState extends ConsumerState<_EditExpenseSheet> {
       ok: (_) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Expense updated',
+          SnackBar(
+            content: const Text('Expense updated',
                 style: TextStyle(color: Colors.white)),
-            backgroundColor: Color(0xFF1E1E1E),
+            backgroundColor: context.colors.surfaceRaised,
           ),
         );
       },
@@ -2556,7 +2583,7 @@ class _EditExpenseSheetState extends ConsumerState<_EditExpenseSheet> {
         SnackBar(
           content: Text(err.message,
               style: const TextStyle(color: Colors.white)),
-          backgroundColor: const Color(0xFF1E1E1E),
+          backgroundColor: context.colors.surfaceRaised,
         ),
       ),
     );
@@ -2564,6 +2591,7 @@ class _EditExpenseSheetState extends ConsumerState<_EditExpenseSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Padding(
       padding:
           EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
@@ -2571,7 +2599,7 @@ class _EditExpenseSheetState extends ConsumerState<_EditExpenseSheet> {
         margin: const EdgeInsets.all(12),
         padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
         decoration: BoxDecoration(
-          color: _surface,
+          color: colors.surfaceDefault,
           borderRadius: BorderRadius.circular(24),
         ),
         child: Column(
@@ -2587,7 +2615,7 @@ class _EditExpenseSheetState extends ConsumerState<_EditExpenseSheet> {
                         fontWeight: FontWeight.w700)),
                 const Spacer(),
                 IconButton(
-                  icon: const Icon(Icons.close, color: _textSecondary),
+                  icon: Icon(Icons.close, color: colors.textSecondary),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
@@ -2612,13 +2640,13 @@ class _EditExpenseSheetState extends ConsumerState<_EditExpenseSheet> {
               style: const TextStyle(color: Colors.white, fontSize: 15),
               decoration: InputDecoration(
                 labelText: 'Category',
-                labelStyle: const TextStyle(color: _textSecondary),
+                labelStyle: TextStyle(color: colors.textSecondary),
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: _border)),
+                    borderSide: BorderSide(color: colors.borderDefault)),
                 enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: _border)),
+                    borderSide: BorderSide(color: colors.borderDefault)),
                 focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(color: _green)),
@@ -2677,6 +2705,7 @@ class _DarkInputField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return TextField(
       controller: controller,
       style: const TextStyle(color: Colors.white),
@@ -2684,13 +2713,13 @@ class _DarkInputField extends StatelessWidget {
       onChanged: onChanged,
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: _textSecondary),
+        labelStyle: TextStyle(color: colors.textSecondary),
         border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: _border)),
+            borderSide: BorderSide(color: colors.borderDefault)),
         enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: _border)),
+            borderSide: BorderSide(color: colors.borderDefault)),
         focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: _green)),

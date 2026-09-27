@@ -232,6 +232,7 @@ class SettingsScreen extends ConsumerWidget {
 
   void _showUpdatePhoto(
       BuildContext context, WidgetRef ref, UserEntity? user) {
+    final colors = context.colors;
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -239,7 +240,7 @@ class SettingsScreen extends ConsumerWidget {
         margin: const EdgeInsets.all(12),
         padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
         decoration: BoxDecoration(
-          color: const Color(0xFF1A1A1A),
+          color: colors.surfaceDefault,
           borderRadius: BorderRadius.circular(24),
         ),
         child: Column(
@@ -250,7 +251,7 @@ class SettingsScreen extends ConsumerWidget {
               height: 4,
               margin: const EdgeInsets.only(bottom: 20),
               decoration: BoxDecoration(
-                color: const Color(0xFF9E9E9E).withOpacity(0.4),
+                color: colors.textSecondary.withOpacity(0.4),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -299,11 +300,11 @@ class SettingsScreen extends ConsumerWidget {
 
   void _comingSoon(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Coming soon',
+      SnackBar(
+        content: const Text('Coming soon',
             style: TextStyle(color: Colors.white)),
-        backgroundColor: Color(0xFF1A1A1A),
-        duration: Duration(seconds: 2),
+        backgroundColor: context.colors.surfaceDefault,
+        duration: const Duration(seconds: 2),
       ),
     );
   }
@@ -480,6 +481,7 @@ class SettingsScreen extends ConsumerWidget {
     required List<_InfoItem> items,
     String? footer,
   }) {
+    final colors = context.colors;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -489,9 +491,9 @@ class SettingsScreen extends ConsumerWidget {
         maxChildSize: 0.92,
         minChildSize: 0.4,
         builder: (_, ctrl) => Container(
-          decoration: const BoxDecoration(
-            color: Color(0xFF1A1A1A),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          decoration: BoxDecoration(
+            color: colors.surfaceDefault,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(
             children: [
@@ -500,7 +502,7 @@ class SettingsScreen extends ConsumerWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF9E9E9E).withOpacity(0.4),
+                  color: colors.textSecondary.withOpacity(0.4),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -517,13 +519,13 @@ class SettingsScreen extends ConsumerWidget {
                             fontWeight: FontWeight.w700)),
                     const Spacer(),
                     IconButton(
-                      icon: const Icon(Icons.close, color: Color(0xFF9E9E9E)),
+                      icon: Icon(Icons.close, color: colors.textSecondary),
                       onPressed: () => Navigator.pop(context),
                     ),
                   ],
                 ),
               ),
-              const Divider(height: 1, color: Color(0xFF2C2C2C)),
+              Divider(height: 1, color: colors.borderDefault),
               Expanded(
                 child: ListView(
                   controller: ctrl,
@@ -553,8 +555,8 @@ class SettingsScreen extends ConsumerWidget {
                       Padding(
                         padding: const EdgeInsets.only(top: 8),
                         child: Text(footer,
-                            style: const TextStyle(
-                                color: Color(0xFF9E9E9E), fontSize: 12)),
+                            style: TextStyle(
+                                color: colors.textSecondary, fontSize: 12)),
                       ),
                   ],
                 ),
@@ -634,10 +636,10 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
       ok: (_) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profile updated ✓',
+          SnackBar(
+            content: const Text('Profile updated ✓',
                 style: TextStyle(color: Colors.white)),
-            backgroundColor: Color(0xFF1E1E1E),
+            backgroundColor: context.colors.surfaceRaised,
           ),
         );
       },
@@ -645,7 +647,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
         SnackBar(
           content: Text(err.message,
               style: const TextStyle(color: Colors.white)),
-          backgroundColor: const Color(0xFF1E1E1E),
+          backgroundColor: context.colors.surfaceRaised,
         ),
       ),
     );
@@ -654,6 +656,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
   @override
   Widget build(BuildContext context) {
     const brandGreen = Color(0xFFC3FD00);
+    final colors = context.colors;
 
     return Padding(
       padding:
@@ -662,7 +665,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
         margin: const EdgeInsets.all(12),
         padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
         decoration: BoxDecoration(
-          color: const Color(0xFF1A1A1A),
+          color: colors.surfaceDefault,
           borderRadius: BorderRadius.circular(24),
         ),
         child: Column(
@@ -747,6 +750,7 @@ class _DarkField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return TextField(
       controller: controller,
       style: const TextStyle(color: Colors.white),
@@ -756,8 +760,8 @@ class _DarkField extends StatelessWidget {
         labelText: label,
         hintText: hint,
         hintStyle: const TextStyle(color: Color(0xFF555555)),
-        labelStyle: const TextStyle(color: Color(0xFF9E9E9E)),
-        prefixIcon: Icon(icon, color: const Color(0xFF9E9E9E)),
+        labelStyle: TextStyle(color: colors.textSecondary),
+        prefixIcon: Icon(icon, color: colors.textSecondary),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: Color(0xFF3A3A3A)),
@@ -932,12 +936,12 @@ class _SecuritySheetState extends State<_SecuritySheet> {
   @override
   Widget build(BuildContext context) {
     const green = Color(0xFFC3FD00);
-    const surface = Color(0xFF1A1A1A);
+    final colors = context.colors;
 
     return Container(
-      decoration: const BoxDecoration(
-        color: surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: colors.surfaceDefault,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -971,9 +975,9 @@ class _SecuritySheetState extends State<_SecuritySheet> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
-                color: const Color(0xFF141414),
+                color: colors.backgroundSubtle,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFF2C2C2C)),
+                border: Border.all(color: colors.borderDefault),
               ),
               child: Row(
                 children: [
@@ -1002,8 +1006,8 @@ class _SecuritySheetState extends State<_SecuritySheet> {
                           _biometricEnabled
                               ? 'App requires Face ID / fingerprint to open'
                               : 'Require biometrics to open Splitbo',
-                          style: const TextStyle(
-                              color: Color(0xFF9E9E9E), fontSize: 12),
+                          style: TextStyle(
+                              color: colors.textSecondary, fontSize: 12),
                         ),
                       ],
                     ),
@@ -1019,14 +1023,14 @@ class _SecuritySheetState extends State<_SecuritySheet> {
                               : 'Biometric lock disabled',
                           style: const TextStyle(color: Colors.white),
                         ),
-                        backgroundColor: const Color(0xFF1E1E1E),
+                        backgroundColor: colors.surfaceRaised,
                         duration: const Duration(seconds: 2),
                       ));
                     },
                     activeColor: green,
                     activeTrackColor: green.withOpacity(0.3),
                     inactiveThumbColor: const Color(0xFF757575),
-                    inactiveTrackColor: const Color(0xFF2C2C2C),
+                    inactiveTrackColor: colors.borderDefault,
                   ),
                 ],
               ),
@@ -1090,10 +1094,10 @@ class _WhatsAppSheetState extends State<_WhatsAppSheet> {
       if (mounted) {
         setState(() => _saving = false);
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('WhatsApp number saved',
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: const Text('WhatsApp number saved',
               style: TextStyle(color: Colors.white)),
-          backgroundColor: Color(0xFF1E1E1E),
+          backgroundColor: context.colors.surfaceRaised,
         ));
       }
     } catch (_) {
@@ -1104,14 +1108,14 @@ class _WhatsAppSheetState extends State<_WhatsAppSheet> {
   @override
   Widget build(BuildContext context) {
     const green = Color(0xFFC3FD00);
-    const surface = Color(0xFF1A1A1A);
+    final colors = context.colors;
 
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
-        decoration: const BoxDecoration(
-          color: surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        decoration: BoxDecoration(
+          color: colors.surfaceDefault,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1139,13 +1143,13 @@ class _WhatsAppSheetState extends State<_WhatsAppSheet> {
               ),
             ),
             const SizedBox(height: 6),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
                   'Friends will be able to send you settle-up reminders on WhatsApp',
-                  style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 13),
+                  style: TextStyle(color: colors.textSecondary, fontSize: 13),
                 ),
               ),
             ),
@@ -1159,17 +1163,17 @@ class _WhatsAppSheetState extends State<_WhatsAppSheet> {
                 style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
                   hintText: '+91 98765 43210',
-                  hintStyle: const TextStyle(color: Color(0xFF9E9E9E)),
+                  hintStyle: TextStyle(color: colors.textSecondary),
                   prefixIcon: const Icon(Icons.chat_rounded, color: green, size: 20),
                   filled: true,
-                  fillColor: const Color(0xFF141414),
+                  fillColor: colors.backgroundSubtle,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFF2C2C2C)),
+                    borderSide: BorderSide(color: colors.borderDefault),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFF2C2C2C)),
+                    borderSide: BorderSide(color: colors.borderDefault),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -1218,12 +1222,12 @@ class _AppearanceSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final current = ref.watch(themeModeProvider);
-    const surface = Color(0xFF1A1A1A);
+    final colors = context.colors;
 
     return Container(
-      decoration: const BoxDecoration(
-        color: surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: colors.surfaceDefault,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1306,6 +1310,7 @@ class _ThemeOption extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const green = Color(0xFFC3FD00);
+    final colors = context.colors;
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
@@ -1313,22 +1318,22 @@ class _ThemeOption extends StatelessWidget {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 16),
           decoration: BoxDecoration(
-            color: selected ? green.withOpacity(0.12) : const Color(0xFF141414),
+            color: selected ? green.withOpacity(0.12) : colors.backgroundSubtle,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: selected ? green : const Color(0xFF2C2C2C),
+              color: selected ? green : colors.borderDefault,
               width: selected ? 1.5 : 1,
             ),
           ),
           child: Column(
             children: [
               Icon(icon,
-                  color: selected ? green : const Color(0xFF9E9E9E), size: 26),
+                  color: selected ? green : colors.textSecondary, size: 26),
               const SizedBox(height: 8),
               Text(
                 label,
                 style: TextStyle(
-                  color: selected ? green : const Color(0xFF9E9E9E),
+                  color: selected ? green : colors.textSecondary,
                   fontSize: 13,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                 ),

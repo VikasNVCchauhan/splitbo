@@ -1,11 +1,9 @@
 import 'package:data/data.dart';
+import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 const _green = Color(0xFFC3FD00);
-const _bg = Color(0xFF080808);
-const _surface = Color(0xFF141414);
-const _textSecondary = Color(0xFF9E9E9E);
 
 class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({super.key});
@@ -50,7 +48,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(msg, style: const TextStyle(color: Colors.white)),
-      backgroundColor: const Color(0xFF1E1E1E),
+      backgroundColor: context.colors.surfaceRaised,
     ));
   }
 
@@ -68,8 +66,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: colors.backgroundDefault,
       body: Stack(
         children: [
           // ── Decorative green glow blobs ───────────────────────────
@@ -198,17 +197,17 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     child: Container(
                       height: 52,
                       decoration: BoxDecoration(
-                        color: _surface,
+                        color: colors.backgroundSubtle,
                         borderRadius: BorderRadius.circular(100),
-                        border: Border.all(color: const Color(0xFF2C2C2C)),
+                        border: Border.all(color: colors.borderDefault),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.email_outlined,
-                              color: _textSecondary, size: 18),
-                          SizedBox(width: 8),
-                          Text('Continue with Email',
+                              color: colors.textSecondary, size: 18),
+                          const SizedBox(width: 8),
+                          const Text('Continue with Email',
                               style: TextStyle(
                                   fontSize: 15,
                                   color: Colors.white,
@@ -220,12 +219,12 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   const SizedBox(height: 14),
                   GestureDetector(
                     onTap: _signIn,
-                    child: const Text(
+                    child: Text(
                       'Already have an account? Sign In',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                           fontSize: 14,
-                          color: _textSecondary,
+                          color: colors.textSecondary,
                           fontWeight: FontWeight.w500),
                     ),
                   ),
@@ -249,12 +248,13 @@ class _FeatureRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         decoration: BoxDecoration(
-          color: _surface,
+          color: colors.backgroundSubtle,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: const Color(0xFF242424)),
         ),
@@ -269,8 +269,8 @@ class _FeatureRow extends StatelessWidget {
                       fontSize: 16,
                       fontWeight: FontWeight.w600)),
             ),
-            const Icon(Icons.chevron_right_rounded,
-                color: _textSecondary, size: 20),
+            Icon(Icons.chevron_right_rounded,
+                color: colors.textSecondary, size: 20),
           ],
         ),
       ),
@@ -326,19 +326,20 @@ class _EmailSignInSheetState extends ConsumerState<_EmailSignInSheet> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(msg, style: const TextStyle(color: Colors.white)),
-      backgroundColor: const Color(0xFF1E1E1E),
+      backgroundColor: context.colors.surfaceRaised,
     ));
   }
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Padding(
       padding:
           EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFF141414),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        decoration: BoxDecoration(
+          color: colors.backgroundSubtle,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -369,8 +370,8 @@ class _EmailSignInSheetState extends ConsumerState<_EmailSignInSheet> {
                 child: Text(
                   'We sent a sign-in link to ${_emailCtrl.text.trim()}.\nTap it to sign in — no password needed.',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                      color: _textSecondary, fontSize: 14, height: 1.5),
+                  style: TextStyle(
+                      color: colors.textSecondary, fontSize: 14, height: 1.5),
                 ),
               ),
               const SizedBox(height: 24),
@@ -387,7 +388,7 @@ class _EmailSignInSheetState extends ConsumerState<_EmailSignInSheet> {
                       });
                     },
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFF2C2C2C)),
+                      side: BorderSide(color: colors.borderDefault),
                       shape: const StadiumBorder(),
                       foregroundColor: Colors.white,
                     ),
@@ -408,13 +409,13 @@ class _EmailSignInSheetState extends ConsumerState<_EmailSignInSheet> {
                 ),
               ),
               const SizedBox(height: 6),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
                     'We\'ll send you a one-tap sign-in link. No password needed.',
-                    style: TextStyle(color: _textSecondary, fontSize: 13),
+                    style: TextStyle(color: colors.textSecondary, fontSize: 13),
                   ),
                 ),
               ),
@@ -428,18 +429,18 @@ class _EmailSignInSheetState extends ConsumerState<_EmailSignInSheet> {
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
                     hintText: 'you@example.com',
-                    hintStyle: const TextStyle(color: _textSecondary),
-                    prefixIcon: const Icon(Icons.email_outlined,
-                        color: _textSecondary, size: 20),
+                    hintStyle: TextStyle(color: colors.textSecondary),
+                    prefixIcon: Icon(Icons.email_outlined,
+                        color: colors.textSecondary, size: 20),
                     filled: true,
-                    fillColor: const Color(0xFF1E1E1E),
+                    fillColor: colors.surfaceRaised,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFF2C2C2C)),
+                      borderSide: BorderSide(color: colors.borderDefault),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFF2C2C2C)),
+                      borderSide: BorderSide(color: colors.borderDefault),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),

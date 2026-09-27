@@ -5,9 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 const _green = Color(0xFFC3FD00);
-const _surface = Color(0xFF1A1A1A);
-const _border = Color(0xFF2C2C2C);
-const _textSecondary = Color(0xFF9E9E9E);
 
 // ── Provider: watch contacts for current user ─────────────────────────────────
 final _contactsProvider = StreamProvider<List<_Contact>>((ref) {
@@ -132,14 +129,14 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                       )
                     : null,
                 filled: true,
-                fillColor: _surface,
+                fillColor: colors.surfaceDefault,
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: _border)),
+                    borderSide: BorderSide(color: colors.borderDefault)),
                 enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: _border)),
+                    borderSide: BorderSide(color: colors.borderDefault)),
                 focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(color: _green)),
@@ -165,14 +162,14 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                       duration: const Duration(milliseconds: 150),
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                       decoration: BoxDecoration(
-                        color: selected ? _green : _surface,
+                        color: selected ? _green : colors.surfaceDefault,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                            color: selected ? _green : _border),
+                            color: selected ? _green : colors.borderDefault),
                       ),
                       child: Text(label,
                           style: TextStyle(
-                              color: selected ? Colors.black : _textSecondary,
+                              color: selected ? Colors.black : colors.textSecondary,
                               fontSize: 13,
                               fontWeight: FontWeight.w600)),
                     ),
@@ -210,9 +207,9 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                   return _EmptyState(onAdd: () => _showAddFriendSheet(context));
                 }
                 if (filtered.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Text('No friends match this filter',
-                        style: TextStyle(color: _textSecondary)),
+                        style: TextStyle(color: colors.textSecondary)),
                   );
                 }
                 return ListView.builder(
@@ -259,14 +256,15 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.people_outline_rounded,
-                color: _textSecondary, size: 56),
+            Icon(Icons.people_outline_rounded,
+                color: colors.textSecondary, size: 56),
             const SizedBox(height: 16),
             const Text('No friends yet',
                 style: TextStyle(
@@ -274,10 +272,10 @@ class _EmptyState extends StatelessWidget {
                     fontSize: 18,
                     fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Add friends to track shared expenses and settle up easily.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: _textSecondary, fontSize: 14, height: 1.5),
+              style: TextStyle(color: colors.textSecondary, fontSize: 14, height: 1.5),
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
@@ -314,6 +312,7 @@ class _FriendTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final colorIdx = contact.displayName.codeUnitAt(0) % _avatarColors.length;
     final avatarColor = _avatarColors[colorIdx];
     final balance = contact.balance;
@@ -326,9 +325,9 @@ class _FriendTile extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: _surface,
+          color: colors.surfaceDefault,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: _border),
+          border: Border.all(color: colors.borderDefault),
         ),
         child: Row(
           children: [
@@ -366,12 +365,12 @@ class _FriendTile extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: _textSecondary.withOpacity(0.15),
+                            color: colors.textSecondary.withOpacity(0.15),
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: const Text('Guest',
+                          child: Text('Guest',
                               style: TextStyle(
-                                  color: _textSecondary, fontSize: 10)),
+                                  color: colors.textSecondary, fontSize: 10)),
                         ),
                       ],
                     ],
@@ -380,7 +379,7 @@ class _FriendTile extends StatelessWidget {
                     Text(
                       contact.email ?? contact.phone ?? '',
                       style:
-                          const TextStyle(color: _textSecondary, fontSize: 12),
+                          TextStyle(color: colors.textSecondary, fontSize: 12),
                     ),
                 ],
               ),
@@ -405,8 +404,8 @@ class _FriendTile extends StatelessWidget {
                 ],
               )
             else
-              const Text('settled',
-                  style: TextStyle(color: _textSecondary, fontSize: 12)),
+              Text('settled',
+                  style: TextStyle(color: colors.textSecondary, fontSize: 12)),
           ],
         ),
       ),
@@ -492,20 +491,21 @@ class _AddFriendSheetState extends ConsumerState<_AddFriendSheet> {
       SnackBar(
         content: Text('${_nameCtrl.text.trim()} added as a friend',
             style: const TextStyle(color: Colors.white)),
-        backgroundColor: const Color(0xFF1E1E1E),
+        backgroundColor: context.colors.surfaceRaised,
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
         margin: const EdgeInsets.all(12),
         padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
         decoration: BoxDecoration(
-          color: _surface,
+          color: colors.surfaceDefault,
           borderRadius: BorderRadius.circular(24),
         ),
         child: Column(
@@ -521,7 +521,7 @@ class _AddFriendSheetState extends ConsumerState<_AddFriendSheet> {
                         fontWeight: FontWeight.w700)),
                 const Spacer(),
                 IconButton(
-                  icon: const Icon(Icons.close, color: _textSecondary),
+                  icon: Icon(Icons.close, color: colors.textSecondary),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
@@ -542,9 +542,9 @@ class _AddFriendSheetState extends ConsumerState<_AddFriendSheet> {
               onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'If they have a Splitbo account we\'ll link automatically. Otherwise they\'re added as a guest.',
-              style: TextStyle(color: _textSecondary, fontSize: 12, height: 1.4),
+              style: TextStyle(color: colors.textSecondary, fontSize: 12, height: 1.4),
             ),
             const SizedBox(height: 20),
             if (_isValid)
@@ -583,6 +583,7 @@ class _FriendDetailSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final balance = contact.balance;
     final isOwed = balance > 0;
     final hasBalance = balance.abs() > 0.5;
@@ -591,7 +592,7 @@ class _FriendDetailSheet extends StatelessWidget {
       margin: const EdgeInsets.all(12),
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
       decoration: BoxDecoration(
-        color: _surface,
+        color: colors.surfaceDefault,
         borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
@@ -607,7 +608,7 @@ class _FriendDetailSheet extends StatelessWidget {
                         fontWeight: FontWeight.w700)),
               ),
               IconButton(
-                icon: const Icon(Icons.close, color: _textSecondary),
+                icon: Icon(Icons.close, color: colors.textSecondary),
                 onPressed: () => Navigator.pop(context),
               ),
             ],
@@ -617,11 +618,11 @@ class _FriendDetailSheet extends StatelessWidget {
               padding: const EdgeInsets.only(top: 4),
               child: Row(
                 children: [
-                  const Icon(Icons.email_outlined, color: _textSecondary, size: 14),
+                  Icon(Icons.email_outlined, color: colors.textSecondary, size: 14),
                   const SizedBox(width: 6),
                   Text(contact.email!,
                       style:
-                          const TextStyle(color: _textSecondary, fontSize: 13)),
+                          TextStyle(color: colors.textSecondary, fontSize: 13)),
                 ],
               ),
             ),
@@ -630,11 +631,11 @@ class _FriendDetailSheet extends StatelessWidget {
               padding: const EdgeInsets.only(top: 4),
               child: Row(
                 children: [
-                  const Icon(Icons.phone_outlined, color: _textSecondary, size: 14),
+                  Icon(Icons.phone_outlined, color: colors.textSecondary, size: 14),
                   const SizedBox(width: 6),
                   Text(contact.phone!,
                       style:
-                          const TextStyle(color: _textSecondary, fontSize: 13)),
+                          TextStyle(color: colors.textSecondary, fontSize: 13)),
                 ],
               ),
             ),
@@ -657,7 +658,7 @@ class _FriendDetailSheet extends StatelessWidget {
                       : Icons.check_circle_outline_rounded,
                   color: hasBalance
                       ? (isOwed ? _green : const Color(0xFFFF6B6B))
-                      : _textSecondary,
+                      : colors.textSecondary,
                   size: 20,
                 ),
                 const SizedBox(width: 10),
@@ -671,7 +672,7 @@ class _FriendDetailSheet extends StatelessWidget {
                     style: TextStyle(
                         color: hasBalance
                             ? (isOwed ? _green : const Color(0xFFFF6B6B))
-                            : _textSecondary,
+                            : colors.textSecondary,
                         fontSize: 14,
                         fontWeight: FontWeight.w600),
                   ),
@@ -702,6 +703,7 @@ class _DarkField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return TextField(
       controller: ctrl,
       style: const TextStyle(color: Colors.white),
@@ -710,16 +712,16 @@ class _DarkField extends StatelessWidget {
       onChanged: onChanged,
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: _textSecondary),
-        prefixIcon: Icon(icon, color: _textSecondary, size: 20),
+        labelStyle: TextStyle(color: colors.textSecondary),
+        prefixIcon: Icon(icon, color: colors.textSecondary, size: 20),
         filled: true,
         fillColor: const Color(0xFF252525),
         border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: _border)),
+            borderSide: BorderSide(color: colors.borderDefault)),
         enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: _border)),
+            borderSide: BorderSide(color: colors.borderDefault)),
         focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: _green)),

@@ -335,7 +335,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               content: Text('Group matched: ${match.name}',
                   style: const TextStyle(color: Colors.white)),
-              backgroundColor: const Color(0xFF1E1E1E),
+              backgroundColor: context.colors.surfaceRaised,
               duration: const Duration(seconds: 3),
             ));
           } else if (mounted && result.groupName!.isNotEmpty) {
@@ -352,16 +352,16 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Row(
+          SnackBar(
+            content: const Row(
               children: [
                 Icon(Icons.check_circle_rounded, color: Color(0xFFC3FD00), size: 18),
                 SizedBox(width: 8),
                 Text('Receipt scanned!', style: TextStyle(color: Colors.white)),
               ],
             ),
-            backgroundColor: Color(0xFF1E1E1E),
-            duration: Duration(seconds: 3),
+            backgroundColor: context.colors.surfaceRaised,
+            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -379,20 +379,21 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
   }
 
   void _promptCreateGroup(String suggestedName) {
+    final colors = context.colors;
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1A1A),
+        backgroundColor: colors.surfaceDefault,
         title: const Text('Create group?',
             style: TextStyle(color: Colors.white)),
         content: Text(
           'Receipt mentions "$suggestedName". Create a new group with this name?',
-          style: const TextStyle(color: Color(0xFF9E9E9E)),
+          style: TextStyle(color: colors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Skip', style: TextStyle(color: Color(0xFF9E9E9E))),
+            child: Text('Skip', style: TextStyle(color: colors.textSecondary)),
           ),
           TextButton(
             onPressed: () async {
@@ -410,7 +411,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                       content: Text('Group "${group.name}" created',
                           style: const TextStyle(color: Colors.white)),
-                      backgroundColor: const Color(0xFF1E1E1E),
+                      backgroundColor: context.colors.surfaceRaised,
                     ));
                   },
                   err: (_) {},
@@ -426,6 +427,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
   }
 
   void _showPeopleSuggestion(List<String> people) {
+    final colors = context.colors;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -433,7 +435,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
         margin: const EdgeInsets.all(12),
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
         decoration: BoxDecoration(
-          color: const Color(0xFF1A1A1A),
+          color: colors.surfaceDefault,
           borderRadius: BorderRadius.circular(24),
         ),
         child: Column(
@@ -450,7 +452,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
               _selectedGroup != null
                   ? 'Add them to "${_selectedGroup!.name}"?'
                   : 'Select a group first to add these people.',
-              style: const TextStyle(color: Color(0xFF9E9E9E), fontSize: 13),
+              style: TextStyle(color: colors.textSecondary, fontSize: 13),
             ),
             const SizedBox(height: 16),
             ...people.map((name) => ListTile(
@@ -484,7 +486,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
                               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                                 content: Text('$name added to group',
                                     style: const TextStyle(color: Colors.white)),
-                                backgroundColor: const Color(0xFF1E1E1E),
+                                backgroundColor: context.colors.surfaceRaised,
                               ));
                             }
                           },
@@ -498,8 +500,8 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
               width: double.infinity,
               child: TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Done',
-                    style: TextStyle(color: Color(0xFF9E9E9E))),
+                child: Text('Done',
+                    style: TextStyle(color: colors.textSecondary)),
               ),
             ),
           ],
@@ -570,7 +572,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg, style: const TextStyle(color: Colors.white)),
-        backgroundColor: const Color(0xFF1E1E1E),
+        backgroundColor: context.colors.surfaceRaised,
         duration: const Duration(seconds: 6),
       ),
     );
@@ -892,10 +894,11 @@ class _GroupPickerSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Container(
       margin: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
+        color: colors.surfaceDefault,
         borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
@@ -1064,11 +1067,11 @@ class _SplitSection extends StatelessWidget {
                 selected: false,
                 disabled: true,
                 onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Shares split — coming soon',
+                  SnackBar(
+                    content: const Text('Shares split — coming soon',
                         style: TextStyle(color: Colors.white)),
-                    backgroundColor: Color(0xFF1E1E1E),
-                    duration: Duration(seconds: 2),
+                    backgroundColor: colors.surfaceRaised,
+                    duration: const Duration(seconds: 2),
                   ),
                 ),
               ),
@@ -1079,11 +1082,11 @@ class _SplitSection extends StatelessWidget {
                 selected: false,
                 disabled: true,
                 onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Adjustment split — coming soon',
+                  SnackBar(
+                    content: const Text('Adjustment split — coming soon',
                         style: TextStyle(color: Colors.white)),
-                    backgroundColor: Color(0xFF1E1E1E),
-                    duration: Duration(seconds: 2),
+                    backgroundColor: colors.surfaceRaised,
+                    duration: const Duration(seconds: 2),
                   ),
                 ),
               ),
@@ -1188,7 +1191,7 @@ class _SplitSection extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
               decoration: BoxDecoration(
-                color: const Color(0xFF0A0A0A),
+                color: colors.backgroundDefault,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -1201,9 +1204,9 @@ class _SplitSection extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const Text('  ·  ',
+                  Text('  ·  ',
                       style: TextStyle(
-                          color: Color(0xFF9E9E9E), fontSize: 13)),
+                          color: colors.textSecondary, fontSize: 13)),
                   Expanded(
                     child: Text(
                       remaining >= 0
@@ -1213,7 +1216,7 @@ class _SplitSection extends StatelessWidget {
                       style: TextStyle(
                         color: isOver
                             ? const Color(0xFFFF6B6B)
-                            : const Color(0xFF9E9E9E),
+                            : colors.textSecondary,
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                       ),
@@ -1248,6 +1251,7 @@ class _SplitPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const brandGreen = Color(0xFFC3FD00);
+    final colors = context.colors;
     return GestureDetector(
       onTap: disabled ? onTap : onTap,
       child: Container(
@@ -1256,15 +1260,11 @@ class _SplitPill extends StatelessWidget {
           color: selected
               ? brandGreen
               : disabled
-                  ? const Color(0xFF1A1A1A)
-                  : const Color(0xFF1A1A1A),
+                  ? colors.surfaceDefault
+                  : colors.surfaceDefault,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: selected
-                ? brandGreen
-                : disabled
-                    ? const Color(0xFF2C2C2C)
-                    : const Color(0xFF2C2C2C),
+            color: selected ? brandGreen : colors.borderDefault,
           ),
         ),
         child: icon != null
@@ -1274,7 +1274,7 @@ class _SplitPill extends StatelessWidget {
                     ? Colors.black
                     : disabled
                         ? const Color(0xFF4A4A4A)
-                        : const Color(0xFF9E9E9E))
+                        : colors.textSecondary)
             : Text(
                 label!,
                 style: TextStyle(
@@ -1284,7 +1284,7 @@ class _SplitPill extends StatelessWidget {
                       ? Colors.black
                       : disabled
                           ? const Color(0xFF4A4A4A)
-                          : const Color(0xFF9E9E9E),
+                          : colors.textSecondary,
                 ),
               ),
       ),
@@ -1404,7 +1404,7 @@ class _ScanReceiptBanner extends StatelessWidget {
                             Text(
                               'Tap to scan again',
                               style: TextStyle(
-                                  fontSize: 12, color: Colors.grey[600]),
+                                  fontSize: 12, color: colors.textSecondary),
                             ),
                           ],
                         ),
@@ -1447,7 +1447,7 @@ class _ScanReceiptBanner extends StatelessWidget {
                           Text(
                             'Auto-fill from photo, PDF or document',
                             style: TextStyle(
-                                fontSize: 12, color: Colors.grey[600]),
+                                fontSize: 12, color: colors.textSecondary),
                           ),
                         ],
                       ),
@@ -1477,10 +1477,11 @@ class _ScanSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Container(
       margin: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
+        color: colors.surfaceDefault,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
@@ -1554,6 +1555,7 @@ class _SheetOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return ListTile(
       leading: Container(
         width: 42,
@@ -1568,9 +1570,9 @@ class _SheetOption extends StatelessWidget {
           style: const TextStyle(
               color: Colors.white, fontWeight: FontWeight.w600)),
       subtitle: Text(subtitle,
-          style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+          style: TextStyle(color: colors.textSecondary, fontSize: 12)),
       trailing:
-          Icon(Icons.chevron_right_rounded, color: Colors.grey[600], size: 20),
+          Icon(Icons.chevron_right_rounded, color: colors.textSecondary, size: 20),
       onTap: onTap,
     );
   }
