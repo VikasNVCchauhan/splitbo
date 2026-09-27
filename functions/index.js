@@ -295,13 +295,20 @@ exports.cleanupExpiredInvites = onSchedule('every monday 02:00', async () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// RATE LIMITER — per-user sliding window stored in Firestore
-// Used by parseReceipt to cap OCR calls (expensive API) per user per day.
+// RATE LIMITER — per-user 24h sliding window stored in Firestore
+//
+// All users: 20 document scans / 24h. No tiers, no upsell.
+//
+// Cost at 50k users (gemini-2.0-flash-lite, ~700 tokens/scan):
+//   Realistic avg ~5 scans/user/month → ~$2/month
+//   Worst case (everyone hits 20/day daily) → ~$8/month
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function checkRateLimit(userId, { maxCalls = 10, windowHours = 24 } = {}) {
+const DAILY_SCAN_LIMIT = 20;
+
+async function checkRateLimit(userId) {
   const now = Date.now();
-  const windowMs = windowHours * 3_600_000;
+  const windowMs = 24 * 3_600_000;
   const ref = db.doc(`ratelimits/${userId}`);
 
   return db.runTransaction(async (txn) => {
@@ -313,15 +320,15 @@ async function checkRateLimit(userId, { maxCalls = 10, windowHours = 24 } = {}) 
         count: 1,
         resetAt: admin.firestore.Timestamp.fromMillis(now + windowMs),
       });
-      return { allowed: true, remaining: maxCalls - 1 };
+      return { allowed: true, remaining: DAILY_SCAN_LIMIT - 1 };
     }
 
-    if (data.count >= maxCalls) {
+    if (data.count >= DAILY_SCAN_LIMIT) {
       return { allowed: false, remaining: 0, resetAt: data.resetAt.toMillis() };
     }
 
     txn.update(ref, { count: admin.firestore.FieldValue.increment(1) });
-    return { allowed: true, remaining: maxCalls - data.count - 1 };
+    return { allowed: true, remaining: DAILY_SCAN_LIMIT - data.count - 1 };
   });
 }
 
@@ -355,12 +362,12 @@ exports.analyzeDocument = onCall(
   async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', 'Must be signed in.');
 
-    const { allowed, remaining, resetAt } = await checkRateLimit(request.auth.uid, { maxCalls: 10 });
+    const { allowed, remaining, resetAt } = await checkRateLimit(request.auth.uid);
     if (!allowed) {
       const resetIn = Math.ceil((resetAt - Date.now()) / 3_600_000);
       throw new HttpsError(
         'resource-exhausted',
-        `Receipt scan limit reached (10/day). Resets in ~${resetIn}h.`,
+        `Document scan limit reached (20/day). Try again in ~${resetIn}h.`,
       );
     }
 
