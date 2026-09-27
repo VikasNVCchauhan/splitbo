@@ -206,6 +206,7 @@ Go to [IAM & Admin → IAM](https://console.cloud.google.com/iam-admin/iam?proje
 | Role | Purpose |
 |------|---------|
 | **Editor** | Covers all deployment permissions + lets Firebase CLI auto-grant service agent roles on first deploy |
+| **Project IAM Admin** | Allows Firebase CLI to set IAM policy bindings for Cloud Run / Eventarc / Pub/Sub service agents |
 | `Service Account User` | Impersonate App Engine runtime SA |
 | `Secret Manager Secret Accessor` | Read secret values at function runtime |
 | `Secret Manager Viewer` | Read secret metadata at deploy time |
