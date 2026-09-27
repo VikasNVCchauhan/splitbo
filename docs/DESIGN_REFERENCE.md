@@ -1,4 +1,4 @@
-# Splitbo Design Reference
+sof# Splitbo Design Reference
 
 **Generated:** 2026-09-21  
 **Sources:** `/docs/brand/marketing-assets/` (visual mockups), `/docs/research/competitive/` (Splitwise screenshots), all feature screen `.dart` files, `PRD.md`, `CLAUDE_CODE_REVIEW.md`

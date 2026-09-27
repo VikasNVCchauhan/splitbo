@@ -48,6 +48,28 @@ jobs:
         env:
           GCP_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
+  deploy-functions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install functions dependencies
+        working-directory: functions
+        run: npm install
+
+      - name: Write service account key
+        run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > $RUNNER_TEMP/sa.json
+
+      - name: Deploy Cloud Functions
+        working-directory: functions
+        run: npx firebase-tools deploy --only functions --project splitbo
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
+
   deploy-pages:
     needs: build
     runs-on: ubuntu-latest

@@ -1,18 +1,34 @@
 {
   "indexes": [
+
+    // ── Groups ────────────────────────────────────────────────────────────────
+
     {
       "collectionGroup": "groups",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "memberIds", "arrayConfig": "CONTAINS" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
+        { "fieldPath": "memberIds",  "arrayConfig": "CONTAINS" },
+        { "fieldPath": "createdAt",  "order": "DESCENDING" }
       ]
     },
     {
       "collectionGroup": "dev_groups",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "memberIds", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "memberIds",  "arrayConfig": "CONTAINS" },
+        { "fieldPath": "createdAt",  "order": "DESCENDING" }
+      ]
+    },
+
+    // ── Expenses ──────────────────────────────────────────────────────────────
+    // groupId + createdAt: used by watchExpensesProvider (.where groupId .orderBy createdAt)
+    // paidBy  + createdAt: used for per-user expense history
+
+    {
+      "collectionGroup": "expenses",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "groupId",   "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },
@@ -20,7 +36,7 @@
       "collectionGroup": "expenses",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "paidBy", "order": "ASCENDING" },
+        { "fieldPath": "paidBy",    "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },
@@ -28,15 +44,132 @@
       "collectionGroup": "expenses",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
-        { "fieldPath": "paidBy", "order": "ASCENDING" },
+        { "fieldPath": "paidBy",    "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },
     {
+      "collectionGroup": "dev_expenses",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "groupId",   "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "dev_expenses",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "paidBy",    "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "dev_expenses",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "paidBy",    "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+
+    // ── Balances ──────────────────────────────────────────────────────────────
+
+    {
+      "collectionGroup": "balances",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId",  "order": "ASCENDING" },
+        { "fieldPath": "groupId", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "dev_balances",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId",  "order": "ASCENDING" },
+        { "fieldPath": "groupId", "order": "ASCENDING" }
+      ]
+    },
+
+    // ── Settlements ───────────────────────────────────────────────────────────
+
+    {
+      "collectionGroup": "settlements",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "groupId",   "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "settlements",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "fromUserId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt",  "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "settlements",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "toUserId",  "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "dev_settlements",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "groupId",   "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "dev_settlements",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "fromUserId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt",  "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "dev_settlements",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "toUserId",  "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+
+    // ── Activity feed ─────────────────────────────────────────────────────────
+    // affectedUserIds + createdAt: used for per-user activity stream
+
+    {
+      "collectionGroup": "activity",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "affectedUserIds", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "createdAt",       "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "dev_activity",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "affectedUserIds", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "createdAt",       "order": "DESCENDING" }
+      ]
+    },
+
+    // ── Invites ───────────────────────────────────────────────────────────────
+
+    {
       "collectionGroup": "invites",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "status",    "order": "ASCENDING" },
         { "fieldPath": "expiresAt", "order": "ASCENDING" }
       ]
     },
@@ -44,18 +177,58 @@
       "collectionGroup": "dev_invites",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "status",    "order": "ASCENDING" },
         { "fieldPath": "expiresAt", "order": "ASCENDING" }
       ]
     },
+
+    // ── Organizations (Phase 3 — Enterprise) ──────────────────────────────────
+
     {
-      "collectionGroup": "balances",
+      "collectionGroup": "org_members",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "userId", "order": "ASCENDING" },
-        { "fieldPath": "groupId", "order": "ASCENDING" }
+        { "fieldPath": "orgId",  "order": "ASCENDING" },
+        { "fieldPath": "userId", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "reimbursements",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "orgId",      "order": "ASCENDING" },
+        { "fieldPath": "status",     "order": "ASCENDING" },
+        { "fieldPath": "createdAt",  "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "reimbursements",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "employeeId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt",  "order": "DESCENDING" }
+      ]
+    },
+
+    // ── UPI Transactions (Phase 4 — UPI Aggregator) ───────────────────────────
+
+    {
+      "collectionGroup": "upi_transactions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "fromUserId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt",  "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "upi_transactions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "toUserId",  "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     }
+
   ],
   "fieldOverrides": []
 }

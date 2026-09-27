@@ -4,108 +4,224 @@ service cloud.firestore {
 
     // ── Helpers ────────────────────────────────────────────────────────────────
 
-    function isSignedIn() {
+    function isAuth() {
       return request.auth != null;
     }
 
-    function isMember(groupData) {
-      return request.auth.uid in groupData.memberIds;
+    function uid() {
+      return request.auth.uid;
     }
 
-    // Self-join: authenticated user is adding only their own UID to memberIds
-    function isSelfJoin(resource, request) {
-      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberIds'])
-          && request.resource.data.memberIds.hasAll(resource.data.memberIds)
-          && !resource.data.memberIds.hasAll([request.auth.uid]);
+    // Self-join: the only field change is adding the current uid to memberIds.
+    // Used by the QR-code join flow where an unauthenticated viewer signs in
+    // anonymously and appends only their own uid.
+    function isSelfJoin(before, after) {
+      return after.data.diff(before.data).affectedKeys().hasOnly(['memberIds'])
+          && after.data.memberIds.hasAll(before.data.memberIds)
+          && !(before.data.memberIds.hasAll([uid()]));
     }
 
-    // ── Production collections ─────────────────────────────────────────────────
+    // Cross-document group-membership checks (billed as Firestore reads).
+    function isGroupMember(groupId) {
+      return uid() in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds;
+    }
 
-    // Users — own profile is fully private, but display name + avatar are
-    // readable by any signed-in user (needed for showing member names in groups).
+    function isDevGroupMember(groupId) {
+      return uid() in get(/databases/$(database)/documents/dev_groups/$(groupId)).data.memberIds;
+    }
+
+    function isOrgAdmin(orgId) {
+      return uid() in get(/databases/$(database)/documents/organizations/$(orgId)).data.adminIds;
+    }
+
+    function isOrgMember(orgId) {
+      return uid() in get(/databases/$(database)/documents/organizations/$(orgId)).data.memberIds;
+    }
+
+    // ── Users ─────────────────────────────────────────────────────────────────
+    // Any signed-in user can read profiles (needed for display-name lookups
+    // inside groups). Only the owner can mutate their own profile.
+
     match /users/{userId} {
-      allow read: if isSignedIn();
-      allow write: if isSignedIn() && request.auth.uid == userId;
-    }
+      allow read:   if isAuth();
+      allow create: if isAuth() && uid() == userId;
+      allow update: if isAuth() && uid() == userId;
+      allow delete: if false;
 
-    match /users/{userId}/contacts/{contactId} {
-      allow read, write: if isSignedIn() && request.auth.uid == userId;
+      match /contacts/{contactId} {
+        allow read, write: if isAuth() && uid() == userId;
+      }
     }
-
-    match /groups/{groupId} {
-      allow read:   if isSignedIn() && isMember(resource.data);
-      allow create: if isSignedIn() && isMember(request.resource.data);
-      // Members can update. Anyone signed-in can self-join (for QR invite flow).
-      allow update: if isSignedIn() && (isMember(resource.data) || isSelfJoin(resource, request));
-      allow delete: if isSignedIn() && resource.data.createdBy == request.auth.uid;
-    }
-
-    match /groups/{groupId}/expenses/{expenseId} {
-      allow read, write: if isSignedIn()
-          && request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds;
-    }
-
-    // Top-level expenses (legacy / activity-feed cross-group queries)
-    match /expenses/{expenseId} {
-      allow read:   if isSignedIn() && request.auth.uid == resource.data.paidBy;
-      allow create: if isSignedIn() && request.auth.uid == request.resource.data.paidBy;
-    }
-
-    // Balances are server-managed — clients may only read their own.
-    match /balances/{balanceId} {
-      allow read: if isSignedIn() && request.auth.uid == balanceId;
-      allow write: if false; // Cloud Functions only
-    }
-
-    // Invite codes — readable publicly (needed before auth on QR join screen).
-    // Only authenticated users (including anonymous) may create or accept.
-    match /invites/{code} {
-      allow read:   if true;
-      allow create: if isSignedIn();
-      allow update: if isSignedIn()
-          && resource.data.status == 'pending'
-          && request.resource.data.status == 'accepted';
-    }
-
-    // ── Development collections (debug builds use dev_ prefix) ────────────────
 
     match /dev_users/{userId} {
-      allow read: if isSignedIn();
-      allow write: if isSignedIn() && request.auth.uid == userId;
+      allow read:   if isAuth();
+      allow create: if isAuth() && uid() == userId;
+      allow update: if isAuth() && uid() == userId;
+      allow delete: if false;
+
+      match /contacts/{contactId} {
+        allow read, write: if isAuth() && uid() == userId;
+      }
     }
 
-    match /dev_users/{userId}/contacts/{contactId} {
-      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    // ── Groups ────────────────────────────────────────────────────────────────
+    // Members can read and update. Self-join is allowed for the QR invite flow.
+    // Only the creator can delete the group.
+
+    match /groups/{groupId} {
+      allow read:   if isAuth() && uid() in resource.data.memberIds;
+      allow create: if isAuth() && uid() in request.resource.data.memberIds;
+      allow update: if isAuth() && (
+        uid() in resource.data.memberIds ||
+        isSelfJoin(resource, request.resource)
+      );
+      allow delete: if isAuth() && uid() == resource.data.createdBy;
     }
 
     match /dev_groups/{groupId} {
-      allow read:   if isSignedIn() && isMember(resource.data);
-      allow create: if isSignedIn() && isMember(request.resource.data);
-      allow update: if isSignedIn() && (isMember(resource.data) || isSelfJoin(resource, request));
-      allow delete: if isSignedIn() && resource.data.createdBy == request.auth.uid;
+      allow read:   if isAuth() && uid() in resource.data.memberIds;
+      allow create: if isAuth() && uid() in request.resource.data.memberIds;
+      allow update: if isAuth() && (
+        uid() in resource.data.memberIds ||
+        isSelfJoin(resource, request.resource)
+      );
+      allow delete: if isAuth() && uid() == resource.data.createdBy;
     }
 
-    match /dev_groups/{groupId}/expenses/{expenseId} {
-      allow read, write: if isSignedIn()
-          && request.auth.uid in get(/databases/$(database)/documents/dev_groups/$(groupId)).data.memberIds;
+    // ── Expenses ──────────────────────────────────────────────────────────────
+    // All members of the group may read, create, update, and delete expenses.
+    // The cross-doc get() is necessary and billed as one extra read per op.
+
+    match /expenses/{expenseId} {
+      allow read:   if isAuth() && isGroupMember(resource.data.groupId);
+      allow create: if isAuth() && isGroupMember(request.resource.data.groupId);
+      allow update: if isAuth() && isGroupMember(resource.data.groupId);
+      allow delete: if isAuth() && isGroupMember(resource.data.groupId);
     }
 
     match /dev_expenses/{expenseId} {
-      allow read:   if isSignedIn() && request.auth.uid == resource.data.paidBy;
-      allow create: if isSignedIn() && request.auth.uid == request.resource.data.paidBy;
+      allow read:   if isAuth() && isDevGroupMember(resource.data.groupId);
+      allow create: if isAuth() && isDevGroupMember(request.resource.data.groupId);
+      allow update: if isAuth() && isDevGroupMember(resource.data.groupId);
+      allow delete: if isAuth() && isDevGroupMember(resource.data.groupId);
     }
 
-    match /dev_balances/{balanceId} {
-      allow read: if isSignedIn() && request.auth.uid == balanceId;
+    // ── Balances ──────────────────────────────────────────────────────────────
+    // Server-written only (Cloud Functions via Admin SDK bypass these rules).
+    // Clients may only read their own balance documents.
+
+    match /balances/{balanceId} {
+      allow read:  if isAuth() && resource.data.userId == uid();
       allow write: if false;
     }
 
-    match /dev_invites/{code} {
-      allow read:   if true;
-      allow create: if isSignedIn();
-      allow update: if isSignedIn()
+    match /dev_balances/{balanceId} {
+      allow read:  if isAuth() && resource.data.userId == uid();
+      allow write: if false;
+    }
+
+    // ── Settlements ───────────────────────────────────────────────────────────
+    // Both parties (payer + payee) can read. Only the payer (fromUserId) can
+    // create. Settlements are immutable once recorded.
+
+    match /settlements/{settlementId} {
+      allow read: if isAuth() && (
+        uid() == resource.data.fromUserId ||
+        uid() == resource.data.toUserId
+      );
+      allow create:         if isAuth() && uid() == request.resource.data.fromUserId;
+      allow update, delete: if false;
+    }
+
+    match /dev_settlements/{settlementId} {
+      allow read: if isAuth() && (
+        uid() == resource.data.fromUserId ||
+        uid() == resource.data.toUserId
+      );
+      allow create:         if isAuth() && uid() == request.resource.data.fromUserId;
+      allow update, delete: if false;
+    }
+
+    // ── Activity feed ─────────────────────────────────────────────────────────
+    // Written exclusively by Cloud Functions (Admin SDK). Clients may only read
+    // entries where they appear in affectedUserIds.
+
+    match /activity/{activityId} {
+      allow read:  if isAuth() && uid() in resource.data.affectedUserIds;
+      allow write: if false;
+    }
+
+    match /dev_activity/{activityId} {
+      allow read:  if isAuth() && uid() in resource.data.affectedUserIds;
+      allow write: if false;
+    }
+
+    // ── Invites ───────────────────────────────────────────────────────────────
+    // Any signed-in user can read (validate the code before redirect).
+    // Any group member can create. Any signed-in user can accept (update status
+    // from pending → accepted) — the join logic lives in Cloud Functions.
+
+    match /invites/{code} {
+      allow read:   if isAuth();
+      allow create: if isAuth();
+      allow update: if isAuth()
           && resource.data.status == 'pending'
           && request.resource.data.status == 'accepted';
+      allow delete: if false;
+    }
+
+    match /dev_invites/{code} {
+      allow read:   if isAuth();
+      allow create: if isAuth();
+      allow update: if isAuth()
+          && resource.data.status == 'pending'
+          && request.resource.data.status == 'accepted';
+      allow delete: if false;
+    }
+
+    // ── Organizations — Phase 3 (Enterprise) ──────────────────────────────────
+
+    match /organizations/{orgId} {
+      allow read:   if isAuth() && isOrgMember(orgId);
+      allow create: if isAuth();
+      allow update: if isAuth() && isOrgAdmin(orgId);
+      allow delete: if false;
+    }
+
+    match /org_members/{docId} {
+      allow read:   if isAuth() && uid() == resource.data.userId;
+      allow create: if isAuth() && isOrgAdmin(request.resource.data.orgId);
+      allow update: if isAuth() && isOrgAdmin(resource.data.orgId);
+      allow delete: if isAuth() && isOrgAdmin(resource.data.orgId);
+    }
+
+    match /reimbursements/{reimId} {
+      allow read: if isAuth() && (
+        uid() == resource.data.employeeId ||
+        isOrgAdmin(resource.data.orgId)
+      );
+      allow create: if isAuth() && uid() == request.resource.data.employeeId;
+      allow update: if isAuth() && isOrgAdmin(resource.data.orgId);
+      allow delete: if false;
+    }
+
+    match /policies/{policyId} {
+      allow read:  if isAuth() && isOrgMember(resource.data.orgId);
+      allow write: if isAuth() && isOrgAdmin(
+        resource != null ? resource.data.orgId : request.resource.data.orgId
+      );
+    }
+
+    // ── UPI Transactions — Phase 4 (UPI Aggregator) ───────────────────────────
+    // Immutable ledger entries. Only the payer (fromUserId) can record a txn.
+
+    match /upi_transactions/{txnId} {
+      allow read: if isAuth() && (
+        uid() == resource.data.fromUserId ||
+        uid() == resource.data.toUserId
+      );
+      allow create:         if isAuth() && uid() == request.resource.data.fromUserId;
+      allow update, delete: if false;
     }
 
   }

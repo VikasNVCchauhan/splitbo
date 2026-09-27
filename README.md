@@ -12,9 +12,11 @@ Splitbo is a modern expense-splitting app built with Flutter Web + Firebase. Tra
 
 - **Groups & Expenses** — Create groups, add expenses, and track who owes what in real time
 - **AI Receipt Scanning** — Photograph or upload a bill (image/PDF) and Gemini 1.5 Flash auto-fills amount, merchant, and category by understanding full receipt context
-- **Google Sign-In** — Firebase Authentication with Google OAuth
-- **Real-time Balances** — Firestore-backed live balance calculations across all group members
-- **Settle Up** — Clear balances with one tap
+- **Google Sign-In + Magic Link** — Firebase Authentication with Google OAuth and passwordless email sign-in
+- **Server-side Balances** — Cloud Functions atomically recompute balances on every expense write — no race conditions, consistent under concurrent writes
+- **Activity Feed** — Server-written activity log per user; tracks expense adds/edits/deletes and settlements
+- **FCM Push Notifications** — Automatic push to group members when an expense is added or a payment is received
+- **Settle Up** — Clear balances with one tap; UPI deep link for instant payment
 - **Dark-first Design** — Brand green `#C3FD00` on black, matching the Splitbo marketing assets
 
 ---
@@ -26,8 +28,9 @@ Splitbo is a modern expense-splitting app built with Flutter Web + Firebase. Tra
 | UI | Flutter (Web, with mobile-ready structure) |
 | State | Riverpod (manual, no code-gen) |
 | Navigation | go_router |
-| Backend | Firebase (Auth, Firestore, Storage) |
-| OCR / AI | Gemini 1.5 Flash (multimodal) |
+| Backend | Firebase (Auth, Firestore, Storage, Cloud Functions) |
+| OCR / AI | Gemini 1.5 Flash (multimodal) via Cloud Function |
+| Push | Firebase Cloud Messaging (FCM) |
 | Monorepo | Melos |
 | Architecture | Clean Architecture (domain / data / features) |
 
@@ -61,7 +64,7 @@ splitbo/
 │
 ├── docs/                       # PRD, architecture docs, brand guidelines, marketing assets
 ├── firebase/                   # Firestore rules + composite index definitions
-├── functions/                  # Cloud Functions (placeholder)
+├── functions/                  # Cloud Functions (Node 20, firebase-functions v5)
 ├── .github/workflows/          # GitHub Actions: build + deploy to GitHub Pages + Firebase
 ├── melos.yaml                  # Monorepo config
 └── pubspec.yaml                # Root pubspec
@@ -132,10 +135,19 @@ Firestore collections:
 
 | Collection | Prefix in dev | Description |
 |-----------|--------------|-------------|
-| `users` | `dev_users` | User profiles |
-| `groups` | `dev_groups` | Expense groups |
-| `expenses` | `dev_expenses` | Expenses per group |
-| `balances` | `dev_balances` | Per-user balance snapshots |
+| `users` | `dev_users` | User profiles (with `nameLower` for prefix search, `fcmToken` for push) |
+| `groups` | `dev_groups` | Expense groups with `memberIds[]`, display name + avatar maps |
+| `expenses` | `dev_expenses` | Top-level collection for cross-group queries |
+| `balances` | `dev_balances` | Per-user balance snapshots — **server-write-only** (Cloud Functions) |
+| `settlements` | `dev_settlements` | Immutable settlement records |
+| `activity` | `dev_activity` | Server-written activity feed per user |
+| `invites` | `dev_invites` | QR/link invite codes with status + expiry |
+
+Phase 3 (enterprise) schema provisioned in rules and indexes:
+`organizations`, `org_members`, `reimbursements`, `policies`
+
+Phase 4 (UPI aggregator) schema provisioned:
+`upi_transactions`
 
 > **Dev vs Prod isolation:** When running locally (`kDebugMode = true`), all Firestore reads/writes go to `dev_*` collections. Production data is never touched during local development.
 
@@ -151,6 +163,7 @@ Every push to `main` automatically:
 - Builds the Flutter web app
 - Deploys to GitHub Pages (live URL above)
 - Deploys Firestore security rules + composite indexes to Firebase
+- Deploys Cloud Functions (Node 20) to Firebase
 
 ### 5. GitHub Secrets (CI/CD)
 
@@ -158,7 +171,8 @@ The following secret is required in the GitHub repo for the auto-deploy to work.
 
 | Secret Name | Purpose |
 |------------|---------|
-| `FIREBASE_SERVICE_ACCOUNT` | Service account JSON for deploying Firestore rules/indexes |
+| `FIREBASE_SERVICE_ACCOUNT` | Service account JSON for deploying Firestore rules/indexes and Cloud Functions |
+| `GEMINI_API_KEY` | Gemini API key — stored in Firebase Secret Manager, set via `firebase functions:secrets:set GEMINI_API_KEY` |
 
 To regenerate this key (if it expires or needs rotation):
 1. Go to [Firebase Console → Project Settings → Service Accounts](https://console.firebase.google.com/project/splitbo/settings/serviceaccounts/adminsdk)
@@ -180,6 +194,10 @@ Current indexes:
 | `expenses` | `groupId` (asc) + `createdAt` (desc) | Group expense feed |
 | `expenses` | `paidBy` (asc) + `createdAt` (desc) | Balance calculations |
 | `balances` | `userId` (asc) + `groupId` (asc) | Balance lookups |
+| `activity` | `affectedUserIds` (array-contains) + `createdAt` (desc) | Per-user activity stream |
+| `settlements` | `groupId` / `fromUserId` / `toUserId` + `createdAt` (desc) | Settlement history |
+| `reimbursements` | `orgId` + `status` + `createdAt` (desc) | Enterprise reimbursement dashboard |
+| `upi_transactions` | `fromUserId` / `toUserId` + `createdAt` (desc) | UPI payment history |
 
 ---
 
@@ -196,6 +214,28 @@ UI (features) → domain (entities + use-cases) → data (Firebase implementatio
 - **`data`** — Implements repositories using Firestore. All Firestore calls return `Stream<Result<T>>`.
 - **`design_system`** — Single source of truth for colors (`brandPrimary = #C3FD00`), text styles, and reusable widgets.
 - **`features/*`** — Each screen is a self-contained package. Uses Riverpod providers from `data` and entities from `domain`.
+
+### Server-side Data Flow (event-driven)
+
+```
+Client writes expense
+  → Firestore triggers onExpenseWrite (Cloud Function)
+      → Full group balance recompute  ← atomic Firestore batch, idempotent
+      → Write activity entry          ← server-only collection
+      → FCM push to group members     ← except the actor
+  → Client streams updated balance docs in real time
+```
+
+Balance documents (`{userId}_{groupId}`) are **write-locked to Cloud Functions**. Clients read only. This guarantees balance consistency under concurrent writes — no race conditions possible.
+
+### Roadmap Phase Alignment
+
+| Phase | Scope | Status |
+|-------|-------|--------|
+| 1 | Consumer bill splitting (Splitwise parity) | In progress |
+| 2 | 100+ user scale — simplify-debts algorithm, cross-group balances | Planned |
+| 3 | Enterprise — `organizations`, `org_members`, `reimbursements`, `policies` | Schema provisioned |
+| 4 | UPI aggregator — `upi_transactions`, merchant VPA, reconciliation ledger | Schema provisioned |
 
 ### State Management
 
@@ -292,6 +332,10 @@ No gradients, no shadows, flat and minimal.
 - [x] Invite members via link (copy-to-clipboard + auto-join route)
 - [x] Push notifications infra (FCM web service worker + token saving)
 - [x] Android + iOS platform setup (Firebase config, package name, permissions)
+- [x] **Cloud Functions** — server-side balance recomputation on every expense/settlement write
+- [x] **Activity collection** — server-written activity log per user (Cloud Function)
+- [x] **FCM push** — expense added / payment received notifications (Cloud Function)
+- [x] **Settlements collection** — immutable settlement records with full balance impact
 
 ### v1.5 — Daily Driver (next sprint, closes gap to 50%)
 - [ ] **Balance screen** — exact "who owes who ₹X" across all groups
@@ -299,7 +343,7 @@ No gradients, no shadows, flat and minimal.
 - [ ] **Unequal splits** — by percentage, custom ₹ amounts, or exact shares
 - [ ] **Expense detail screen** — view/edit a single expense
 - [ ] **UPI/GPay deep link** — one tap to pay via any UPI app to settle up
-- [ ] **Cloud Functions** — auto-recalculate balances on every expense write (production-grade, not client-side)
+- [ ] **Simplify debts** — server-side algorithm to reduce N-way debts to minimum transactions
 - [ ] App icons — Splitbo brand icon replacing Flutter default (required before store)
 
 ### v2 — Frictionless Imports (closes gap to 65%)
