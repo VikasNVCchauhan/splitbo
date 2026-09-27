@@ -179,6 +179,15 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // ── Rate limits ───────────────────────────────────────────────────────────
+    // Written by Cloud Functions only (Admin SDK). Owner can read to show
+    // remaining scan count in the UI.
+
+    match /ratelimits/{userId} {
+      allow read:  if isAuth() && uid() == userId;
+      allow write: if false;
+    }
+
     // ── Organizations — Phase 3 (Enterprise) ──────────────────────────────────
 
     match /organizations/{orgId} {

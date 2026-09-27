@@ -27,15 +27,17 @@ Splitwise's core splitting features are locked behind a ₹1,399/year Pro plan (
 | Cross-platform parity | Same feature set on iOS, Android, Web |
 | Free core features | No expense limits, no paywall on splits/charts |
 | India-first | INR default, UPI payment notes, Indian phone number support |
-| Firebase backend | Realtime sync, offline support, scalable auth |
+| Firebase backend | Realtime sync, offline support, scalable auth, Cloud Functions |
 | App Store + Play Store launch | Published on both stores at v1.0 |
+| Server-side correctness | Balance recalculation via Cloud Functions — no client-side races |
 
 ### Non-Goals (v1)
-- AI receipt OCR / itemization
 - Multi-currency conversion (single currency per group)
-- In-app payments / UPI integration
+- In-app payments / UPI integration (UPI deep link for settle-up is in scope)
 - WhatsApp/SMS bot interface
 - Business expense management
+
+> **Note:** AI receipt OCR (Gemini 1.5 Flash) was originally listed as a non-goal but has been implemented ahead of schedule as a competitive differentiator vs Splitwise.
 
 ---
 
@@ -122,7 +124,11 @@ Joins groups for specific trips, doesn't want to manage a complex app. Needs sim
 All splits are stored as exact decimal amounts per user. On save, the system validates that `sum(splits) == total amount` and shows a rounding remainder that gets assigned to the payer. Balances are updated atomically via Cloud Functions.
 
 ### 6.2 Balance Denormalization
-To avoid recalculating balances from all expenses on every load, Cloud Functions maintain a `/balances` cache updated on every expense create/update/delete/settlement. Client reads balances from cache, not from raw expenses.
+Cloud Functions maintain a `/balances` cache updated on every expense create/update/delete/settlement. Client reads balances from cache, not from raw expenses.
+
+**Implementation (2026-09-27):** Balance updates are incremental — on each write the Cloud Function reads only the affected member balance docs (~5 reads) and updates them in a Firestore transaction. This is O(n_members) per write, not O(n_expenses), which keeps costs near zero at scale. A `recalculateGroupBalances` callable is available for drift recovery.
+
+Balance doc structure per user: `{ userId, groupId, netAmount, details: { otherUserId: ±amount }, currency, updatedAt }`. The `details` map mirrors the client-side `computeGroupBalancesProvider` convention (positive = they owe you).
 
 ### 6.3 Offline Support
 Firestore's offline persistence is enabled. Users can browse existing data offline. Adding expenses while offline queues writes and syncs on reconnect. A banner indicates offline state.

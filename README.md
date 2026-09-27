@@ -167,14 +167,14 @@ Every push to `main` automatically:
 
 ### 5. GitHub Secrets (CI/CD)
 
-The following secret is required in the GitHub repo for the auto-deploy to work. The project owner manages this.
+The following secrets are required in the GitHub repo for auto-deploy to work. The project owner manages these.
 
 | Secret Name | Purpose |
 |------------|---------|
 | `FIREBASE_SERVICE_ACCOUNT` | Service account JSON for deploying Firestore rules/indexes and Cloud Functions |
 | `GEMINI_API_KEY` | Gemini API key — stored in Firebase Secret Manager, set via `firebase functions:secrets:set GEMINI_API_KEY` |
 
-To regenerate this key (if it expires or needs rotation):
+To regenerate the service account key (if it expires or needs rotation):
 1. Go to [Firebase Console → Project Settings → Service Accounts](https://console.firebase.google.com/project/splitbo/settings/serviceaccounts/adminsdk)
 2. Click **Generate new private key**
 3. Go to [GitHub → Settings → Secrets → Actions](https://github.com/VikasNVCchauhan/splitbo/settings/secrets/actions)
@@ -182,7 +182,36 @@ To regenerate this key (if it expires or needs rotation):
 
 > **Never commit the service account JSON to the repo.** It is only stored in GitHub Secrets.
 
-### 6. Firestore Composite Indexes
+### 6. Cloud Functions — First-time GCP Setup
+
+> These are one-time steps required before Cloud Functions can deploy. They are **not** needed for Firestore rules/indexes which deploy separately.
+
+**Step 1 — Enable 4 GCP APIs** (visit each URL, click Enable):
+
+| API | URL |
+|-----|-----|
+| Cloud Functions | [cloudfunctions.googleapis.com](https://console.cloud.google.com/apis/library/cloudfunctions.googleapis.com?project=splitbo) |
+| Cloud Build | [cloudbuild.googleapis.com](https://console.cloud.google.com/apis/library/cloudbuild.googleapis.com?project=splitbo) |
+| Artifact Registry | [artifactregistry.googleapis.com](https://console.cloud.google.com/apis/library/artifactregistry.googleapis.com?project=splitbo) |
+| Secret Manager | [secretmanager.googleapis.com](https://console.cloud.google.com/apis/library/secretmanager.googleapis.com?project=splitbo) |
+
+**Step 2 — Grant Service Account User role:**
+1. Go to [IAM & Admin → IAM](https://console.cloud.google.com/iam-admin/iam?project=splitbo)
+2. Find `firebase-deploye@splitbo.iam.gserviceaccount.com`
+3. Edit → Add role **Service Account User** → Save
+
+> This lets the deploy service account impersonate the App Engine runtime account (`splitbo@appspot.gserviceaccount.com`) which Cloud Functions requires.
+
+**Step 3 — Set the Gemini API key secret:**
+```bash
+GOOGLE_APPLICATION_CREDENTIALS=/path/to/sa.json \
+  firebase functions:secrets:set GEMINI_API_KEY --project splitbo
+# Paste the key when prompted
+```
+
+After these three steps, every push to `main` will deploy functions automatically.
+
+### 7. Firestore Composite Indexes
 
 Indexes are defined in [`firebase/firestore.indexes.json`](firebase/firestore.indexes.json) and deployed automatically by GitHub Actions.
 

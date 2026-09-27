@@ -508,10 +508,10 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
     );
   }
 
-  // Calls the parseReceipt Cloud Function — key never touches the client.
+  // Calls the analyzeDocument Cloud Function — key never touches the client.
   Future<_OcrResult?> _callGeminiVision(Uint8List bytes, String mime) async {
     final callable = FirebaseFunctions.instance.httpsCallable(
-      'parseReceipt',
+      'analyzeDocument',
       options: HttpsCallableOptions(timeout: const Duration(seconds: 35)),
     );
     final result = await callable.call<Map<Object?, Object?>>({
