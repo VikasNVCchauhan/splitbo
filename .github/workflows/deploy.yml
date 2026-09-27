@@ -66,7 +66,7 @@ jobs:
 
       - name: Deploy Cloud Functions
         working-directory: functions
-        run: npx firebase-tools deploy --only functions --project splitbo
+        run: npx firebase-tools deploy --only functions --force --project splitbo
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
 
