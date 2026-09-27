@@ -186,30 +186,42 @@ To regenerate the service account key (if it expires or needs rotation):
 
 > These are one-time steps required before Cloud Functions can deploy. They are **not** needed for Firestore rules/indexes which deploy separately.
 
-**Step 1 — Enable 4 GCP APIs** (visit each URL, click Enable):
+**Step 1 — Enable 8 GCP APIs** (visit each URL and click Enable):
 
-| API | URL |
-|-----|-----|
-| Cloud Functions | [cloudfunctions.googleapis.com](https://console.cloud.google.com/apis/library/cloudfunctions.googleapis.com?project=splitbo) |
-| Cloud Build | [cloudbuild.googleapis.com](https://console.cloud.google.com/apis/library/cloudbuild.googleapis.com?project=splitbo) |
-| Artifact Registry | [artifactregistry.googleapis.com](https://console.cloud.google.com/apis/library/artifactregistry.googleapis.com?project=splitbo) |
-| Secret Manager | [secretmanager.googleapis.com](https://console.cloud.google.com/apis/library/secretmanager.googleapis.com?project=splitbo) |
+| API | Purpose |
+|-----|---------|
+| [Cloud Functions](https://console.cloud.google.com/apis/library/cloudfunctions.googleapis.com?project=splitbo) | Deploy Cloud Functions |
+| [Cloud Build](https://console.cloud.google.com/apis/library/cloudbuild.googleapis.com?project=splitbo) | Build function containers |
+| [Artifact Registry](https://console.cloud.google.com/apis/library/artifactregistry.googleapis.com?project=splitbo) | Store function container images |
+| [Secret Manager](https://console.cloud.google.com/apis/library/secretmanager.googleapis.com?project=splitbo) | Store Gemini API key securely |
+| [Cloud Run](https://console.cloud.google.com/apis/library/run.googleapis.com?project=splitbo) | Functions v2 runs on Cloud Run |
+| [Eventarc](https://console.cloud.google.com/apis/library/eventarc.googleapis.com?project=splitbo) | Firestore `onDocumentWritten` triggers |
+| [Cloud Scheduler](https://console.cloud.google.com/apis/library/cloudscheduler.googleapis.com?project=splitbo) | `cleanupExpiredInvites` weekly job |
+| [Pub/Sub](https://console.cloud.google.com/apis/library/pubsub.googleapis.com?project=splitbo) | Internal trigger routing |
 
-**Step 2 — Grant Service Account User role:**
-1. Go to [IAM & Admin → IAM](https://console.cloud.google.com/iam-admin/iam?project=splitbo)
-2. Find `firebase-deploye@splitbo.iam.gserviceaccount.com`
-3. Edit → Add role **Service Account User** → Save
+**Step 2 — Grant IAM roles to the deploy service account:**
 
-> This lets the deploy service account impersonate the App Engine runtime account (`splitbo@appspot.gserviceaccount.com`) which Cloud Functions requires.
+Go to [IAM & Admin → IAM](https://console.cloud.google.com/iam-admin/iam?project=splitbo), find `firebase-deploye@splitbo.iam.gserviceaccount.com`, and add all of these roles:
 
-**Step 3 — Set the Gemini API key secret:**
-```bash
-GOOGLE_APPLICATION_CREDENTIALS=/path/to/sa.json \
-  firebase functions:secrets:set SPLITBO_GEMINI_API_KEY --project splitbo
-# Paste the key when prompted
-```
+| Role | Purpose |
+|------|---------|
+| `Service Account User` | Impersonate App Engine runtime SA |
+| `Secret Manager Secret Accessor` | Read secret values at function runtime |
+| `Secret Manager Viewer` | Read secret metadata at deploy time |
+| `Cloud Run Admin` | Deploy Cloud Run services (v2 functions) |
+| `Eventarc Admin` | Create Eventarc triggers for Firestore |
+| `Cloud Scheduler Admin` | Create scheduled jobs |
+| `Pub/Sub Admin` | Create Pub/Sub topics for triggers |
+| `Storage Admin` | Upload deployment artifacts |
+| `Artifact Registry Writer` | Push function container images |
+| `Logs Writer` | Write function execution logs |
 
-After these three steps, every push to `main` will deploy functions automatically.
+**Step 3 — Create the Gemini API key secret in Secret Manager:**
+1. Go to [Secret Manager](https://console.cloud.google.com/security/secret-manager?project=splitbo)
+2. Create Secret → Name: `SPLITBO_GEMINI_API_KEY` → paste your Gemini key
+3. Get a free key at [aistudio.google.com](https://aistudio.google.com)
+
+After all three steps, every push to `main` deploys functions automatically.
 
 ### 7. Firestore Composite Indexes
 
