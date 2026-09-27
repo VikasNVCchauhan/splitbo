@@ -201,10 +201,11 @@ To regenerate the service account key (if it expires or needs rotation):
 
 **Step 2 — Grant IAM roles to the deploy service account:**
 
-Go to [IAM & Admin → IAM](https://console.cloud.google.com/iam-admin/iam?project=splitbo), find `firebase-deploye@splitbo.iam.gserviceaccount.com`, and add all of these roles:
+Go to [IAM & Admin → IAM](https://console.cloud.google.com/iam-admin/iam?project=splitbo), find `firebase-deploye@splitbo.iam.gserviceaccount.com`, and add **all** of these roles:
 
 | Role | Purpose |
 |------|---------|
+| **Editor** | Covers all deployment permissions + lets Firebase CLI auto-grant service agent roles on first deploy |
 | `Service Account User` | Impersonate App Engine runtime SA |
 | `Secret Manager Secret Accessor` | Read secret values at function runtime |
 | `Secret Manager Viewer` | Read secret metadata at deploy time |
@@ -215,6 +216,8 @@ Go to [IAM & Admin → IAM](https://console.cloud.google.com/iam-admin/iam?proje
 | `Storage Admin` | Upload deployment artifacts |
 | `Artifact Registry Writer` | Push function container images |
 | `Logs Writer` | Write function execution logs |
+
+> **Why Editor?** Firebase CLI auto-grants roles to Google-managed service agents (Cloud Run, Eventarc, etc.) on first deployment. Without `Editor`, this IAM modification fails and the deploy errors out even if all other roles are present.
 
 **Step 3 — Create the Gemini API key secret in Secret Manager:**
 1. Go to [Secret Manager](https://console.cloud.google.com/security/secret-manager?project=splitbo)
