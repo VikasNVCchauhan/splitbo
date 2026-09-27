@@ -164,6 +164,14 @@ function makeExpenseTrigger(prefix, collection) {
       expenseDeltas(before),  // remove old
     );
 
+    // Keep group totalExpenses in sync — server is authoritative
+    const amountDelta = (after?.amount || 0) - (before?.amount || 0);
+    if (amountDelta !== 0) {
+      await db.doc(`${prefix}groups/${groupId}`).update({
+        totalExpenses: admin.firestore.FieldValue.increment(amountDelta),
+      });
+    }
+
     const expense   = after || before;
     const actorId   = after?.createdBy || before?.createdBy || expense?.paidBy;
     const actorName = expense?.memberDisplayNames?.[actorId] || 'Someone';
@@ -388,7 +396,6 @@ exports.analyzeDocument = onCall(
       generationConfig: { temperature: 0.1, maxOutputTokens: 512 },
     };
 
-    const fetch = (await import('node-fetch')).default;
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

@@ -31,8 +31,26 @@ class GroupsScreen extends ConsumerWidget {
       body: groupsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text(e.toString(),
-              style: TextStyle(color: colors.semanticError)),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.cloud_off_rounded, color: colors.textDisabled, size: 40),
+              const SizedBox(height: 12),
+              Text(
+                'Could not load groups',
+                style: TextStyle(
+                  color: colors.textPrimary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Check your connection and try again.',
+                style: TextStyle(color: colors.textSecondary, fontSize: 13),
+              ),
+            ],
+          ),
         ),
         data: (groups) => _GroupsBody(
           groups: groups,

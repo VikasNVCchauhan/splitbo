@@ -70,13 +70,6 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
         updatedAt: now,
       );
       await docRef.set(dto.toFirestore());
-      // Best-effort group total cache update — computed from stream in UI anyway
-      try {
-        await _firestore
-            .collection('${dbPrefix}groups')
-            .doc(groupId)
-            .update({'totalExpenses': FieldValue.increment(amount)});
-      } catch (_) {}
       return Ok(dto.toEntity());
     } on FirebaseException catch (e) {
       return Err(_mapError(e));
@@ -99,16 +92,6 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
   }) async {
     try {
       final docRef = _expenses(groupId).doc(expenseId);
-      if (amount != null) {
-        final snap = await docRef.get();
-        final oldAmount = (snap.data()?['amount'] as num?)?.toDouble() ?? 0.0;
-        try {
-          await _firestore
-              .collection('${dbPrefix}groups')
-              .doc(groupId)
-              .update({'totalExpenses': FieldValue.increment(amount - oldAmount)});
-        } catch (_) {}
-      }
       final updates = <String, dynamic>{
         if (description != null) 'description': description,
         if (amount != null) 'amount': amount,
@@ -139,15 +122,7 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
   }) async {
     try {
       final docRef = _expenses(groupId).doc(expenseId);
-      final snap = await docRef.get();
-      final amount = (snap.data()?['amount'] as num?)?.toDouble() ?? 0.0;
       await docRef.delete();
-      try {
-        await _firestore
-            .collection('${dbPrefix}groups')
-            .doc(groupId)
-            .update({'totalExpenses': FieldValue.increment(-amount)});
-      } catch (_) {}
       return const Ok(null);
     } on FirebaseException catch (e) {
       return Err(_mapError(e));

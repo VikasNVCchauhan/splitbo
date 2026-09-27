@@ -1384,14 +1384,18 @@ class _ScanReceiptBanner extends StatelessWidget {
                                   size: 16,
                                 ),
                                 const SizedBox(width: 6),
-                                Text(
-                                  scanHint ?? 'Receipt attached',
-                                  style: TextStyle(
-                                    color: scanOk
-                                        ? brandGreen
-                                        : Colors.orange,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 14,
+                                Expanded(
+                                  child: Text(
+                                    scanHint ?? 'Receipt attached',
+                                    style: TextStyle(
+                                      color: scanOk
+                                          ? brandGreen
+                                          : Colors.orange,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                               ],
