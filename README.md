@@ -172,7 +172,7 @@ The following secrets are required in the GitHub repo for auto-deploy to work. T
 | Secret Name | Purpose |
 |------------|---------|
 | `FIREBASE_SERVICE_ACCOUNT` | Service account JSON for deploying Firestore rules/indexes and Cloud Functions |
-| `GEMINI_API_KEY` | Gemini API key — stored in Firebase Secret Manager, set via `firebase functions:secrets:set GEMINI_API_KEY` |
+| `GEMINI_API_KEY` | Gemini API key — stored in Firebase Secret Manager as `SPLITBO_GEMINI_API_KEY`, set via `firebase functions:secrets:set SPLITBO_GEMINI_API_KEY` |
 
 To regenerate the service account key (if it expires or needs rotation):
 1. Go to [Firebase Console → Project Settings → Service Accounts](https://console.firebase.google.com/project/splitbo/settings/serviceaccounts/adminsdk)
@@ -205,7 +205,7 @@ To regenerate the service account key (if it expires or needs rotation):
 **Step 3 — Set the Gemini API key secret:**
 ```bash
 GOOGLE_APPLICATION_CREDENTIALS=/path/to/sa.json \
-  firebase functions:secrets:set GEMINI_API_KEY --project splitbo
+  firebase functions:secrets:set SPLITBO_GEMINI_API_KEY --project splitbo
 # Paste the key when prompted
 ```
 

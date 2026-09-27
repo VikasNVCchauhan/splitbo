@@ -9,7 +9,7 @@ const admin = require('firebase-admin');
 admin.initializeApp();
 const db = admin.firestore();
 
-const geminiKey = defineSecret('GEMINI_API_KEY');
+const geminiKey = defineSecret('SPLITBO_GEMINI_API_KEY');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // INCREMENTAL BALANCE UPDATES
