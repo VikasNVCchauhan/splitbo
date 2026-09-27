@@ -218,7 +218,15 @@ Go to [IAM & Admin → IAM](https://console.cloud.google.com/iam-admin/iam?proje
 | `Artifact Registry Writer` | Push function container images |
 | `Logs Writer` | Write function execution logs |
 
-> **Why Editor?** Firebase CLI auto-grants roles to Google-managed service agents (Cloud Run, Eventarc, etc.) on first deployment. Without `Editor`, this IAM modification fails and the deploy errors out even if all other roles are present.
+> **Why Editor + Project IAM Admin?** Firebase CLI auto-grants roles to Google-managed service agents (Cloud Run, Eventarc, etc.) on first deployment. Without these, the deploy errors out even if all other roles are present.
+
+**Additionally, grant these 3 service agent bindings manually** (Firebase CLI needs them but may not have permission to set them automatically). Go to [IAM → Grant Access (+)](https://console.cloud.google.com/iam-admin/iam?project=splitbo):
+
+| Principal | Role |
+|-----------|------|
+| `service-715213443351@gcp-sa-pubsub.iam.gserviceaccount.com` | `Service Account Token Creator` |
+| `715213443351-compute@developer.gserviceaccount.com` | `Cloud Run Invoker` |
+| `715213443351-compute@developer.gserviceaccount.com` | `Eventarc Event Receiver` |
 
 **Step 3 — Create the Gemini API key secret in Secret Manager:**
 1. Go to [Secret Manager](https://console.cloud.google.com/security/secret-manager?project=splitbo)
@@ -243,6 +251,35 @@ Current indexes:
 | `settlements` | `groupId` / `fromUserId` / `toUserId` + `createdAt` (desc) | Settlement history |
 | `reimbursements` | `orgId` + `status` + `createdAt` (desc) | Enterprise reimbursement dashboard |
 | `upi_transactions` | `fromUserId` / `toUserId` + `createdAt` (desc) | UPI payment history |
+
+---
+
+### 8. Infrastructure Cost Budget
+
+**Target: combined monthly cost < $20 at 50 000 active users.**
+
+Assumptions used: 20% DAU (10k/day), each DAU adds ~1 expense/day, ~5 members/expense, 10% of users scan 5 documents/month. Firestore offline cache (already enabled, 40 MB) means most reads are served locally — only deltas hit the network.
+
+| Service | Free tier | Estimated usage | Monthly cost |
+|---------|-----------|----------------|-------------|
+| **Firestore reads** | 50k/day | ~150k billed/day (after cache) | ~$2.70 |
+| **Firestore writes** | 20k/day | ~50k billed/day (balance deltas) | ~$2.70 |
+| **Firestore storage** | 1 GB | ~600 MB | ~$0.11 |
+| **Cloud Functions** | 2M invocations/month | ~300k/month (well within free) | **$0** |
+| **Gemini 2.0 Flash Lite** | — | ~25k scans/month (rate-limited to 20/user/day) | ~$2.10 |
+| **Firebase Auth** | Unlimited Google/email | All users | **$0** |
+| **FCM** | Unlimited | All pushes | **$0** |
+| **Cloud Scheduler** | 3 jobs free | 1 job (weekly cleanup) | **$0** |
+| **Secret Manager** | 6 active secrets free | 1 secret | **$0** |
+| **Total** | | | **~$7.60/month** |
+
+Cost levers already in place:
+- **Incremental balance updates** — O(n_members) writes per expense, not O(n_expenses)
+- **Firestore offline persistence** — 40 MB local cache dramatically reduces reads
+- **Rate limiter** — `analyzeDocument` capped at 20 scans/user/day; Gemini uses the cheapest multimodal model (`gemini-2.0-flash-lite`)
+- **No Functions cold-start waste** — `maxInstances: 10` prevents runaway scaling
+
+To monitor spend: [GCP Billing → Budgets & Alerts](https://console.cloud.google.com/billing/budgets?project=splitbo) — set an alert at $15 to get an email before hitting $20.
 
 ---
 
