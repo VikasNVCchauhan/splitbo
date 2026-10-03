@@ -1,10 +1,13 @@
+import 'dart:math' as math;
+
 import 'package:data/data.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-const _green = Color(0xFFC3FD00);
-const _dark = Color(0xFF0A0A0A);
+// Brand tokens
+const _green = Color(0xFF9CD246);
+const _black = Color(0xFF000000);
 
 class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({super.key});
@@ -48,7 +51,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(msg, style: const TextStyle(color: Colors.white)),
-      backgroundColor: const Color(0xFF2A2A2A),
+      backgroundColor: const Color(0xFF1A1A1A),
     ));
   }
 
@@ -67,25 +70,25 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _dark,
+      backgroundColor: _black,
       body: Stack(
         children: [
-          // Green glow top-left
+          // Green ambient glow — top-left
           Positioned(
-            top: -120, left: -80,
+            top: -140, left: -100,
             child: Container(
-              width: 320, height: 320,
+              width: 360, height: 360,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: _green.withOpacity(0.15),
+                color: _green.withOpacity(0.14),
               ),
             ),
           ),
-          // Green glow bottom-right
+          // Green ambient glow — bottom-right
           Positioned(
-            bottom: -80, right: -60,
+            bottom: -100, right: -80,
             child: Container(
-              width: 260, height: 260,
+              width: 300, height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: _green.withOpacity(0.10),
@@ -93,172 +96,148 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             ),
           ),
 
+          // Main content — constrained + centered for web
           SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 48),
-
-                  // Logo: transparent icon + SplitBo wordmark
-                  Center(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Image.asset(
-                          'assets/images/logo_icon.jpg',
-                          height: 52,
-                          width: 52,
-                          fit: BoxFit.contain,
-                        ),
-                        const SizedBox(width: 10),
-                        const Text.rich(
-                          TextSpan(children: [
-                            TextSpan(
-                              text: 'Split',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 32,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: -0.5,
-                              ),
-                            ),
-                            TextSpan(
-                              text: 'Bo',
-                              style: TextStyle(
-                                color: _green,
-                                fontSize: 32,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: -0.5,
-                              ),
-                            ),
-                          ]),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-
-                  // Tagline
-                  const Text(
-                    'Split bills. Keep friends.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Color(0xFFAAAAAA),
-                      fontSize: 15,
-                      fontWeight: FontWeight.w400,
-                      letterSpacing: 0.2,
-                    ),
-                  ),
-                  const SizedBox(height: 40),
-
-                  // Illustrated expense cards
-                  const _ExpenseIllustration(),
-                  const SizedBox(height: 16),
-
-                  // Subtitle
-                  const Text(
-                    'Share expenses, not stress.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Color(0xFFAAAAAA),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,
-                      letterSpacing: 0.1,
-                    ),
-                  ),
-                  const SizedBox(height: 36),
-
-                  // Feature pills row
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 440),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 28),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      _FeaturePill(icon: Icons.bolt_rounded, label: 'Split'),
-                      const SizedBox(width: 10),
-                      _FeaturePill(icon: Icons.bar_chart_rounded, label: 'Track'),
-                      const SizedBox(width: 10),
-                      _FeaturePill(icon: Icons.sync_rounded, label: 'Settle'),
-                      const SizedBox(width: 10),
-                      _FeaturePill(icon: Icons.favorite_border_rounded, label: 'Together'),
+                      const SizedBox(height: 36),
+
+                      // ── Logo: vector icon + SplitBo wordmark ─────────────
+                      const Center(
+                        child: Column(
+                          children: [
+                            _SplitboIcon(size: 72),
+                            SizedBox(height: 10),
+                            Text.rich(
+                              TextSpan(children: [
+                                TextSpan(
+                                  text: 'Split',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: -0.5,
+                                    height: 1,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: 'Bo',
+                                  style: TextStyle(
+                                    color: _green,
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: -0.5,
+                                    height: 1,
+                                  ),
+                                ),
+                              ]),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+
+                      // Tagline
+                      const Text(
+                        'Split bills. Keep friends.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Color(0xFFAAAAAA),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w400,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                      const SizedBox(height: 40),
+
+                      // ── Expense card fan illustration ────────────────────
+                      const _CardFan(),
+                      const SizedBox(height: 16),
+
+                      const Text(
+                        'Share expenses, not stress.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Color(0xFF888888),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                      const SizedBox(height: 40),
+
+                      // ── Get Started ──────────────────────────────────────
+                      if (_loading)
+                        const Center(
+                          child: CircularProgressIndicator(
+                              color: _green, strokeWidth: 2.5),
+                        )
+                      else
+                        SizedBox(
+                          height: 56,
+                          child: ElevatedButton(
+                            onPressed: _isLockedOut ? null : _signIn,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _green,
+                              foregroundColor: Colors.black,
+                              disabledBackgroundColor:
+                                  _green.withOpacity(0.4),
+                              elevation: 0,
+                              shape: const StadiumBorder(),
+                            ),
+                            child: const Text(
+                              'Get Started',
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ),
+                        ),
+                      const SizedBox(height: 12),
+
+                      // ── Sign In (outlined) ───────────────────────────────
+                      SizedBox(
+                        height: 52,
+                        child: OutlinedButton(
+                          onPressed: _showEmailSheet,
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(
+                                color: Color(0xFF444444), width: 1.5),
+                            shape: const StadiumBorder(),
+                            foregroundColor: Colors.white,
+                          ),
+                          child: const Text(
+                            'Sign In',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Fine print
+                      const Text(
+                        'Better splits. Brighter relationships.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Color(0xFF555555),
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
                     ],
                   ),
-                  const SizedBox(height: 28),
-
-                  // Get Started button
-                  if (_loading)
-                    const Center(
-                        child: CircularProgressIndicator(
-                            color: _green, strokeWidth: 2.5))
-                  else
-                    SizedBox(
-                      height: 56,
-                      child: ElevatedButton(
-                        onPressed: _isLockedOut ? null : _signIn,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _green,
-                          foregroundColor: Colors.black,
-                          disabledBackgroundColor: _green.withOpacity(0.4),
-                          elevation: 0,
-                          shape: const StadiumBorder(),
-                        ),
-                        child: const Text(
-                          'Get Started',
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ),
-                    ),
-                  const SizedBox(height: 14),
-
-                  // Continue with Email
-                  SizedBox(
-                    height: 52,
-                    child: OutlinedButton(
-                      onPressed: _showEmailSheet,
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Color(0xFF333333)),
-                        shape: const StadiumBorder(),
-                        foregroundColor: Colors.white,
-                        backgroundColor: const Color(0xFF141414),
-                      ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.email_outlined, size: 18, color: Color(0xFFAAAAAA)),
-                          SizedBox(width: 8),
-                          Text(
-                            'Continue with Email',
-                            style: TextStyle(
-                              fontSize: 15,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Sign In link
-                  GestureDetector(
-                    onTap: _signIn,
-                    child: const Text(
-                      'Sign In',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: _green,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                ],
+                ),
               ),
             ),
           ),
@@ -268,136 +247,212 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   }
 }
 
-// ── Expense illustration ───────────────────────────────────────────────────────
-class _ExpenseIllustration extends StatelessWidget {
-  const _ExpenseIllustration();
+// ── SplitBo icon (vector, no background) ─────────────────────────────────────
+class _SplitboIcon extends StatelessWidget {
+  const _SplitboIcon({this.size = 64});
+  final double size;
 
   @override
   Widget build(BuildContext context) {
-    // Three white receipt-style cards stacked with progressive right-offset,
-    // matching the reference design.
-    return Center(
-      child: SizedBox(
-        width: 320,
-        height: 210,
-        child: Stack(
-          children: [
-            // Green spark decorations
-            Positioned(
-              left: 0,
-              top: 60,
-              child: _Spark(angle: -0.5),
-            ),
-            Positioned(
-              right: 0,
-              top: 20,
-              child: _Spark(angle: 0.3),
-            ),
-            // Bottom card — most offset right
-            Positioned(
-              top: 120,
-              left: 10,
-              right: 0,
-              child: _ReceiptCard(
-                avatarColor: const Color(0xFF8B9DC3),
-                title: 'Apartment',
-                subtotal: '₹12,800',
-                total: '₹12,000',
-                members: 3,
-                memberColors: const [
-                  Color(0xFF6B8DD6),
-                  Color(0xFF9B6B6B),
-                  Color(0xFF6BAD8D),
-                ],
-              ),
-            ),
-            // Middle card
-            Positioned(
-              top: 50,
-              left: 8,
-              right: -8,
-              child: _ReceiptCard(
-                avatarColor: const Color(0xFFD4A574),
-                title: 'Road Trip',
-                subtotal: '₹ Tao',
-                total: '₹6,300',
-                members: 2,
-                memberColors: const [
-                  Color(0xFFD4A574),
-                  Color(0xFF74A4D4),
-                ],
-              ),
-            ),
-            // Top card — least offset
-            Positioned(
-              top: 0,
-              left: 16,
-              right: -16,
-              child: _ReceiptCard(
-                avatarColor: const Color(0xFFC47A7A),
-                title: 'Dinner',
-                subtotal: '₹ 400',
-                total: '₹2,400',
-                members: 2,
-                memberColors: const [
-                  Color(0xFFC47A7A),
-                  Color(0xFF7AC4A0),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+    return CustomPaint(
+      size: Size(size, size),
+      painter: _SplitboIconPainter(),
     );
   }
 }
 
-class _ReceiptCard extends StatelessWidget {
-  const _ReceiptCard({
-    required this.avatarColor,
-    required this.title,
-    required this.subtotal,
-    required this.total,
-    required this.members,
-    required this.memberColors,
-  });
+class _SplitboIconPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size s) {
+    final p = Paint()
+      ..color = _green
+      ..style = PaintingStyle.fill;
 
-  final Color avatarColor;
-  final String title;
-  final String subtotal;
-  final String total;
-  final int members;
-  final List<Color> memberColors;
+    // Top dot — person head
+    canvas.drawCircle(Offset(s.width * 0.28, s.height * 0.20), s.width * 0.11, p);
+
+    // Diagonal bar
+    canvas.save();
+    canvas.translate(s.width * 0.50, s.height * 0.50);
+    canvas.rotate(-0.55);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromCenter(
+            center: Offset.zero,
+            width: s.width * 0.82,
+            height: s.width * 0.25),
+        Radius.circular(s.width * 0.10),
+      ),
+      p,
+    );
+    canvas.restore();
+
+    // Bottom outer circle
+    canvas.drawCircle(Offset(s.width * 0.72, s.height * 0.78), s.width * 0.19, p);
+    // Hole — cut with background colour
+    canvas.drawCircle(
+      Offset(s.width * 0.72, s.height * 0.78),
+      s.width * 0.09,
+      Paint()..color = _black..style = PaintingStyle.fill,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_) => false;
+}
+
+// ── Fanned expense card illustration ─────────────────────────────────────────
+// Three white cards rotated to fan out, matching the brand reference.
+class _CardFan extends StatelessWidget {
+  const _CardFan();
 
   @override
   Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, constraints) {
+      final w = constraints.maxWidth.clamp(0.0, 380.0);
+      final cardW = w * 0.72;
+      final fanH = cardW * 0.55;
+
+      return Center(
+        child: SizedBox(
+          width: w,
+          height: fanH + 30,
+          child: Stack(
+            alignment: Alignment.bottomCenter,
+            children: [
+              // Left card — rotated CCW
+              Positioned(
+                bottom: 0,
+                left: w * 0.0,
+                child: Transform.rotate(
+                  angle: -0.22,
+                  alignment: Alignment.bottomCenter,
+                  child: _ExpenseCard(
+                    width: cardW,
+                    height: fanH,
+                    avatarColor: const Color(0xFF7B9ED9),
+                    title: 'Apartment',
+                    amount: '₹12,000',
+                    members: const [
+                      Color(0xFF7B9ED9),
+                      Color(0xFFD97B7B),
+                      Color(0xFF7BD9A5),
+                    ],
+                  ),
+                ),
+              ),
+              // Right card — rotated CW
+              Positioned(
+                bottom: 0,
+                right: w * 0.0,
+                child: Transform.rotate(
+                  angle: 0.22,
+                  alignment: Alignment.bottomCenter,
+                  child: _ExpenseCard(
+                    width: cardW,
+                    height: fanH,
+                    avatarColor: const Color(0xFFD9A87B),
+                    title: 'Dinner',
+                    amount: '₹2,400',
+                    members: const [
+                      Color(0xFFD9A87B),
+                      Color(0xFF7BC4D9),
+                    ],
+                  ),
+                ),
+              ),
+              // Centre card — straight, on top
+              _ExpenseCard(
+                width: cardW,
+                height: fanH,
+                avatarColor: _green,
+                title: 'Road Trip',
+                amount: '₹6,300',
+                members: const [
+                  Color(0xFF9CD246),
+                  Color(0xFF7B9ED9),
+                  Color(0xFFD97B7B),
+                ],
+                elevated: true,
+              ),
+
+              // Spark left
+              Positioned(
+                top: 0,
+                left: w * 0.04,
+                child: const _Spark(),
+              ),
+              // Spark right
+              Positioned(
+                top: 4,
+                right: w * 0.04,
+                child: Transform(
+                  transform: Matrix4.rotationY(math.pi),
+                  alignment: Alignment.center,
+                  child: const _Spark(),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    });
+  }
+}
+
+class _ExpenseCard extends StatelessWidget {
+  const _ExpenseCard({
+    required this.width,
+    required this.height,
+    required this.avatarColor,
+    required this.title,
+    required this.amount,
+    required this.members,
+    this.elevated = false,
+  });
+
+  final double width;
+  final double height;
+  final Color avatarColor;
+  final String title;
+  final String amount;
+  final List<Color> members;
+  final bool elevated;
+
+  @override
+  Widget build(BuildContext context) {
+    final avatarR = height * 0.28;
     return Container(
-      height: 56,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      width: width,
+      height: height,
+      padding: EdgeInsets.symmetric(
+          horizontal: width * 0.06, vertical: height * 0.14),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F5),
-        borderRadius: BorderRadius.circular(14),
+        color: const Color(0xFFF2F2F2),
+        borderRadius: BorderRadius.circular(width * 0.06),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.18),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: Colors.black
+                .withOpacity(elevated ? 0.35 : 0.20),
+            blurRadius: elevated ? 24 : 12,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
       child: Row(
         children: [
-          // Avatar circle
+          // Avatar
           Container(
-            width: 34,
-            height: 34,
+            width: avatarR * 2,
+            height: avatarR * 2,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: avatarColor,
             ),
-            child: const Icon(Icons.person, size: 18, color: Colors.white),
+            child: Icon(Icons.person_rounded,
+                color: Colors.white, size: avatarR * 1.2),
           ),
-          const SizedBox(width: 10),
+          SizedBox(width: width * 0.04),
           // Title + member dots
           Expanded(
             child: Column(
@@ -406,123 +461,72 @@ class _ReceiptCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    color: Color(0xFF1A1A1A),
-                    fontSize: 12,
+                  style: TextStyle(
+                    color: const Color(0xFF111111),
+                    fontSize: height * 0.18,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 3),
+                SizedBox(height: height * 0.06),
                 Row(
-                  children: List.generate(
-                    members,
-                    (i) => Container(
-                      width: 14,
-                      height: 14,
-                      margin: EdgeInsets.only(right: i < members - 1 ? 2 : 0),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: memberColors[i % memberColors.length],
-                      ),
-                    ),
-                  ),
+                  children: members
+                      .map((c) => Container(
+                            width: height * 0.14,
+                            height: height * 0.14,
+                            margin: const EdgeInsets.only(right: 3),
+                            decoration: BoxDecoration(
+                                shape: BoxShape.circle, color: c),
+                          ))
+                      .toList(),
                 ),
               ],
             ),
           ),
-          // Amounts
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                subtotal,
-                style: const TextStyle(
-                  color: Color(0xFF888888),
-                  fontSize: 10,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              Text(
-                total,
-                style: const TextStyle(
-                  color: Color(0xFF1A1A1A),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Spark decoration ─────────────────────────────────────────────────────────
-class _Spark extends StatelessWidget {
-  const _Spark({required this.angle});
-  final double angle;
-
-  @override
-  Widget build(BuildContext context) {
-    return Transform.rotate(
-      angle: angle,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(width: 3, height: 14, decoration: BoxDecoration(
-            color: _green, borderRadius: BorderRadius.circular(2))),
-          const SizedBox(height: 4),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(width: 14, height: 3, decoration: BoxDecoration(
-                color: _green, borderRadius: BorderRadius.circular(2))),
-              const SizedBox(width: 4),
-              Container(width: 14, height: 3, decoration: BoxDecoration(
-                color: _green, borderRadius: BorderRadius.circular(2))),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Container(width: 3, height: 14, decoration: BoxDecoration(
-            color: _green, borderRadius: BorderRadius.circular(2))),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Feature pill ──────────────────────────────────────────────────────────────
-class _FeaturePill extends StatelessWidget {
-  const _FeaturePill({required this.icon, required this.label});
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFF141414),
-        borderRadius: BorderRadius.circular(100),
-        border: Border.all(color: const Color(0xFF2A2A2A)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: _green),
-          const SizedBox(width: 5),
+          // Amount
           Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
+            amount,
+            style: TextStyle(
+              color: const Color(0xFF111111),
+              fontSize: height * 0.19,
+              fontWeight: FontWeight.w800,
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+// ── Green spark ───────────────────────────────────────────────────────────────
+class _Spark extends StatelessWidget {
+  const _Spark();
+
+  @override
+  Widget build(BuildContext context) {
+    const c = _green;
+    const r = BorderRadius.all(Radius.circular(2));
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+            width: 3, height: 16,
+            decoration: const BoxDecoration(color: c, borderRadius: r)),
+        const SizedBox(height: 4),
+        Row(mainAxisSize: MainAxisSize.min, children: [
+          Container(
+              width: 18, height: 3,
+              decoration: const BoxDecoration(color: c, borderRadius: r)),
+          const SizedBox(width: 4),
+          Container(
+              width: 10, height: 3,
+              decoration: const BoxDecoration(color: c, borderRadius: r)),
+        ]),
+        const SizedBox(height: 4),
+        Container(
+            width: 3, height: 10,
+            decoration: const BoxDecoration(color: c, borderRadius: r)),
+      ],
     );
   }
 }
@@ -574,7 +578,7 @@ class _EmailSignInSheetState extends ConsumerState<_EmailSignInSheet> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(msg, style: const TextStyle(color: Colors.white)),
-      backgroundColor: const Color(0xFF2A2A2A),
+      backgroundColor: const Color(0xFF1A1A1A),
     ));
   }
 
@@ -585,7 +589,7 @@ class _EmailSignInSheetState extends ConsumerState<_EmailSignInSheet> {
           EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
         decoration: const BoxDecoration(
-          color: Color(0xFF141414),
+          color: Color(0xFF111111),
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
@@ -628,14 +632,12 @@ class _EmailSignInSheetState extends ConsumerState<_EmailSignInSheet> {
                   width: double.infinity,
                   height: 52,
                   child: OutlinedButton(
-                    onPressed: () {
-                      setState(() {
-                        _sent = false;
-                        _emailCtrl.clear();
-                      });
-                    },
+                    onPressed: () => setState(() {
+                      _sent = false;
+                      _emailCtrl.clear();
+                    }),
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFF333333)),
+                      side: const BorderSide(color: Color(0xFF444444)),
                       shape: const StadiumBorder(),
                       foregroundColor: Colors.white,
                     ),
@@ -648,7 +650,7 @@ class _EmailSignInSheetState extends ConsumerState<_EmailSignInSheet> {
                 padding: EdgeInsets.symmetric(horizontal: 24),
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: Text('Continue with Email',
+                  child: Text('Sign in with Email',
                       style: TextStyle(
                           color: Colors.white,
                           fontSize: 20,
@@ -661,7 +663,7 @@ class _EmailSignInSheetState extends ConsumerState<_EmailSignInSheet> {
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    'We\'ll send you a one-tap sign-in link. No password needed.',
+                    "We'll send a one-tap sign-in link. No password needed.",
                     style: TextStyle(color: Color(0xFFAAAAAA), fontSize: 13),
                   ),
                 ),
@@ -676,11 +678,11 @@ class _EmailSignInSheetState extends ConsumerState<_EmailSignInSheet> {
                   style: const TextStyle(color: Colors.white),
                   decoration: const InputDecoration(
                     hintText: 'you@example.com',
-                    hintStyle: TextStyle(color: Color(0xFF666666)),
+                    hintStyle: TextStyle(color: Color(0xFF555555)),
                     prefixIcon: Icon(Icons.email_outlined,
-                        color: Color(0xFF666666), size: 20),
+                        color: Color(0xFF555555), size: 20),
                     filled: true,
-                    fillColor: Color(0xFF1E1E1E),
+                    fillColor: Color(0xFF1A1A1A),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(12)),
                       borderSide: BorderSide(color: Color(0xFF333333)),
@@ -716,7 +718,8 @@ class _EmailSignInSheetState extends ConsumerState<_EmailSignInSheet> {
                     ),
                     child: _sending
                         ? const SizedBox(
-                            width: 20, height: 20,
+                            width: 20,
+                            height: 20,
                             child: CircularProgressIndicator(
                                 strokeWidth: 2, color: Colors.black))
                         : const Text('Send Sign-In Link',
@@ -731,7 +734,8 @@ class _EmailSignInSheetState extends ConsumerState<_EmailSignInSheet> {
                   child: Text(
                     'Max attempts reached. Please use Google sign-in.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Color(0xFFFF6B6B), fontSize: 12),
+                    style:
+                        TextStyle(color: Color(0xFFFF6B6B), fontSize: 12),
                   ),
                 ),
             ],
