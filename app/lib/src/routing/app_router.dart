@@ -179,13 +179,22 @@ class _AppShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(saveFcmTokenProvider);
     final colors = context.colors;
+    // nav pill (80) + outer bottom padding (14) = 94; plus device safe area
+    final navBarClearance = MediaQuery.of(context).viewPadding.bottom + 94;
     return Scaffold(
       backgroundColor: colors.backgroundDefault,
-      body: Align(
-        alignment: Alignment.topCenter,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 600),
-          child: shell,
+      body: MediaQuery(
+        data: MediaQuery.of(context).copyWith(
+          padding: MediaQuery.of(context).padding.copyWith(
+            bottom: navBarClearance,
+          ),
+        ),
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: shell,
+          ),
         ),
       ),
       extendBody: true,

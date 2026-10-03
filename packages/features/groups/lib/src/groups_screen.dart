@@ -19,7 +19,7 @@ class GroupsScreen extends ConsumerWidget {
         backgroundColor: colors.backgroundDefault,
         elevation: 0,
         automaticallyImplyLeading: false,
-        title: const SplitboWordmark(height: 28),
+        title: const SplitboHomeLogo(height: 28),
       ),
       body: groupsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),

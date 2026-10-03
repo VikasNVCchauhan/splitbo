@@ -329,7 +329,7 @@ class _LoginCards extends StatelessWidget {
               left: 0,
               top: 0,
               child: Transform.rotate(
-                angle: -0.05,
+                angle: -0.155,
                 child: _LoginCard(
                   s: s, w: cw, h: ch,
                   avatarAsset: _f3,
@@ -385,6 +385,8 @@ class _LoginCard extends StatelessWidget {
             avatarAsset,
             width: av, height: av,
             fit: BoxFit.cover,
+            frameBuilder: (_, child, frame, sync) =>
+                (sync || frame != null) ? child : SizedBox(width: av, height: av),
           ),
         ),
         if (secondEmoji != null) ...[
@@ -419,6 +421,8 @@ class _LoginCard extends StatelessWidget {
                       e.value,
                       width: dot, height: dot,
                       fit: BoxFit.cover,
+                      frameBuilder: (_, child, frame, sync) =>
+                          (sync || frame != null) ? child : SizedBox(width: dot, height: dot),
                     ),
                   ),
                 )),

@@ -23,7 +23,11 @@ class BalanceScreen extends ConsumerWidget {
         backgroundColor: colors.backgroundDefault,
         elevation: 0,
         automaticallyImplyLeading: false,
-        titleSpacing: 20,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_rounded, color: colors.textPrimary),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        titleSpacing: 0,
         title: Text(
           'Balances',
           style: TextStyle(

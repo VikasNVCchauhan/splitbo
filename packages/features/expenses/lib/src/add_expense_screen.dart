@@ -627,7 +627,11 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
             ),
         ],
       ),
-      body: SingleChildScrollView(
+      body: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: SingleChildScrollView(
         padding: EdgeInsets.all(spacing.insetLg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -871,6 +875,8 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
               ),
             SizedBox(height: spacing.stackMd),
           ],
+        ),
+          ),
         ),
       ),
     );
@@ -1432,6 +1438,7 @@ class _ScanReceiptBanner extends StatelessWidget {
                 : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
+                      const SizedBox(width: 12),
                       Container(
                         width: 38,
                         height: 38,
@@ -1619,12 +1626,16 @@ class _CategoryChip extends StatelessWidget {
     final colors = context.colors;
     return FilterChip(
       label: Text(category.label),
-      avatar: Icon(_icons[category] ?? Icons.receipt_outlined, size: 16),
+      avatar: Icon(
+        selected ? Icons.check_rounded : (_icons[category] ?? Icons.receipt_outlined),
+        size: 16,
+        color: selected ? colors.brandPrimaryDk : colors.textSecondary,
+      ),
       selected: selected,
+      showCheckmark: false,
       onSelected: onSelected,
       backgroundColor: colors.surfaceRaised,
       selectedColor: colors.brandPrimaryLt,
-      checkmarkColor: colors.brandPrimaryDk,
       side: BorderSide(
           color: selected ? colors.brandPrimary : colors.borderDefault),
       labelStyle: TextStyle(
