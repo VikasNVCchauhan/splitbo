@@ -180,12 +180,7 @@ class _AppShell extends ConsumerWidget {
     final colors = context.colors;
     return Scaffold(
       backgroundColor: colors.backgroundDefault,
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 600),
-          child: shell,
-        ),
-      ),
+      body: shell,
       bottomNavigationBar: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 600),

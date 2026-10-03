@@ -513,8 +513,8 @@ class SettingsScreen extends ConsumerWidget {
                     Icon(icon, color: const Color(0xFF739800), size: 22),
                     const SizedBox(width: 10),
                     Text(title,
-                        style: const TextStyle(
-                            color: Colors.white,
+                        style: TextStyle(
+                            color: colors.textPrimary,
                             fontSize: 18,
                             fontWeight: FontWeight.w700)),
                     const Spacer(),
@@ -537,15 +537,15 @@ class SettingsScreen extends ConsumerWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(item.label,
-                                  style: const TextStyle(
-                                      color: Color(0xFF739800),
+                                  style: TextStyle(
+                                      color: colors.brandPrimary,
                                       fontSize: 12,
                                       fontWeight: FontWeight.w700,
                                       letterSpacing: 0.4)),
                               const SizedBox(height: 4),
                               Text(item.value,
-                                  style: const TextStyle(
-                                      color: Colors.white,
+                                  style: TextStyle(
+                                      color: colors.textPrimary,
                                       fontSize: 14,
                                       height: 1.5)),
                             ],
@@ -674,9 +674,9 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
           children: [
             Row(
               children: [
-                const Text('Edit Profile',
+                Text('Edit Profile',
                     style: TextStyle(
-                        color: Colors.white,
+                        color: colors.textPrimary,
                         fontSize: 18,
                         fontWeight: FontWeight.w700)),
                 const Spacer(),
@@ -753,29 +753,29 @@ class _DarkField extends StatelessWidget {
     final colors = context.colors;
     return TextField(
       controller: controller,
-      style: const TextStyle(color: Colors.white),
+      style: TextStyle(color: colors.textPrimary),
       keyboardType: type,
       textCapitalization: capitalize,
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        hintStyle: const TextStyle(color: Color(0xFF555555)),
+        hintStyle: TextStyle(color: colors.textSecondary),
         labelStyle: TextStyle(color: colors.textSecondary),
         prefixIcon: Icon(icon, color: colors.textSecondary),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFF3A3A3A)),
+          borderSide: BorderSide(color: colors.borderDefault),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFF739800)),
+          borderSide: BorderSide(color: colors.brandPrimary),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFF3A3A3A)),
+          borderSide: BorderSide(color: colors.borderDefault),
         ),
         filled: true,
-        fillColor: const Color(0xFF2A2A2A),
+        fillColor: colors.surfaceRaised,
       ),
     );
   }
@@ -951,19 +951,19 @@ class _SecuritySheetState extends State<_SecuritySheet> {
             child: Container(
               width: 40, height: 4,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
+                color: context.colors.borderDefault,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
           ),
           const SizedBox(height: 20),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text('Security',
                   style: TextStyle(
-                      color: Colors.white,
+                      color: colors.textPrimary,
                       fontSize: 17,
                       fontWeight: FontWeight.w700)),
             ),
@@ -1125,19 +1125,19 @@ class _WhatsAppSheetState extends State<_WhatsAppSheet> {
               child: Container(
                 width: 40, height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
+                  color: context.colors.borderDefault,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
             const SizedBox(height: 20),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text('WhatsApp Number',
                     style: TextStyle(
-                        color: Colors.white,
+                        color: colors.textPrimary,
                         fontSize: 17,
                         fontWeight: FontWeight.w700)),
               ),
@@ -1160,7 +1160,7 @@ class _WhatsAppSheetState extends State<_WhatsAppSheet> {
                 controller: _ctrl,
                 keyboardType: TextInputType.phone,
                 autofocus: true,
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: colors.textPrimary),
                 decoration: InputDecoration(
                   hintText: '+91 98765 43210',
                   hintStyle: TextStyle(color: colors.textSecondary),
@@ -1238,20 +1238,20 @@ class _AppearanceSheet extends ConsumerWidget {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
+                color: context.colors.borderDefault,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
           ),
           const SizedBox(height: 20),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
                 'Appearance',
                 style: TextStyle(
-                    color: Colors.white,
+                    color: colors.textPrimary,
                     fontSize: 17,
                     fontWeight: FontWeight.w700),
               ),

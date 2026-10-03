@@ -1,3 +1,5 @@
+import 'dart:math' show cos, sin;
+
 import 'package:data/data.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
@@ -268,8 +270,10 @@ class _LoginCards extends StatelessWidget {
   Widget build(BuildContext context) {
     final cw = 232.0 * s;
     final ch = 62.0 * s;
-    final totalH = ch * 2.68;
-    final totalW = cw + 54 * s;
+    final hShift = 34.0 * s; // zigzag horizontal offset
+    final gap = 7.0 * s;     // vertical gap between cards (no overlap)
+    final totalH = ch * 3 + gap * 2;
+    final totalW = cw + hShift;
 
     return Center(
       child: SizedBox(
@@ -278,48 +282,65 @@ class _LoginCards extends StatelessWidget {
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            Positioned(left: 2 * s, top: ch * 0.48,
-                child: _GreenSparks(s: s)),
-            Positioned(right: 2 * s, top: ch * 0.10,
-                child: _GreenSparks(s: s, mirrored: true)),
-
-            // Back — Apartment (bottom-LEFT, tilted clockwise)
+            // Left spark — beside Dinner card (top-left)
             Positioned(
-              bottom: 0, left: 0,
-              child: Transform.rotate(angle: 0.04,
+              left: -40 * s,
+              top: ch * 0.15,
+              child: _SparkWidget(s: s),
+            ),
+            // Right spark — top-right corner area
+            Positioned(
+              right: -36 * s,
+              top: -6 * s,
+              child: _SparkWidget(s: s, mirrored: true),
+            ),
+
+            // Bottom — Apartment (LEFT, tilted clockwise)
+            Positioned(
+              left: 0,
+              top: 2 * (ch + gap),
+              child: Transform.rotate(
+                angle: 0.04,
                 child: _LoginCard(
                   s: s, w: cw, h: ch,
                   avatarAsset: _f1,
                   title: 'Apartment',
                   memberAssets: const [_f3, _f2, _f1],
                   extra: 3, splitAmt: '₹12,000', totalAmt: '₹12,000',
-                )),
+                ),
+              ),
             ),
 
-            // Middle — Groceries (center)
+            // Middle — Grocery (RIGHT, nearly level)
             Positioned(
-              bottom: ch * 0.63, left: 27 * s,
-              child: Transform.rotate(angle: -0.01,
+              left: hShift,
+              top: ch + gap,
+              child: Transform.rotate(
+                angle: 0.01,
                 child: _LoginCard(
                   s: s, w: cw, h: ch,
                   avatarAsset: _f2,
                   title: 'Grocery',
                   secondEmoji: '🛒',
                   splitAmt: '₹700', totalAmt: '₹6,300',
-                )),
+                ),
+              ),
             ),
 
-            // Front — Dinner (top-RIGHT, tilted counter-clockwise)
+            // Top — Dinner (LEFT, tilted counter-clockwise)
             Positioned(
-              top: 0, right: 0,
-              child: Transform.rotate(angle: -0.06,
+              left: 0,
+              top: 0,
+              child: Transform.rotate(
+                angle: -0.05,
                 child: _LoginCard(
                   s: s, w: cw, h: ch,
                   avatarAsset: _f3,
                   title: 'Dinner',
                   memberAssets: const [_f2, _f1, _f3],
                   extra: 2, splitAmt: '₹400', totalAmt: '₹2,400',
-                )),
+                ),
+              ),
             ),
           ],
         ),
@@ -447,37 +468,56 @@ class _LoginCard extends StatelessWidget {
   }
 }
 
-class _GreenSparks extends StatelessWidget {
-  const _GreenSparks({required this.s, this.mirrored = false});
+class _SparkWidget extends StatelessWidget {
+  const _SparkWidget({required this.s, this.mirrored = false});
   final double s;
   final bool mirrored;
 
   @override
   Widget build(BuildContext context) {
-    final slash = Transform.rotate(
-      angle: -0.42,
-      child: Container(
-        width: 4.5 * s, height: 22 * s,
-        decoration: BoxDecoration(
-          color: _green,
-          borderRadius: BorderRadius.circular(2.5 * s),
-        ),
-      ),
+    Widget spark = CustomPaint(
+      size: Size(32 * s, 32 * s),
+      painter: _SparkPainter(s: s),
     );
-
-    Widget sparks = Row(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [slash, SizedBox(width: 8 * s), slash],
-    );
-
-    if (!mirrored) return sparks;
-    return Transform(
-      transform: Matrix4.rotationY(3.14159),
-      alignment: Alignment.center,
-      child: sparks,
-    );
+    if (mirrored) {
+      spark = Transform(
+        transform: Matrix4.rotationY(3.14159265),
+        alignment: Alignment.center,
+        child: spark,
+      );
+    }
+    return spark;
   }
+}
+
+class _SparkPainter extends CustomPainter {
+  const _SparkPainter({required this.s});
+  final double s;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = _green
+      ..strokeWidth = 3.5 * s
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
+    // Fan of 3 rays radiating rightward from left edge
+    final ox = 0.0;
+    final oy = size.height / 2;
+    final len = size.width * 0.88;
+
+    for (final angle in [-0.85, 0.0, 0.85]) {
+      canvas.drawLine(
+        Offset(ox, oy),
+        Offset(ox + len * cos(angle), oy + len * sin(angle)),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_SparkPainter old) => false;
 }
 
 // ── Email magic-link sheet ────────────────────────────────────────────────────
