@@ -165,6 +165,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                           height: 210 * s,
                           fit: BoxFit.contain,
                           filterQuality: FilterQuality.medium,
+                          frameBuilder: (context, child, frame, syncLoaded) {
+                            if (syncLoaded || frame != null) return child;
+                            // Reserve space so layout never shifts; cards fade in
+                            return SizedBox(height: 210 * s);
+                          },
                         ),
                         SizedBox(height: 10 * s),
 
