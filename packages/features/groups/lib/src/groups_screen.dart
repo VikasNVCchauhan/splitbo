@@ -19,38 +19,7 @@ class GroupsScreen extends ConsumerWidget {
         backgroundColor: colors.backgroundDefault,
         elevation: 0,
         automaticallyImplyLeading: false,
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Image.asset(
-              'assets/images/logo_icon.jpg',
-              height: 28,
-              width: 28,
-              fit: BoxFit.contain,
-            ),
-            const SizedBox(width: 8),
-            Text.rich(
-              const TextSpan(children: [
-                TextSpan(
-                  text: 'Split',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                TextSpan(
-                  text: 'Bo',
-                  style: TextStyle(
-                    color: Color(0xFF9CD246),
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ]),
-            ),
-          ],
-        ),
+        title: const SplitboWordmark(height: 28),
       ),
       body: groupsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),

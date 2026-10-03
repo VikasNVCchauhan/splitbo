@@ -1,29 +1,59 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-/// Renders the Splitbo logo mark from the canonical SVG asset.
-/// Use [size] to control width/height (square). Color defaults to brand green.
+const _green = Color(0xFFC3FD00);
+const _charcoal = Color(0xFF141414);
+
+/// The Splitbo icon mark only (S-shaped diagonal bar + circles).
+/// Pass [color] to override the default brand green.
 class SplitboLogoMark extends StatelessWidget {
-  const SplitboLogoMark({
-    super.key,
-    this.size = 32,
-    this.color,
-  });
+  const SplitboLogoMark({super.key, this.size = 32, this.color});
 
   final double size;
   final Color? color;
 
-  static const _assetPath =
-      'packages/design_system/assets/images/logo_mark.svg';
+  @override
+  Widget build(BuildContext context) {
+    return SvgPicture.asset(
+      'packages/design_system/assets/images/logo_icon.svg',
+      width: size,
+      height: size,
+      colorFilter: ColorFilter.mode(color ?? _green, BlendMode.srcIn),
+    );
+  }
+}
+
+/// Full "SplitBo" wordmark (icon + letter-forms).
+/// Text letters are charcoal in light mode, white in dark mode.
+/// The icon and "Bo" circle stay brand green regardless.
+class SplitboWordmark extends StatelessWidget {
+  const SplitboWordmark({super.key, this.height = 32});
+
+  final double height;
 
   @override
   Widget build(BuildContext context) {
-    final c = color ?? const Color(0xFFC3FD00);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return SvgPicture.asset(
-      _assetPath,
-      width: size,
-      height: size,
-      colorFilter: ColorFilter.mode(c, BlendMode.srcIn),
+      'packages/design_system/assets/images/logo_wordmark.svg',
+      height: height,
+      colorMapper: _WordmarkColorMapper(isDark: isDark),
     );
+  }
+}
+
+class _WordmarkColorMapper implements ColorMapper {
+  const _WordmarkColorMapper({required this.isDark});
+  final bool isDark;
+
+  @override
+  Color substitute(
+    String? id,
+    String elementName,
+    String attributeName,
+    Color color,
+  ) {
+    if (isDark && color == _charcoal) return Colors.white;
+    return color;
   }
 }

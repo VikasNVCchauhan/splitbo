@@ -273,29 +273,7 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
       automaticallyImplyLeading: false,
       centerTitle: false,
       titleSpacing: 20,
-      title: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const SplitboLogoMark(size: 32),
-          const SizedBox(width: 10),
-          const Text.rich(
-            TextSpan(children: [
-              TextSpan(
-                  text: 'Split',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800)),
-              TextSpan(
-                  text: 'bo',
-                  style: TextStyle(
-                      color: _green,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800)),
-            ]),
-          ),
-        ],
-      ),
+      title: const SplitboWordmark(height: 32),
       actions: [
         // Search
         IconButton(

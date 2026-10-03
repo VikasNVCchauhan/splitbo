@@ -108,39 +108,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     children: [
                       const SizedBox(height: 36),
 
-                      // ── Logo: vector icon + SplitBo wordmark ─────────────
-                      const Center(
-                        child: Column(
-                          children: [
-                            _SplitboIcon(size: 72),
-                            SizedBox(height: 10),
-                            Text.rich(
-                              TextSpan(children: [
-                                TextSpan(
-                                  text: 'Split',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: -0.5,
-                                    height: 1,
-                                  ),
-                                ),
-                                TextSpan(
-                                  text: 'Bo',
-                                  style: TextStyle(
-                                    color: _green,
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: -0.5,
-                                    height: 1,
-                                  ),
-                                ),
-                              ]),
-                            ),
-                          ],
-                        ),
-                      ),
+                      // ── Logo wordmark ─────────────────────────────────────
+                      const Center(child: SplitboWordmark(height: 64)),
                       const SizedBox(height: 10),
 
                       // Tagline
@@ -202,24 +171,15 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                         ),
                       const SizedBox(height: 12),
 
-                      // ── Sign In (outlined) ───────────────────────────────
-                      SizedBox(
-                        height: 52,
-                        child: OutlinedButton(
-                          onPressed: _showEmailSheet,
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(
-                                color: Color(0xFF444444), width: 1.5),
-                            shape: const StadiumBorder(),
-                            foregroundColor: Colors.white,
-                          ),
-                          child: const Text(
-                            'Sign In',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
+                      // ── Sign In (text-only, matching reference) ──────────
+                      TextButton(
+                        onPressed: _showEmailSheet,
+                        child: const Text(
+                          'Sign In',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
                           ),
                         ),
                       ),
@@ -301,8 +261,7 @@ class _SplitboIconPainter extends CustomPainter {
   bool shouldRepaint(_) => false;
 }
 
-// ── Fanned expense card illustration ─────────────────────────────────────────
-// Three white cards rotated to fan out, matching the brand reference.
+// ── Expense card illustration — vertical cascade matching brand reference ─────
 class _CardFan extends StatelessWidget {
   const _CardFan();
 
@@ -310,79 +269,80 @@ class _CardFan extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constraints) {
       final w = constraints.maxWidth.clamp(0.0, 380.0);
-      final cardW = w * 0.72;
-      final fanH = cardW * 0.55;
+      final cardW = w * 0.84;
+      final cardH = cardW * 0.27;
+      final peek = cardH * 0.62; // how far each card peeks below previous
 
       return Center(
         child: SizedBox(
           width: w,
-          height: fanH + 30,
+          height: cardH + peek * 2 + 24,
           child: Stack(
-            alignment: Alignment.bottomCenter,
             children: [
-              // Left card — rotated CCW
+              // Bottom card (rendered first = behind)
               Positioned(
-                bottom: 0,
-                left: w * 0.0,
+                top: peek * 2,
+                left: w * 0.10,
                 child: Transform.rotate(
-                  angle: -0.22,
-                  alignment: Alignment.bottomCenter,
+                  angle: 0.04,
                   child: _ExpenseCard(
                     width: cardW,
-                    height: fanH,
+                    height: cardH,
                     avatarColor: const Color(0xFF7B9ED9),
                     title: 'Apartment',
-                    amount: '₹12,000',
-                    members: const [
+                    splitAmount: '₹12,200',
+                    totalAmount: '₹12,000',
+                    memberColors: const [
                       Color(0xFF7B9ED9),
                       Color(0xFFD97B7B),
-                      Color(0xFF7BD9A5),
+                      Color(0xFF9CD246),
                     ],
                   ),
                 ),
               ),
-              // Right card — rotated CW
+              // Middle card
               Positioned(
-                bottom: 0,
-                right: w * 0.0,
+                top: peek,
+                left: w * 0.05,
                 child: Transform.rotate(
-                  angle: 0.22,
-                  alignment: Alignment.bottomCenter,
+                  angle: -0.02,
                   child: _ExpenseCard(
                     width: cardW,
-                    height: fanH,
+                    height: cardH,
+                    avatarColor: _green,
+                    title: 'Goa Trip',
+                    splitAmount: '₹ Split',
+                    totalAmount: '₹6,300',
+                    memberColors: const [
+                      Color(0xFF9CD246),
+                      Color(0xFFD9C47B),
+                    ],
+                    elevated: true,
+                  ),
+                ),
+              ),
+              // Top card (rendered last = in front)
+              Positioned(
+                top: 0,
+                left: w * 0.01,
+                child: Transform.rotate(
+                  angle: -0.05,
+                  child: _ExpenseCard(
+                    width: cardW,
+                    height: cardH,
                     avatarColor: const Color(0xFFD9A87B),
                     title: 'Dinner',
-                    amount: '₹2,400',
-                    members: const [
+                    splitAmount: '₹400',
+                    totalAmount: '₹2,400',
+                    memberColors: const [
                       Color(0xFFD9A87B),
                       Color(0xFF7BC4D9),
                     ],
                   ),
                 ),
               ),
-              // Centre card — straight, on top
-              _ExpenseCard(
-                width: cardW,
-                height: fanH,
-                avatarColor: _green,
-                title: 'Road Trip',
-                amount: '₹6,300',
-                members: const [
-                  Color(0xFF9CD246),
-                  Color(0xFF7B9ED9),
-                  Color(0xFFD97B7B),
-                ],
-                elevated: true,
-              ),
-
-              // Spark left
-              Positioned(
-                top: 0,
-                left: w * 0.04,
-                child: const _Spark(),
-              ),
-              // Spark right
+              // Sparks
+              Positioned(top: 0, left: w * 0.04, child: const _Spark()),
               Positioned(
                 top: 4,
                 right: w * 0.04,
@@ -406,8 +366,9 @@ class _ExpenseCard extends StatelessWidget {
     required this.height,
     required this.avatarColor,
     required this.title,
-    required this.amount,
-    required this.members,
+    required this.splitAmount,
+    required this.totalAmount,
+    required this.memberColors,
     this.elevated = false,
   });
 
@@ -415,27 +376,28 @@ class _ExpenseCard extends StatelessWidget {
   final double height;
   final Color avatarColor;
   final String title;
-  final String amount;
-  final List<Color> members;
+  final String splitAmount;
+  final String totalAmount;
+  final List<Color> memberColors;
   final bool elevated;
 
   @override
   Widget build(BuildContext context) {
-    final avatarR = height * 0.28;
+    final avatarSize = height * 0.64;
+    final dotSize = height * 0.18;
     return Container(
       width: width,
       height: height,
       padding: EdgeInsets.symmetric(
-          horizontal: width * 0.06, vertical: height * 0.14),
+          horizontal: width * 0.05, vertical: height * 0.14),
       decoration: BoxDecoration(
-        color: const Color(0xFFF2F2F2),
-        borderRadius: BorderRadius.circular(width * 0.06),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(width * 0.05),
         boxShadow: [
           BoxShadow(
-            color: Colors.black
-                .withOpacity(elevated ? 0.35 : 0.20),
-            blurRadius: elevated ? 24 : 12,
-            offset: const Offset(0, 6),
+            color: Colors.black.withOpacity(elevated ? 0.30 : 0.16),
+            blurRadius: elevated ? 20 : 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -443,14 +405,12 @@ class _ExpenseCard extends StatelessWidget {
         children: [
           // Avatar
           Container(
-            width: avatarR * 2,
-            height: avatarR * 2,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: avatarColor,
-            ),
+            width: avatarSize,
+            height: avatarSize,
+            decoration:
+                BoxDecoration(shape: BoxShape.circle, color: avatarColor),
             child: Icon(Icons.person_rounded,
-                color: Colors.white, size: avatarR * 1.2),
+                color: Colors.white, size: avatarSize * 0.60),
           ),
           SizedBox(width: width * 0.04),
           // Title + member dots
@@ -461,35 +421,52 @@ class _ExpenseCard extends StatelessWidget {
               children: [
                 Text(
                   title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: const Color(0xFF111111),
-                    fontSize: height * 0.18,
+                    fontSize: height * 0.24,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                SizedBox(height: height * 0.06),
+                SizedBox(height: height * 0.10),
                 Row(
-                  children: members
+                  children: memberColors
                       .map((c) => Container(
-                            width: height * 0.14,
-                            height: height * 0.14,
+                            width: dotSize,
+                            height: dotSize,
                             margin: const EdgeInsets.only(right: 3),
-                            decoration: BoxDecoration(
-                                shape: BoxShape.circle, color: c),
+                            decoration:
+                                BoxDecoration(shape: BoxShape.circle, color: c),
                           ))
                       .toList(),
                 ),
               ],
             ),
           ),
-          // Amount
-          Text(
-            amount,
-            style: TextStyle(
-              color: const Color(0xFF111111),
-              fontSize: height * 0.19,
-              fontWeight: FontWeight.w800,
-            ),
+          // Amounts — split on top (small), total below (bold)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                splitAmount,
+                style: TextStyle(
+                  color: const Color(0xFF888888),
+                  fontSize: height * 0.16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              SizedBox(height: height * 0.04),
+              Text(
+                totalAmount,
+                style: TextStyle(
+                  color: const Color(0xFF111111),
+                  fontSize: height * 0.22,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
           ),
         ],
       ),
