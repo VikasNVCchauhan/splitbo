@@ -274,53 +274,75 @@ class _ExpenseIllustration extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Fixed 340×160 canvas centred in available width — cards never overflow.
+    // Three white receipt-style cards stacked with progressive right-offset,
+    // matching the reference design.
     return Center(
       child: SizedBox(
-        width: 340,
-        height: 160,
+        width: 320,
+        height: 210,
         child: Stack(
-          clipBehavior: Clip.none,
-          alignment: Alignment.center,
           children: [
-            // Left card — tilted back
+            // Green spark decorations
             Positioned(
               left: 0,
-              top: 20,
-              child: Transform.rotate(
-                angle: -0.15,
-                child: const _ExpenseCard(
-                  title: 'Apartment',
-                  amount: '₹12,000',
-                  members: 4,
-                  color: Color(0xFF1E1E1E),
-                ),
-              ),
+              top: 60,
+              child: _Spark(angle: -0.5),
             ),
-            // Right card — tilted forward
             Positioned(
               right: 0,
-              top: 10,
-              child: Transform.rotate(
-                angle: 0.12,
-                child: const _ExpenseCard(
-                  title: 'Dinner',
-                  amount: '₹2,400',
-                  members: 3,
-                  color: Color(0xFF232323),
-                  accent: _green,
-                ),
+              top: 20,
+              child: _Spark(angle: 0.3),
+            ),
+            // Bottom card — most offset right
+            Positioned(
+              top: 120,
+              left: 10,
+              right: 0,
+              child: _ReceiptCard(
+                avatarColor: const Color(0xFF8B9DC3),
+                title: 'Apartment',
+                subtotal: '₹12,800',
+                total: '₹12,000',
+                members: 3,
+                memberColors: const [
+                  Color(0xFF6B8DD6),
+                  Color(0xFF9B6B6B),
+                  Color(0xFF6BAD8D),
+                ],
               ),
             ),
-            // Center card — straight, on top with glow
-            const Align(
-              alignment: Alignment.center,
-              child: _ExpenseCard(
+            // Middle card
+            Positioned(
+              top: 50,
+              left: 8,
+              right: -8,
+              child: _ReceiptCard(
+                avatarColor: const Color(0xFFD4A574),
                 title: 'Road Trip',
-                amount: '₹6,300',
-                members: 5,
-                color: Color(0xFF1A1A1A),
-                elevated: true,
+                subtotal: '₹ Tao',
+                total: '₹6,300',
+                members: 2,
+                memberColors: const [
+                  Color(0xFFD4A574),
+                  Color(0xFF74A4D4),
+                ],
+              ),
+            ),
+            // Top card — least offset
+            Positioned(
+              top: 0,
+              left: 16,
+              right: -16,
+              child: _ReceiptCard(
+                avatarColor: const Color(0xFFC47A7A),
+                title: 'Dinner',
+                subtotal: '₹ 400',
+                total: '₹2,400',
+                members: 2,
+                memberColors: const [
+                  Color(0xFFC47A7A),
+                  Color(0xFF7AC4A0),
+                ],
               ),
             ),
           ],
@@ -330,100 +352,141 @@ class _ExpenseIllustration extends StatelessWidget {
   }
 }
 
-class _ExpenseCard extends StatelessWidget {
-  const _ExpenseCard({
+class _ReceiptCard extends StatelessWidget {
+  const _ReceiptCard({
+    required this.avatarColor,
     required this.title,
-    required this.amount,
+    required this.subtotal,
+    required this.total,
     required this.members,
-    required this.color,
-    this.accent,
-    this.elevated = false,
+    required this.memberColors,
   });
 
+  final Color avatarColor;
   final String title;
-  final String amount;
+  final String subtotal;
+  final String total;
   final int members;
-  final Color color;
-  final Color? accent;
-  final bool elevated;
+  final List<Color> memberColors;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 160,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      height: 56,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: elevated ? _green.withOpacity(0.4) : const Color(0xFF303030),
-        ),
-        boxShadow: elevated
-            ? [
-                BoxShadow(
-                  color: _green.withOpacity(0.15),
-                  blurRadius: 20,
-                  spreadRadius: 2,
-                )
-              ]
-            : null,
+        color: const Color(0xFFF5F5F5),
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.18),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
+      child: Row(
         children: [
-          Row(
-            children: [
-              Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: (accent ?? const Color(0xFF444444)).withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(8),
+          // Avatar circle
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: avatarColor,
+            ),
+            child: const Icon(Icons.person, size: 18, color: Colors.white),
+          ),
+          const SizedBox(width: 10),
+          // Title + member dots
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Color(0xFF1A1A1A),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-                child: Icon(
-                  Icons.receipt_long_rounded,
-                  size: 14,
-                  color: accent ?? Colors.white70,
+                const SizedBox(height: 3),
+                Row(
+                  children: List.generate(
+                    members,
+                    (i) => Container(
+                      width: 14,
+                      height: 14,
+                      margin: EdgeInsets.only(right: i < members - 1 ? 2 : 0),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: memberColors[i % memberColors.length],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Amounts
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                subtotal,
+                style: const TextStyle(
+                  color: Color(0xFF888888),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-              const Spacer(),
               Text(
-                amount,
-                style: TextStyle(
-                  color: accent ?? Colors.white,
+                total,
+                style: const TextStyle(
+                  color: Color(0xFF1A1A1A),
                   fontSize: 13,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          Text(
-            title,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 6),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Spark decoration ─────────────────────────────────────────────────────────
+class _Spark extends StatelessWidget {
+  const _Spark({required this.angle});
+  final double angle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Transform.rotate(
+      angle: angle,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(width: 3, height: 14, decoration: BoxDecoration(
+            color: _green, borderRadius: BorderRadius.circular(2))),
+          const SizedBox(height: 4),
           Row(
-            children: List.generate(
-              members.clamp(0, 4),
-              (i) => Container(
-                width: 18,
-                height: 18,
-                margin: EdgeInsets.only(right: i < members - 1 ? 3 : 0),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0xFF444444),
-                  border: Border.all(color: color, width: 1.5),
-                ),
-                child: const Icon(Icons.person, size: 10, color: Colors.white54),
-              ),
-            ),
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(width: 14, height: 3, decoration: BoxDecoration(
+                color: _green, borderRadius: BorderRadius.circular(2))),
+              const SizedBox(width: 4),
+              Container(width: 14, height: 3, decoration: BoxDecoration(
+                color: _green, borderRadius: BorderRadius.circular(2))),
+            ],
           ),
+          const SizedBox(height: 4),
+          Container(width: 3, height: 14, decoration: BoxDecoration(
+            color: _green, borderRadius: BorderRadius.circular(2))),
         ],
       ),
     );
