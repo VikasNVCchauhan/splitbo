@@ -28,7 +28,13 @@ class ActivityScreen extends ConsumerWidget {
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 80),
         child: FloatingActionButton.extended(
-          onPressed: () => context.push('/expense/new'),
+          onPressed: () {
+            if (ref.read(guestModeProvider)) {
+              context.go('/auth/sign-in');
+              return;
+            }
+            context.push('/expense/new');
+          },
           backgroundColor: const Color(0xFF739800),
           foregroundColor: Colors.black,
           elevation: 2,

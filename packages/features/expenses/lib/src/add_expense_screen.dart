@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:data/data.dart';
+import 'package:go_router/go_router.dart';
 import 'package:design_system/design_system.dart';
 import 'package:domain/domain.dart';
 import 'package:file_picker/file_picker.dart';
@@ -214,6 +215,58 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
         err: (err) => _toastError(err.message),
       );
     }
+  }
+
+  // ── Quick create group ────────────────────────────────────────────────────
+  void _showQuickCreateGroup() {
+    final nameCtrl = TextEditingController();
+    final colors = context.colors;
+    const brandGreen = Color(0xFF739800);
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: colors.surfaceDefault,
+        title: Text('New Group', style: TextStyle(color: colors.textPrimary, fontWeight: FontWeight.w700)),
+        content: TextField(
+          controller: nameCtrl,
+          autofocus: true,
+          textCapitalization: TextCapitalization.words,
+          style: TextStyle(color: colors.textPrimary),
+          decoration: InputDecoration(
+            hintText: 'Group name',
+            hintStyle: TextStyle(color: colors.textSecondary),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel', style: TextStyle(color: colors.textSecondary)),
+          ),
+          TextButton(
+            onPressed: () async {
+              final name = nameCtrl.text.trim();
+              if (name.isEmpty) return;
+              Navigator.pop(context);
+              final user = ref.read(authStateProvider).valueOrNull;
+              if (user == null) return;
+              final result = await ref.read(groupRepositoryProvider).createGroup(
+                name: name,
+                description: '',
+                currency: 'INR',
+                memberIds: [user.id],
+              );
+              if (mounted) {
+                result.fold(
+                  ok: (g) { _onGroupChanged(g); },
+                  err: (e) => _toastError(e.message),
+                );
+              }
+            },
+            child: const Text('Create', style: TextStyle(color: brandGreen, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
   }
 
   // ── Group picker ──────────────────────────────────────────────────────────
@@ -601,6 +654,14 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
     final groupsAsync = ref.watch(watchGroupsProvider);
     const brandGreen = Color(0xFF739800);
 
+    // Guest mode — redirect to sign-in
+    if (ref.watch(guestModeProvider)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) { Navigator.of(context).pop(); context.go('/auth/sign-in'); }
+      });
+      return const Scaffold(backgroundColor: Colors.black, body: SizedBox.shrink());
+    }
+
     return Scaffold(
       backgroundColor: colors.backgroundDefault,
       appBar: AppBar(
@@ -801,8 +862,20 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
                                     fontSize: 15, color: colors.textSecondary),
                               ),
                       ),
-                      Icon(Icons.expand_more_rounded,
-                          color: colors.textSecondary, size: 22),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (groups.isNotEmpty)
+                            Icon(Icons.expand_more_rounded,
+                                color: colors.textSecondary, size: 22),
+                          const SizedBox(width: 4),
+                          GestureDetector(
+                            onTap: _showQuickCreateGroup,
+                            child: Icon(Icons.add_circle_outline_rounded,
+                                color: brandGreen, size: 22),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
