@@ -319,7 +319,6 @@ class _LoginCards extends StatelessWidget {
                   s: s, w: cw, h: ch,
                   avatarAsset: _f2,
                   title: 'Grocery',
-                  secondEmoji: '🛒',
                   splitAmt: '₹700', totalAmt: '₹6,300',
                 ),
               ),
