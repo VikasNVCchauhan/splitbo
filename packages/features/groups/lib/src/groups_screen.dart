@@ -19,13 +19,37 @@ class GroupsScreen extends ConsumerWidget {
         backgroundColor: colors.backgroundDefault,
         elevation: 0,
         automaticallyImplyLeading: false,
-        title: Text(
-          'Groups',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w800,
-            color: colors.textPrimary,
-          ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              'assets/images/logo_icon.jpg',
+              height: 28,
+              width: 28,
+              fit: BoxFit.contain,
+            ),
+            const SizedBox(width: 8),
+            Text.rich(
+              const TextSpan(children: [
+                TextSpan(
+                  text: 'Split',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                TextSpan(
+                  text: 'Bo',
+                  style: TextStyle(
+                    color: Color(0xFFC3FD00),
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ]),
+            ),
+          ],
         ),
       ),
       body: groupsAsync.when(

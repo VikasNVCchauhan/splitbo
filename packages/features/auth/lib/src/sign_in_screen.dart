@@ -99,34 +99,63 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 48),
 
-                  // Full stacked logo (icon + SplitBo wordmark)
+                  // Logo: transparent icon + SplitBo wordmark
                   Center(
-                    child: Image.asset(
-                      'assets/images/logo_full.jpg',
-                      height: 110,
-                      fit: BoxFit.contain,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Image.asset(
+                          'assets/images/logo_icon.jpg',
+                          height: 52,
+                          width: 52,
+                          fit: BoxFit.contain,
+                        ),
+                        const SizedBox(width: 10),
+                        const Text.rich(
+                          TextSpan(children: [
+                            TextSpan(
+                              text: 'Split',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 32,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                            TextSpan(
+                              text: 'Bo',
+                              style: TextStyle(
+                                color: _green,
+                                fontSize: 32,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                          ]),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 10),
 
                   // Tagline
                   const Text(
                     'Split bills. Keep friends.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
+                      color: Color(0xFFAAAAAA),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w400,
                       letterSpacing: 0.2,
                     ),
                   ),
-                  const SizedBox(height: 36),
+                  const SizedBox(height: 40),
 
                   // Illustrated expense cards
                   const _ExpenseIllustration(),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 16),
 
                   // Subtitle
                   const Text(
@@ -139,8 +168,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                       letterSpacing: 0.1,
                     ),
                   ),
-
-                  const Spacer(),
+                  const SizedBox(height: 36),
 
                   // Feature pills row
                   Row(
@@ -246,49 +274,57 @@ class _ExpenseIllustration extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 160,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Back card (tilted left)
-          Positioned(
-            left: 20,
-            top: 10,
-            child: Transform.rotate(
-              angle: -0.12,
-              child: const _ExpenseCard(
-                title: 'Apartment',
-                amount: '₹12,000',
-                members: 4,
-                color: Color(0xFF1E1E1E),
+    // Fixed 340×160 canvas centred in available width — cards never overflow.
+    return Center(
+      child: SizedBox(
+        width: 340,
+        height: 160,
+        child: Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.center,
+          children: [
+            // Left card — tilted back
+            Positioned(
+              left: 0,
+              top: 20,
+              child: Transform.rotate(
+                angle: -0.15,
+                child: const _ExpenseCard(
+                  title: 'Apartment',
+                  amount: '₹12,000',
+                  members: 4,
+                  color: Color(0xFF1E1E1E),
+                ),
               ),
             ),
-          ),
-          // Front card (slightly tilted right)
-          Positioned(
-            right: 20,
-            top: 0,
-            child: Transform.rotate(
-              angle: 0.08,
-              child: const _ExpenseCard(
-                title: 'Dinner',
-                amount: '₹2,400',
-                members: 3,
-                color: Color(0xFF232323),
-                accent: _green,
+            // Right card — tilted forward
+            Positioned(
+              right: 0,
+              top: 10,
+              child: Transform.rotate(
+                angle: 0.12,
+                child: const _ExpenseCard(
+                  title: 'Dinner',
+                  amount: '₹2,400',
+                  members: 3,
+                  color: Color(0xFF232323),
+                  accent: _green,
+                ),
               ),
             ),
-          ),
-          // Center card (straight, on top)
-          const _ExpenseCard(
-            title: 'Road Trip',
-            amount: '₹6,300',
-            members: 5,
-            color: Color(0xFF1A1A1A),
-            elevated: true,
-          ),
-        ],
+            // Center card — straight, on top with glow
+            const Align(
+              alignment: Alignment.center,
+              child: _ExpenseCard(
+                title: 'Road Trip',
+                amount: '₹6,300',
+                members: 5,
+                color: Color(0xFF1A1A1A),
+                elevated: true,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
