@@ -52,11 +52,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       if (userAsync.isLoading) return null;
 
       final isSignedIn = userAsync.valueOrNull != null;
+      final isGuest = container.read(guestModeProvider);
       final onAuthPage = state.matchedLocation.startsWith('/auth');
 
       final onJoinPage = state.matchedLocation.startsWith('/join');
-      if (!isSignedIn && !onAuthPage && !onJoinPage) return AppRoutes.signIn;
-      if (isSignedIn && onAuthPage) return AppRoutes.home;
+      if (!isSignedIn && !isGuest && !onAuthPage && !onJoinPage) return AppRoutes.signIn;
+      if ((isSignedIn || isGuest) && onAuthPage) return AppRoutes.home;
       return null;
     },
     routes: [
@@ -154,13 +155,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 // Notifies go_router when auth state changes.
 class _AuthChangeNotifier extends ChangeNotifier {
   _AuthChangeNotifier(ProviderRef ref) {
-    _sub = ref.listen(authStateProvider, (_, __) => notifyListeners());
+    _authSub = ref.listen(authStateProvider, (_, __) => notifyListeners());
+    _guestSub = ref.listen(guestModeProvider, (_, __) => notifyListeners());
   }
-  late final ProviderSubscription _sub;
+  late final ProviderSubscription _authSub;
+  late final ProviderSubscription _guestSub;
 
   @override
   void dispose() {
-    _sub.close();
+    _authSub.close();
+    _guestSub.close();
     super.dispose();
   }
 }

@@ -2,6 +2,7 @@ import 'package:data/data.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 // Brand tokens
 const _green = Color(0xFF9CD246);
@@ -59,8 +60,12 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     ));
   }
 
-  void _showEmailSheet() {
-    showModalBottomSheet<void>(
+  void _skip() {
+    ref.read(guestModeProvider.notifier).state = true;
+    context.go('/home');
+  }
+
+  void _showEmailSheet() {    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -100,6 +105,25 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             ),
           ),
 
+          // Skip button — top-right, lets user browse without signing in
+          Positioned(
+            top: 0,
+            right: 8,
+            child: SafeArea(
+              child: TextButton(
+                onPressed: _skip,
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFF888888),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+                child: const Text(
+                  'Skip',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                ),
+              ),
+            ),
+          ),
+
           // Main content — single scale factor so everything fits any screen
           SafeArea(
             child: LayoutBuilder(
@@ -128,7 +152,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 36 * s,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: FontWeight.w700,
                                   height: 1.1,
                                 ),
                               ),
@@ -213,7 +237,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                             style: TextStyle(
                               fontSize: 16 * s,
                               fontWeight: FontWeight.w600,
-                              color: Colors.white,
+                              color: _green,
                             ),
                           ),
                         ),
@@ -237,64 +261,65 @@ class _LoginCards extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cw = 272.0 * s;
-    final ch = 74.0 * s;
-    final totalH = ch * 2.8;
-    final totalW = cw + 56 * s;
+    final cw = 280.0 * s;
+    final ch = 92.0 * s;
+    final totalH = ch * 2.55;
+    final totalW = cw + 68 * s;
 
-    return SizedBox(
-      height: totalH,
-      width: totalW,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Positioned(left: 0, top: 28 * s,
-              child: _GreenSparks(s: s)),
-          Positioned(right: 0, top: 10 * s,
-              child: _GreenSparks(s: s, mirrored: true)),
+    return Center(
+      child: SizedBox(
+        height: totalH,
+        width: totalW,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Positioned(left: 0, top: ch * 0.38, child: _GreenSparks(s: s)),
+            Positioned(right: 0, top: ch * 0.06, child: _GreenSparks(s: s, mirrored: true)),
 
-          // Bottom — Apartment
-          Positioned(
-            bottom: 0, left: 24 * s,
-            child: Transform.rotate(angle: 0.04,
-              child: _LoginCard(
-                s: s, w: cw, h: ch,
-                avatarIcon: Icons.group_rounded,
-                avatarColor: const Color(0xFF7B9ED9),
-                title: 'Apartment',
-                memberColors: const [Color(0xFF9CD246), Color(0xFF7B9ED9), Color(0xFFD97B7B)],
-                extra: 3, splitAmt: '₹12,200', totalAmt: '₹12,000',
-              )),
-          ),
+            // Back — Apartment
+            Positioned(
+              bottom: 0, right: 0,
+              child: Transform.rotate(angle: 0.05,
+                child: _LoginCard(
+                  s: s, w: cw, h: ch,
+                  avatarInitial: 'R',
+                  avatarColor: const Color(0xFF6B7FD4),
+                  title: 'Apartment',
+                  memberInitials: const ['A', 'P', 'S'],
+                  memberColors: const [Color(0xFF9CD246), Color(0xFF7B9ED9), Color(0xFFE8A08E)],
+                  extra: 3, splitAmt: '₹12,000', totalAmt: '₹12,000',
+                )),
+            ),
 
-          // Middle
-          Positioned(
-            bottom: ch * 0.75, left: 16 * s,
-            child: Transform.rotate(angle: -0.02,
-              child: _LoginCard(
-                s: s, w: cw, h: ch,
-                avatarIcon: Icons.person_rounded,
-                avatarColor: const Color(0xFF444444),
-                title: null,
-                secondIcon: Icons.shopping_bag_outlined,
-                splitAmt: '₹700', totalAmt: '₹6,300',
-              )),
-          ),
+            // Middle
+            Positioned(
+              bottom: ch * 0.60, left: 24 * s,
+              child: Transform.rotate(angle: -0.01,
+                child: _LoginCard(
+                  s: s, w: cw, h: ch,
+                  avatarInitial: 'K',
+                  avatarColor: const Color(0xFF3A3A3A),
+                  secondIcon: Icons.shopping_bag_outlined,
+                  splitAmt: '₹700', totalAmt: '₹6,300',
+                )),
+            ),
 
-          // Top — Dinner
-          Positioned(
-            top: 0, left: 8 * s,
-            child: Transform.rotate(angle: -0.06,
-              child: _LoginCard(
-                s: s, w: cw, h: ch,
-                avatarIcon: Icons.person_rounded,
-                avatarColor: const Color(0xFF8EB5E8),
-                title: 'Dinner',
-                memberColors: const [Color(0xFF8EB5E8), Color(0xFFE8A08E), Color(0xFF9CD246)],
-                extra: 2, splitAmt: '₹400', totalAmt: '₹2,400',
-              )),
-          ),
-        ],
+            // Front — Dinner
+            Positioned(
+              top: 0, left: 0,
+              child: Transform.rotate(angle: -0.07,
+                child: _LoginCard(
+                  s: s, w: cw, h: ch,
+                  avatarInitial: 'V',
+                  avatarColor: const Color(0xFF5B9BD5),
+                  title: 'Dinner',
+                  memberInitials: const ['A', 'R', 'S'],
+                  memberColors: const [Color(0xFF8EB5E8), Color(0xFFE8A08E), Color(0xFF9CD246)],
+                  extra: 2, splitAmt: '₹400', totalAmt: '₹2,400',
+                )),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -303,81 +328,122 @@ class _LoginCards extends StatelessWidget {
 class _LoginCard extends StatelessWidget {
   const _LoginCard({
     required this.s, required this.w, required this.h,
-    required this.avatarIcon, required this.avatarColor,
+    required this.avatarInitial,
+    required this.avatarColor,
     this.title, this.secondIcon,
+    this.memberInitials = const [],
     this.memberColors = const [], this.extra = 0,
     required this.splitAmt, required this.totalAmt,
   });
 
   final double s, w, h;
-  final IconData avatarIcon;
+  final String avatarInitial;
   final Color avatarColor;
   final String? title;
   final IconData? secondIcon;
+  final List<String> memberInitials;
   final List<Color> memberColors;
   final int extra;
   final String splitAmt, totalAmt;
 
   @override
   Widget build(BuildContext context) {
-    final av = h * 0.66;
-    final dot = h * 0.20;
+    final av = h * 0.72;
+    final dot = h * 0.285;
+    final step = dot * 0.64; // overlap amount per avatar
 
     return Container(
       width: w, height: h,
-      padding: EdgeInsets.symmetric(horizontal: w * 0.04, vertical: h * 0.10),
+      padding: EdgeInsets.symmetric(horizontal: w * 0.048, vertical: h * 0.08),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(w * 0.055),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.13),
-            blurRadius: 14, offset: const Offset(0, 4))],
+        borderRadius: BorderRadius.circular(18 * s),
+        boxShadow: [BoxShadow(
+            color: Colors.black.withOpacity(0.20),
+            blurRadius: 28, spreadRadius: 0, offset: const Offset(0, 8))],
       ),
       child: Row(children: [
-        // Avatar
+        // Large circular avatar with initial
         Container(
           width: av, height: av,
           decoration: BoxDecoration(shape: BoxShape.circle, color: avatarColor),
-          child: Icon(avatarIcon, color: Colors.white, size: av * 0.58),
+          child: Center(
+            child: Text(avatarInitial,
+              style: TextStyle(color: Colors.white,
+                  fontSize: av * 0.40, fontWeight: FontWeight.w800,
+                  letterSpacing: 0)),
+          ),
         ),
         if (secondIcon != null) ...[
-          SizedBox(width: 4 * s),
+          SizedBox(width: 6 * s),
           Container(
-            width: av * 0.78, height: av * 0.78,
+            width: av * 0.68, height: av * 0.68,
             decoration: BoxDecoration(shape: BoxShape.circle,
-                color: _green.withOpacity(0.12)),
-            child: Icon(secondIcon, color: _green, size: av * 0.44),
+                color: _green.withOpacity(0.14)),
+            child: Icon(secondIcon, color: _green, size: av * 0.38),
           ),
         ],
-        SizedBox(width: 8 * s),
+        SizedBox(width: 10 * s),
 
-        // Title + member dots
+        // Title + overlapping member avatars
         Expanded(child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             if (title != null)
-              Text(title!, style: TextStyle(color: const Color(0xFF111111),
-                  fontSize: h * 0.22, fontWeight: FontWeight.w700)),
+              Text(title!,
+                style: TextStyle(
+                    color: const Color(0xFF0A0A0A),
+                    fontSize: h * 0.245, fontWeight: FontWeight.w800,
+                    letterSpacing: -0.2)),
             if (memberColors.isNotEmpty) ...[
-              if (title != null) SizedBox(height: 3 * s),
-              Row(mainAxisSize: MainAxisSize.min, children: [
-                ...memberColors.map((c) => Container(
-                  width: dot, height: dot,
-                  margin: EdgeInsets.only(right: 2 * s),
-                  decoration: BoxDecoration(shape: BoxShape.circle, color: c),
-                )),
-                if (extra > 0)
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 4 * s),
+              if (title != null) SizedBox(height: 6 * s),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(
                     height: dot,
-                    decoration: BoxDecoration(
-                        color: _green,
-                        borderRadius: BorderRadius.circular(dot)),
-                    child: Center(child: Text('+$extra',
-                      style: TextStyle(color: Colors.black,
-                          fontSize: dot * 0.62, fontWeight: FontWeight.w800))),
+                    width: dot + (memberColors.length - 1) * step,
+                    child: Stack(
+                      children: [
+                        for (int i = 0; i < memberColors.length; i++)
+                          Positioned(
+                            left: i * step,
+                            child: Container(
+                              width: dot, height: dot,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: memberColors[i],
+                                border: Border.all(color: Colors.white, width: 1.8 * s),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  i < memberInitials.length ? memberInitials[i] : '',
+                                  style: TextStyle(color: Colors.white,
+                                      fontSize: dot * 0.42, fontWeight: FontWeight.w700),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
-              ]),
+                  if (extra > 0) ...[
+                    SizedBox(width: 5 * s),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 6 * s),
+                      height: dot,
+                      decoration: BoxDecoration(
+                          color: _green,
+                          borderRadius: BorderRadius.circular(dot / 2)),
+                      child: Center(child: Text('+$extra',
+                        style: TextStyle(color: Colors.black,
+                            fontSize: dot * 0.52, fontWeight: FontWeight.w800))),
+                    ),
+                  ],
+                ],
+              ),
             ],
           ],
         )),
@@ -387,11 +453,14 @@ class _LoginCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.end,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(splitAmt, style: TextStyle(color: const Color(0xFF888888),
-                fontSize: h * 0.16, fontWeight: FontWeight.w500)),
+            Text(splitAmt,
+              style: TextStyle(color: const Color(0xFF999999),
+                  fontSize: h * 0.155, fontWeight: FontWeight.w500)),
             SizedBox(height: 2 * s),
-            Text(totalAmt, style: TextStyle(color: const Color(0xFF111111),
-                fontSize: h * 0.26, fontWeight: FontWeight.w800)),
+            Text(totalAmt,
+              style: TextStyle(color: const Color(0xFF0A0A0A),
+                  fontSize: h * 0.295, fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5)),
           ],
         ),
       ]),
@@ -406,31 +475,29 @@ class _GreenSparks extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final r = BorderRadius.circular(2 * s);
-    Widget w = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(width: 3 * s, height: 16 * s,
-            decoration: BoxDecoration(color: _green, borderRadius: r)),
-        SizedBox(height: 4 * s),
-        Row(mainAxisSize: MainAxisSize.min, children: [
-          Container(width: 18 * s, height: 3 * s,
-              decoration: BoxDecoration(color: _green, borderRadius: r)),
-          SizedBox(width: 4 * s),
-          Container(width: 10 * s, height: 3 * s,
-              decoration: BoxDecoration(color: _green, borderRadius: r)),
-        ]),
-        SizedBox(height: 4 * s),
-        Container(width: 3 * s, height: 10 * s,
-            decoration: BoxDecoration(color: _green, borderRadius: r)),
-      ],
+    // Two diagonal slash marks matching the brand reference
+    final slash = Transform.rotate(
+      angle: -0.42,
+      child: Container(
+        width: 5.5 * s, height: 28 * s,
+        decoration: BoxDecoration(
+          color: _green,
+          borderRadius: BorderRadius.circular(3 * s),
+        ),
+      ),
     );
-    if (!mirrored) return w;
+
+    Widget sparks = Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [slash, SizedBox(width: 10 * s), slash],
+    );
+
+    if (!mirrored) return sparks;
     return Transform(
       transform: Matrix4.rotationY(3.14159),
       alignment: Alignment.center,
-      child: w,
+      child: sparks,
     );
   }
 }
