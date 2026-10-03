@@ -16,6 +16,55 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.colors;
     final user = ref.watch(authStateProvider).valueOrNull;
+    final isGuest = ref.watch(guestModeProvider);
+
+    if (isGuest) {
+      return Scaffold(
+        backgroundColor: colors.backgroundDefault,
+        appBar: AppBar(
+          backgroundColor: colors.backgroundDefault,
+          elevation: 0,
+          automaticallyImplyLeading: false,
+          titleSpacing: 20,
+          title: Text('Account',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 20, color: colors.textPrimary)),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.person_outline_rounded, size: 64, color: colors.textSecondary),
+                const SizedBox(height: 20),
+                Text('Sign in to access your account',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: colors.textPrimary)),
+                const SizedBox(height: 8),
+                Text('Create a free account to manage your profile, sync groups across devices, and more.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 14, color: colors.textSecondary, height: 1.5)),
+                const SizedBox(height: 28),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: () => context.go('/auth/sign-in'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: colors.brandPrimary,
+                      foregroundColor: colors.textOnPrimary,
+                      elevation: 0,
+                      shape: const StadiumBorder(),
+                    ),
+                    child: const Text('Sign In', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: colors.backgroundDefault,

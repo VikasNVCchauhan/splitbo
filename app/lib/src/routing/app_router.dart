@@ -2,6 +2,7 @@
 // Manual Riverpod provider — no code-gen, no build_runner needed.
 
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:data/data.dart';
@@ -180,45 +181,78 @@ class _AppShell extends ConsumerWidget {
     final colors = context.colors;
     return Scaffold(
       backgroundColor: colors.backgroundDefault,
-      body: shell,
-      bottomNavigationBar: Align(
-        alignment: Alignment.center,
-        heightFactor: 1.0,
+      body: Align(
+        alignment: Alignment.topCenter,
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 600),
-          child: NavigationBar(
-            backgroundColor: colors.surfaceDefault,
-            indicatorColor: colors.brandPrimaryLt,
-            selectedIndex: shell.currentIndex,
-            onDestinationSelected: shell.goBranch,
-            labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-            destinations: [
-              NavigationDestination(
-                icon: Icon(Icons.home_outlined, color: colors.textSecondary),
-                selectedIcon: Icon(Icons.home_rounded, color: colors.brandPrimary),
-                label: 'Home',
+          child: shell,
+        ),
+      ),
+      extendBody: true,
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
+        child: Align(
+          alignment: Alignment.center,
+          heightFactor: 1.0,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(28),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: colors.surfaceDefault.withOpacity(0.88),
+                    borderRadius: BorderRadius.circular(28),
+                    border: Border.all(
+                      color: colors.borderDefault.withOpacity(0.45),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.18),
+                        blurRadius: 32,
+                        spreadRadius: -4,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: NavigationBar(
+                    backgroundColor: Colors.transparent,
+                    indicatorColor: colors.brandPrimaryLt,
+                    selectedIndex: shell.currentIndex,
+                    onDestinationSelected: shell.goBranch,
+                    labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+                    destinations: [
+                      NavigationDestination(
+                        icon: Icon(Icons.home_outlined, color: colors.textSecondary),
+                        selectedIcon: Icon(Icons.home_rounded, color: colors.brandPrimary),
+                        label: 'Home',
+                      ),
+                      NavigationDestination(
+                        icon: Icon(Icons.group_outlined, color: colors.textSecondary),
+                        selectedIcon: Icon(Icons.group_rounded, color: colors.brandPrimary),
+                        label: 'Groups',
+                      ),
+                      NavigationDestination(
+                        icon: Icon(Icons.people_outline_rounded, color: colors.textSecondary),
+                        selectedIcon: Icon(Icons.people_rounded, color: colors.brandPrimary),
+                        label: 'Friends',
+                      ),
+                      NavigationDestination(
+                        icon: Icon(Icons.receipt_long_outlined, color: colors.textSecondary),
+                        selectedIcon: Icon(Icons.receipt_long_rounded, color: colors.brandPrimary),
+                        label: 'Activity',
+                      ),
+                      NavigationDestination(
+                        icon: Icon(Icons.person_outline_rounded, color: colors.textSecondary),
+                        selectedIcon: Icon(Icons.person_rounded, color: colors.brandPrimary),
+                        label: 'Profile',
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              NavigationDestination(
-                icon: Icon(Icons.group_outlined, color: colors.textSecondary),
-                selectedIcon: Icon(Icons.group_rounded, color: colors.brandPrimary),
-                label: 'Groups',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.people_outline_rounded, color: colors.textSecondary),
-                selectedIcon: Icon(Icons.people_rounded, color: colors.brandPrimary),
-                label: 'Friends',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.receipt_long_outlined, color: colors.textSecondary),
-                selectedIcon: Icon(Icons.receipt_long_rounded, color: colors.brandPrimary),
-                label: 'Activity',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.person_outline_rounded, color: colors.textSecondary),
-                selectedIcon: Icon(Icons.person_rounded, color: colors.brandPrimary),
-                label: 'Profile',
-              ),
-            ],
+            ),
           ),
         ),
       ),

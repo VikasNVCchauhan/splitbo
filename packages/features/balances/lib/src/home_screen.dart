@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-const _green = Color(0xFF739800);
+const _green = Color(0xFF739800); // light-mode fallback only — prefer colors.brandPrimary in widgets
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -43,8 +43,8 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 TextSpan(
                   text: '$firstName!',
-                  style: const TextStyle(
-                      color: _green,
+                  style: TextStyle(
+                      color: colors.brandPrimary,
                       fontSize: 28,
                       fontWeight: FontWeight.w800,
                       height: 1.2),
@@ -104,12 +104,12 @@ class HomeScreen extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
                     color: isOwed
-                        ? _green.withOpacity(0.08)
+                        ? colors.brandPrimary.withOpacity(0.08)
                         : const Color(0xFFFF6B6B).withOpacity(0.08),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
                       color: isOwed
-                          ? _green.withOpacity(0.2)
+                          ? colors.brandPrimary.withOpacity(0.2)
                           : const Color(0xFFFF6B6B).withOpacity(0.2),
                     ),
                   ),
@@ -120,7 +120,7 @@ class HomeScreen extends ConsumerWidget {
                         isOwed
                             ? Icons.arrow_downward_rounded
                             : Icons.arrow_upward_rounded,
-                        color: isOwed ? _green : const Color(0xFFFF6B6B),
+                        color: isOwed ? colors.brandPrimary : const Color(0xFFFF6B6B),
                         size: 14,
                       ),
                       const SizedBox(width: 6),
@@ -129,7 +129,7 @@ class HomeScreen extends ConsumerWidget {
                             ? 'You are owed ₹${totalNet.toStringAsFixed(0)} overall'
                             : 'You owe ₹${totalNet.abs().toStringAsFixed(0)} overall',
                         style: TextStyle(
-                          color: isOwed ? _green : const Color(0xFFFF6B6B),
+                          color: isOwed ? colors.brandPrimary : const Color(0xFFFF6B6B),
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                         ),
@@ -198,22 +198,22 @@ class HomeScreen extends ConsumerWidget {
                 const Spacer(),
                 GestureDetector(
                   onTap: () => context.go('/groups'),
-                  child: const Text('See all',
+                  child: Text('See all',
                       style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
-                          color: _green)),
+                          color: colors.brandPrimary)),
                 ),
               ],
             ),
             const SizedBox(height: 14),
 
             groupsAsync.when(
-              loading: () => const Center(
+              loading: () => Center(
                   child: Padding(
-                      padding: EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(24),
                       child:
-                          CircularProgressIndicator(color: _green, strokeWidth: 2))),
+                          CircularProgressIndicator(color: colors.brandPrimary, strokeWidth: 2))),
               error: (_, __) =>
                   _EmptyGroupsHint(onTap: () => context.go('/groups')),
               data: (groups) {
@@ -286,7 +286,7 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
               width: 34,
               height: 34,
               decoration: BoxDecoration(
-                color: user?.avatarUrl != null ? null : _green.withOpacity(0.15),
+                color: user?.avatarUrl != null ? null : colors.brandPrimary.withOpacity(0.15),
                 shape: BoxShape.circle,
                 image: user?.avatarUrl != null
                     ? DecorationImage(
@@ -297,8 +297,8 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
               child: user?.avatarUrl == null
                   ? Center(
                       child: Text(initials,
-                          style: const TextStyle(
-                              color: _green,
+                          style: TextStyle(
+                              color: colors.brandPrimary,
                               fontSize: 12,
                               fontWeight: FontWeight.w700)),
                     )
@@ -441,6 +441,7 @@ class _NewGroupCircle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return GestureDetector(
       onTap: onTap,
       child: SizedBox(
@@ -452,23 +453,23 @@ class _NewGroupCircle extends StatelessWidget {
               width: 64,
               height: 64,
               decoration: BoxDecoration(
-                color: context.colors.surfaceRaised,
+                color: colors.surfaceRaised,
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: _green.withOpacity(0.5),
+                  color: colors.brandPrimary.withOpacity(0.5),
                   width: 1.5,
                 ),
               ),
-              child: const Center(
-                child: Icon(Icons.add_rounded, color: _green, size: 28),
+              child: Center(
+                child: Icon(Icons.add_rounded, color: colors.brandPrimary, size: 28),
               ),
             ),
             const SizedBox(height: 6),
-            const Text(
+            Text(
               'New',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: _green,
+                color: colors.brandPrimary,
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
               ),

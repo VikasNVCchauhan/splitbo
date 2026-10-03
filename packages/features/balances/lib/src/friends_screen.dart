@@ -3,6 +3,7 @@ import 'package:data/data.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 const _green = Color(0xFF739800);
 
@@ -229,6 +230,10 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   }
 
   void _showAddFriendSheet(BuildContext context) {
+    if (ref.read(guestModeProvider)) {
+      context.go('/auth/sign-in');
+      return;
+    }
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
