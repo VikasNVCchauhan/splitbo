@@ -32,7 +32,7 @@ final groupRepositoryProvider = Provider<GroupRepository>((ref) =>
 
 final watchGroupsProvider = StreamProvider<List<GroupEntity>>((ref) {
   final user = ref.watch(authStateProvider).valueOrNull;
-  if (user == null) return const Stream.empty();
+  if (user == null) return Stream.value([]);
   return ref.watch(groupRepositoryProvider).watchGroups(user.id);
 });
 
@@ -83,7 +83,7 @@ final balanceRepositoryProvider = Provider<BalanceRepository>((ref) =>
 
 final watchBalancesProvider = StreamProvider<List<BalanceEntity>>((ref) {
   final user = ref.watch(authStateProvider).valueOrNull;
-  if (user == null) return const Stream.empty();
+  if (user == null) return Stream.value([]);
   return ref.watch(balanceRepositoryProvider).watchBalances(user.id);
 });
 

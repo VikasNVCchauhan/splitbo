@@ -55,6 +55,10 @@ class GroupsScreen extends ConsumerWidget {
   }
 
   void _showCreateGroupSheet(BuildContext context, WidgetRef ref) {
+    if (ref.read(guestModeProvider)) {
+      context.go('/auth/sign-in');
+      return;
+    }
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,

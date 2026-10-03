@@ -12,6 +12,7 @@ import 'package:feature_expenses/feature_expenses.dart';
 import 'package:feature_groups/feature_groups.dart';
 import 'package:feature_settings/feature_settings.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:design_system/design_system.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -173,46 +174,48 @@ class _AppShell extends ConsumerWidget {
   const _AppShell({required this.shell});
   final StatefulNavigationShell shell;
 
-  static const _brandGreen = Color(0xFFC3FD00);
-  static const _inactive = Color(0xFF757575);
-  static const _bg = Color(0xFF0A0A0A);
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Save FCM token whenever signed-in user changes
     ref.watch(saveFcmTokenProvider);
+    final colors = context.colors;
     return Scaffold(
-      body: shell,
+      backgroundColor: colors.backgroundDefault,
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: shell,
+        ),
+      ),
       bottomNavigationBar: NavigationBar(
-        backgroundColor: _bg,
-        indicatorColor: _brandGreen.withOpacity(0.15),
+        backgroundColor: colors.surfaceDefault,
+        indicatorColor: colors.brandPrimaryLt,
         selectedIndex: shell.currentIndex,
         onDestinationSelected: shell.goBranch,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-        destinations: const [
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_rounded, color: _brandGreen),
+            icon: Icon(Icons.home_outlined, color: colors.textSecondary),
+            selectedIcon: Icon(Icons.home_rounded, color: colors.brandPrimary),
             label: 'Home',
           ),
           NavigationDestination(
-            icon: Icon(Icons.group_outlined),
-            selectedIcon: Icon(Icons.group_rounded, color: _brandGreen),
+            icon: Icon(Icons.group_outlined, color: colors.textSecondary),
+            selectedIcon: Icon(Icons.group_rounded, color: colors.brandPrimary),
             label: 'Groups',
           ),
           NavigationDestination(
-            icon: Icon(Icons.people_outline_rounded),
-            selectedIcon: Icon(Icons.people_rounded, color: _brandGreen),
+            icon: Icon(Icons.people_outline_rounded, color: colors.textSecondary),
+            selectedIcon: Icon(Icons.people_rounded, color: colors.brandPrimary),
             label: 'Friends',
           ),
           NavigationDestination(
-            icon: Icon(Icons.receipt_long_outlined),
-            selectedIcon: Icon(Icons.receipt_long_rounded, color: _brandGreen),
+            icon: Icon(Icons.receipt_long_outlined, color: colors.textSecondary),
+            selectedIcon: Icon(Icons.receipt_long_rounded, color: colors.brandPrimary),
             label: 'Activity',
           ),
           NavigationDestination(
-            icon: Icon(Icons.person_outline_rounded),
-            selectedIcon: Icon(Icons.person_rounded, color: _brandGreen),
+            icon: Icon(Icons.person_outline_rounded, color: colors.textSecondary),
+            selectedIcon: Icon(Icons.person_rounded, color: colors.brandPrimary),
             label: 'Profile',
           ),
         ],
