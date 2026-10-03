@@ -42,7 +42,7 @@ class GroupsScreen extends ConsumerWidget {
                 TextSpan(
                   text: 'Bo',
                   style: TextStyle(
-                    color: Color(0xFFC3FD00),
+                    color: Color(0xFF9CD246),
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
                   ),
