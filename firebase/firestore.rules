@@ -76,6 +76,14 @@ service cloud.firestore {
         isSelfJoin(resource, request.resource)
       );
       allow delete: if isAuth() && uid() == resource.data.createdBy;
+
+      // Expenses are stored as a subcollection under each group.
+      match /expenses/{expenseId} {
+        allow read:   if isAuth() && uid() in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds;
+        allow create: if isAuth() && uid() in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds;
+        allow update: if isAuth() && uid() in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds;
+        allow delete: if isAuth() && uid() in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds;
+      }
     }
 
     match /dev_groups/{groupId} {
@@ -86,6 +94,13 @@ service cloud.firestore {
         isSelfJoin(resource, request.resource)
       );
       allow delete: if isAuth() && uid() == resource.data.createdBy;
+
+      match /expenses/{expenseId} {
+        allow read:   if isAuth() && uid() in get(/databases/$(database)/documents/dev_groups/$(groupId)).data.memberIds;
+        allow create: if isAuth() && uid() in get(/databases/$(database)/documents/dev_groups/$(groupId)).data.memberIds;
+        allow update: if isAuth() && uid() in get(/databases/$(database)/documents/dev_groups/$(groupId)).data.memberIds;
+        allow delete: if isAuth() && uid() in get(/databases/$(database)/documents/dev_groups/$(groupId)).data.memberIds;
+      }
     }
 
     // ── Expenses ──────────────────────────────────────────────────────────────

@@ -68,7 +68,6 @@ class _GroupDetailBodyState extends ConsumerState<_GroupDetailBody>
   void initState() {
     super.initState();
     _tab = TabController(length: 6, vsync: this);
-    _tab.addListener(() => setState(() {}));
   }
 
   @override
@@ -85,7 +84,6 @@ class _GroupDetailBodyState extends ConsumerState<_GroupDetailBody>
     final expensesAsync = ref.watch(watchExpensesProvider(group.id));
     final expenses = expensesAsync.valueOrNull ?? [];
     final computedTotal = expenses.fold<double>(0.0, (sum, e) => sum + e.amount);
-    final onMembersTab = _tab.index == 5;
 
     return Scaffold(
       backgroundColor: colors.backgroundDefault,
@@ -127,22 +125,25 @@ class _GroupDetailBodyState extends ConsumerState<_GroupDetailBody>
           const SizedBox(width: 8),
         ],
       ),
-      floatingActionButton: onMembersTab
-          ? null
-          : (_tab.index == 0
-              ? FloatingActionButton.extended(
-                  heroTag: 'addExpense',
-                  onPressed: () =>
-                      context.push('/expense/new?groupId=${group.id}'),
-                  backgroundColor: _green,
-                  foregroundColor: Colors.black,
-                  elevation: 2,
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add Expense',
-                      style: TextStyle(
-                          fontWeight: FontWeight.w700, fontSize: 14)),
-                )
-              : null),
+      floatingActionButton: AnimatedBuilder(
+        animation: _tab,
+        builder: (context, _) {
+          if (_tab.index == 5) return const SizedBox.shrink();
+          if (_tab.index != 0) return const SizedBox.shrink();
+          return FloatingActionButton.extended(
+            heroTag: 'addExpense',
+            onPressed: () =>
+                context.push('/expense/new?groupId=${group.id}'),
+            backgroundColor: _green,
+            foregroundColor: Colors.black,
+            elevation: 2,
+            icon: const Icon(Icons.add),
+            label: const Text('Add Expense',
+                style: TextStyle(
+                    fontWeight: FontWeight.w700, fontSize: 14)),
+          );
+        },
+      ),
       body: NotificationListener<ScrollNotification>(
         onNotification: (n) {
           if (n.depth == 0) {
@@ -164,7 +165,6 @@ class _GroupDetailBodyState extends ConsumerState<_GroupDetailBody>
               pinned: true,
               delegate: _PillTabDelegate(
                 controller: _tab,
-                selectedIndex: _tab.index,
               ),
             ),
           ],
@@ -177,8 +177,18 @@ class _GroupDetailBodyState extends ConsumerState<_GroupDetailBody>
                     child: CircularProgressIndicator(
                         color: _green, strokeWidth: 2)),
                 error: (e, _) => Center(
-                    child: Text(e.toString(),
-                        style: const TextStyle(color: Colors.white))),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.cloud_off_rounded, color: colors.textDisabled, size: 40),
+                        const SizedBox(height: 12),
+                        Text('Could not load expenses',
+                            style: TextStyle(color: colors.textPrimary, fontSize: 15, fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 6),
+                        Text('Check your connection and try again.',
+                            style: TextStyle(color: colors.textSecondary, fontSize: 13)),
+                      ],
+                    )),
                 data: (expenses) => expenses.isEmpty
                     ? _EmptyExpenses(groupId: group.id)
                     : _ExpenseList(expenses: expenses, group: group),
@@ -277,16 +287,10 @@ class _GroupDetailBodyState extends ConsumerState<_GroupDetailBody>
 
 // ── Pill tab bar delegate ─────────────────────────────────────────────────────
 class _PillTabDelegate extends SliverPersistentHeaderDelegate {
-  const _PillTabDelegate({
-    required this.controller,
-    required this.selectedIndex,
-  });
-  final TabController controller;
-  final int selectedIndex;
+  const _PillTabDelegate({required this.controller});
 
-  static const _labels = [
-    'Expenses', 'Balances', 'Charts', 'Totals', 'Whiteboard', 'Members'
-  ];
+  final TabController controller;
+
   static const _height = 56.0;
 
   @override
@@ -297,55 +301,108 @@ class _PillTabDelegate extends SliverPersistentHeaderDelegate {
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
     final colors = context.colors;
-    return Container(
+    return ColoredBox(
       color: colors.backgroundDefault,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        itemCount: _labels.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (context, i) {
-          final sel = i == selectedIndex;
-          return GestureDetector(
-            onTap: () => controller.animateTo(i),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              decoration: BoxDecoration(
-                color: sel ? _green : colors.surfaceDefault,
-                borderRadius: BorderRadius.circular(20),
-                border: sel
-                    ? null
-                    : Border.all(color: colors.borderDefault, width: 1),
-                boxShadow: sel
-                    ? [
-                        BoxShadow(
-                          color: _green.withOpacity(0.25),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        )
-                      ]
-                    : null,
-              ),
-              child: Text(
-                _labels[i],
-                style: TextStyle(
-                  color: sel ? Colors.black : colors.textSecondary,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                ),
-              ),
-            ),
-          );
-        },
-      ),
+      child: _PillTabBar(controller: controller),
     );
   }
 
   @override
-  bool shouldRebuild(_PillTabDelegate old) =>
-      old.selectedIndex != selectedIndex;
+  bool shouldRebuild(_PillTabDelegate old) => old.controller != controller;
+}
+
+// Self-updating pill bar — only this widget rebuilds on tab change.
+class _PillTabBar extends StatefulWidget {
+  const _PillTabBar({required this.controller});
+  final TabController controller;
+
+  @override
+  State<_PillTabBar> createState() => _PillTabBarState();
+}
+
+class _PillTabBarState extends State<_PillTabBar> {
+  static const _labels = [
+    'Expenses', 'Balances', 'Charts', 'Totals', 'Whiteboard', 'Members'
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_onTabChange);
+  }
+
+  void _onTabChange() {
+    if (mounted && !widget.controller.indexIsChanging) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onTabChange);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final sel = widget.controller.index;
+    return Stack(
+      children: [
+        ListView.separated(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          itemCount: _labels.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          itemBuilder: (context, i) {
+            final isSelected = i == sel;
+            return GestureDetector(
+              onTap: () => widget.controller.animateTo(i),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                decoration: BoxDecoration(
+                  color: isSelected ? _green : colors.surfaceDefault,
+                  borderRadius: BorderRadius.circular(20),
+                  border: isSelected
+                      ? null
+                      : Border.all(color: colors.borderDefault, width: 1),
+                  boxShadow: isSelected
+                      ? [BoxShadow(color: _green.withOpacity(0.25), blurRadius: 8, offset: const Offset(0, 2))]
+                      : null,
+                ),
+                child: Text(
+                  _labels[i],
+                  style: TextStyle(
+                    color: isSelected ? Colors.black : colors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+        // Right fade — hints that more tabs exist beyond the visible area
+        Positioned(
+          right: 0, top: 0, bottom: 0,
+          child: IgnorePointer(
+            child: Container(
+              width: 28,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [
+                    colors.backgroundDefault.withOpacity(0),
+                    colors.backgroundDefault.withOpacity(0.92),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 // ── LinkedIn-style group header ───────────────────────────────────────────────
