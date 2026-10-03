@@ -59,7 +59,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       final onJoinPage = state.matchedLocation.startsWith('/join');
       if (!isSignedIn && !isGuest && !onAuthPage && !onJoinPage) return AppRoutes.signIn;
-      if ((isSignedIn || isGuest) && onAuthPage) return AppRoutes.home;
+      if (isSignedIn && onAuthPage) return AppRoutes.home; // signed-in users don't need auth pages; guests can visit to upgrade
       return null;
     },
     routes: [
@@ -225,7 +225,9 @@ class _AppShell extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  child: NavigationBar(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(27),
+                    child: NavigationBar(
                     backgroundColor: Colors.transparent,
                     indicatorColor: colors.brandPrimaryLt,
                     selectedIndex: shell.currentIndex,
@@ -258,6 +260,7 @@ class _AppShell extends ConsumerWidget {
                         label: 'Profile',
                       ),
                     ],
+                  ),
                   ),
                 ),
               ),

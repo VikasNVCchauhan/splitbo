@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 const _green = Color(0xFF739800);
 const _charcoal = Color(0xFF141414);
 const _charcoalHome = Color(0xFF090A0D);
+const _limeHome = Color(0xFFC1F802);
 
 /// The Splitbo icon mark only (S-shaped diagonal bar + circles).
 /// Pass [color] to override the default brand green.
@@ -89,6 +90,7 @@ class _HomeLogoColorMapper implements ColorMapper {
     Color color,
   ) {
     if (isDark && color == _charcoalHome) return Colors.white;
+    if (!isDark && color == _limeHome) return _green; // olive in light mode
     return color;
   }
 }
