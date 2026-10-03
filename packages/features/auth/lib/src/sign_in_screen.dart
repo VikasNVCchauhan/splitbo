@@ -1,5 +1,3 @@
-import 'dart:math' show cos, sin;
-
 import 'package:data/data.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
@@ -271,8 +269,8 @@ class _LoginCards extends StatelessWidget {
     final cw = 232.0 * s;
     final ch = 62.0 * s;
     final hShift = 34.0 * s; // zigzag horizontal offset
-    final gap = 7.0 * s;     // vertical gap between cards (no overlap)
-    final totalH = ch * 3 + gap * 2;
+    final step = ch * 0.87;  // slight overlap between cards
+    final totalH = ch + step * 2;
     final totalW = cw + hShift;
 
     return Center(
@@ -298,7 +296,7 @@ class _LoginCards extends StatelessWidget {
             // Bottom — Apartment (LEFT, tilted clockwise)
             Positioned(
               left: 0,
-              top: 2 * (ch + gap),
+              top: step * 2,
               child: Transform.rotate(
                 angle: 0.04,
                 child: _LoginCard(
@@ -314,7 +312,7 @@ class _LoginCards extends StatelessWidget {
             // Middle — Grocery (RIGHT, nearly level)
             Positioned(
               left: hShift,
-              top: ch + gap,
+              top: step,
               child: Transform.rotate(
                 angle: 0.01,
                 child: _LoginCard(
@@ -475,49 +473,43 @@ class _SparkWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget spark = CustomPaint(
-      size: Size(32 * s, 32 * s),
-      painter: _SparkPainter(s: s),
+    // Two short diagonal strokes, offset — classic "spark/flash" marks
+    final stroke1 = Transform.rotate(
+      angle: -0.75,
+      child: Container(
+        width: 4.0 * s, height: 22 * s,
+        decoration: BoxDecoration(
+          color: _green,
+          borderRadius: BorderRadius.circular(2.5 * s),
+        ),
+      ),
     );
+    final stroke2 = Transform.rotate(
+      angle: -0.75,
+      child: Container(
+        width: 4.0 * s, height: 15 * s,
+        decoration: BoxDecoration(
+          color: _green,
+          borderRadius: BorderRadius.circular(2.5 * s),
+        ),
+      ),
+    );
+
+    Widget sparks = Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [stroke1, SizedBox(width: 11 * s), stroke2],
+    );
+
     if (mirrored) {
-      spark = Transform(
+      sparks = Transform(
         transform: Matrix4.rotationY(3.14159265),
         alignment: Alignment.center,
-        child: spark,
+        child: sparks,
       );
     }
-    return spark;
+    return sparks;
   }
-}
-
-class _SparkPainter extends CustomPainter {
-  const _SparkPainter({required this.s});
-  final double s;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = _green
-      ..strokeWidth = 3.5 * s
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-
-    // Fan of 3 rays radiating rightward from left edge
-    final ox = 0.0;
-    final oy = size.height / 2;
-    final len = size.width * 0.88;
-
-    for (final angle in [-0.85, 0.0, 0.85]) {
-      canvas.drawLine(
-        Offset(ox, oy),
-        Offset(ox + len * cos(angle), oy + len * sin(angle)),
-        paint,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(_SparkPainter old) => false;
 }
 
 // ── Email magic-link sheet ────────────────────────────────────────────────────

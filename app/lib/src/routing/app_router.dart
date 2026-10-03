@@ -181,7 +181,9 @@ class _AppShell extends ConsumerWidget {
     return Scaffold(
       backgroundColor: colors.backgroundDefault,
       body: shell,
-      bottomNavigationBar: Center(
+      bottomNavigationBar: Align(
+        alignment: Alignment.center,
+        heightFactor: 1.0,
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 600),
           child: NavigationBar(
