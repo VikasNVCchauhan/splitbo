@@ -8,9 +8,9 @@ import 'src/app/app_bootstrap.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Start loading the login card image bytes immediately — by the time
-  // the login screen renders, the bytes are already in the bundle cache.
+  // Warm up login assets — bytes cached before runApp so first render is instant
   rootBundle.load('assets/images/login_cards.png');
+  rootBundle.load('packages/design_system/assets/images/logo_icon.svg');
 
   final overrides = await AppBootstrap.init();
 
