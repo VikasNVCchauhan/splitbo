@@ -159,18 +159,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                         ),
                         SizedBox(height: 24 * s),
 
-                        // ── Card illustration ─────────────────────────────────
-                        Image.asset(
-                          'assets/images/login_cards.png',
-                          height: 210 * s,
-                          fit: BoxFit.contain,
-                          filterQuality: FilterQuality.medium,
-                          frameBuilder: (context, child, frame, syncLoaded) {
-                            if (syncLoaded || frame != null) return child;
-                            // Reserve space so layout never shifts; cards fade in
-                            return SizedBox(height: 210 * s);
-                          },
-                        ),
+                        // ── Card illustration — Flutter widgets, instant render ─
+                        _LoginCards(s: s),
                         SizedBox(height: 10 * s),
 
                         Text(
@@ -236,6 +226,211 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ── Login card fan illustration ───────────────────────────────────────────────
+class _LoginCards extends StatelessWidget {
+  const _LoginCards({required this.s});
+  final double s;
+
+  @override
+  Widget build(BuildContext context) {
+    final cw = 272.0 * s;
+    final ch = 74.0 * s;
+    final totalH = ch * 2.8;
+    final totalW = cw + 56 * s;
+
+    return SizedBox(
+      height: totalH,
+      width: totalW,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned(left: 0, top: 28 * s,
+              child: _GreenSparks(s: s)),
+          Positioned(right: 0, top: 10 * s,
+              child: _GreenSparks(s: s, mirrored: true)),
+
+          // Bottom — Apartment
+          Positioned(
+            bottom: 0, left: 24 * s,
+            child: Transform.rotate(angle: 0.04,
+              child: _LoginCard(
+                s: s, w: cw, h: ch,
+                avatarIcon: Icons.group_rounded,
+                avatarColor: const Color(0xFF7B9ED9),
+                title: 'Apartment',
+                memberColors: const [Color(0xFF9CD246), Color(0xFF7B9ED9), Color(0xFFD97B7B)],
+                extra: 3, splitAmt: '₹12,200', totalAmt: '₹12,000',
+              )),
+          ),
+
+          // Middle
+          Positioned(
+            bottom: ch * 0.75, left: 16 * s,
+            child: Transform.rotate(angle: -0.02,
+              child: _LoginCard(
+                s: s, w: cw, h: ch,
+                avatarIcon: Icons.person_rounded,
+                avatarColor: const Color(0xFF444444),
+                title: null,
+                secondIcon: Icons.shopping_bag_outlined,
+                splitAmt: '₹700', totalAmt: '₹6,300',
+              )),
+          ),
+
+          // Top — Dinner
+          Positioned(
+            top: 0, left: 8 * s,
+            child: Transform.rotate(angle: -0.06,
+              child: _LoginCard(
+                s: s, w: cw, h: ch,
+                avatarIcon: Icons.person_rounded,
+                avatarColor: const Color(0xFF8EB5E8),
+                title: 'Dinner',
+                memberColors: const [Color(0xFF8EB5E8), Color(0xFFE8A08E), Color(0xFF9CD246)],
+                extra: 2, splitAmt: '₹400', totalAmt: '₹2,400',
+              )),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LoginCard extends StatelessWidget {
+  const _LoginCard({
+    required this.s, required this.w, required this.h,
+    required this.avatarIcon, required this.avatarColor,
+    this.title, this.secondIcon,
+    this.memberColors = const [], this.extra = 0,
+    required this.splitAmt, required this.totalAmt,
+  });
+
+  final double s, w, h;
+  final IconData avatarIcon;
+  final Color avatarColor;
+  final String? title;
+  final IconData? secondIcon;
+  final List<Color> memberColors;
+  final int extra;
+  final String splitAmt, totalAmt;
+
+  @override
+  Widget build(BuildContext context) {
+    final av = h * 0.66;
+    final dot = h * 0.20;
+
+    return Container(
+      width: w, height: h,
+      padding: EdgeInsets.symmetric(horizontal: w * 0.04, vertical: h * 0.10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(w * 0.055),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.13),
+            blurRadius: 14, offset: const Offset(0, 4))],
+      ),
+      child: Row(children: [
+        // Avatar
+        Container(
+          width: av, height: av,
+          decoration: BoxDecoration(shape: BoxShape.circle, color: avatarColor),
+          child: Icon(avatarIcon, color: Colors.white, size: av * 0.58),
+        ),
+        if (secondIcon != null) ...[
+          SizedBox(width: 4 * s),
+          Container(
+            width: av * 0.78, height: av * 0.78,
+            decoration: BoxDecoration(shape: BoxShape.circle,
+                color: _green.withOpacity(0.12)),
+            child: Icon(secondIcon, color: _green, size: av * 0.44),
+          ),
+        ],
+        SizedBox(width: 8 * s),
+
+        // Title + member dots
+        Expanded(child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (title != null)
+              Text(title!, style: TextStyle(color: const Color(0xFF111111),
+                  fontSize: h * 0.22, fontWeight: FontWeight.w700)),
+            if (memberColors.isNotEmpty) ...[
+              if (title != null) SizedBox(height: 3 * s),
+              Row(mainAxisSize: MainAxisSize.min, children: [
+                ...memberColors.map((c) => Container(
+                  width: dot, height: dot,
+                  margin: EdgeInsets.only(right: 2 * s),
+                  decoration: BoxDecoration(shape: BoxShape.circle, color: c),
+                )),
+                if (extra > 0)
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 4 * s),
+                    height: dot,
+                    decoration: BoxDecoration(
+                        color: _green,
+                        borderRadius: BorderRadius.circular(dot)),
+                    child: Center(child: Text('+$extra',
+                      style: TextStyle(color: Colors.black,
+                          fontSize: dot * 0.62, fontWeight: FontWeight.w800))),
+                  ),
+              ]),
+            ],
+          ],
+        )),
+
+        // Amounts
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(splitAmt, style: TextStyle(color: const Color(0xFF888888),
+                fontSize: h * 0.16, fontWeight: FontWeight.w500)),
+            SizedBox(height: 2 * s),
+            Text(totalAmt, style: TextStyle(color: const Color(0xFF111111),
+                fontSize: h * 0.26, fontWeight: FontWeight.w800)),
+          ],
+        ),
+      ]),
+    );
+  }
+}
+
+class _GreenSparks extends StatelessWidget {
+  const _GreenSparks({required this.s, this.mirrored = false});
+  final double s;
+  final bool mirrored;
+
+  @override
+  Widget build(BuildContext context) {
+    final r = BorderRadius.circular(2 * s);
+    Widget w = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(width: 3 * s, height: 16 * s,
+            decoration: BoxDecoration(color: _green, borderRadius: r)),
+        SizedBox(height: 4 * s),
+        Row(mainAxisSize: MainAxisSize.min, children: [
+          Container(width: 18 * s, height: 3 * s,
+              decoration: BoxDecoration(color: _green, borderRadius: r)),
+          SizedBox(width: 4 * s),
+          Container(width: 10 * s, height: 3 * s,
+              decoration: BoxDecoration(color: _green, borderRadius: r)),
+        ]),
+        SizedBox(height: 4 * s),
+        Container(width: 3 * s, height: 10 * s,
+            decoration: BoxDecoration(color: _green, borderRadius: r)),
+      ],
+    );
+    if (!mirrored) return w;
+    return Transform(
+      transform: Matrix4.rotationY(3.14159),
+      alignment: Alignment.center,
+      child: w,
     );
   }
 }
