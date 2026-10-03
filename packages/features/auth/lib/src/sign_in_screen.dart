@@ -261,10 +261,10 @@ class _LoginCards extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cw = 280.0 * s;
-    final ch = 92.0 * s;
-    final totalH = ch * 2.55;
-    final totalW = cw + 68 * s;
+    final cw = 230.0 * s;
+    final ch = 60.0 * s;
+    final totalH = ch * 2.7;
+    final totalW = cw + 56 * s;
 
     return Center(
       child: SizedBox(
@@ -273,19 +273,20 @@ class _LoginCards extends StatelessWidget {
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            Positioned(left: 0, top: ch * 0.38, child: _GreenSparks(s: s)),
-            Positioned(right: 0, top: ch * 0.06, child: _GreenSparks(s: s, mirrored: true)),
+            Positioned(left: 2 * s, top: ch * 0.5,
+                child: _GreenSparks(s: s)),
+            Positioned(right: 2 * s, top: ch * 0.12,
+                child: _GreenSparks(s: s, mirrored: true)),
 
             // Back — Apartment
             Positioned(
               bottom: 0, right: 0,
-              child: Transform.rotate(angle: 0.05,
+              child: Transform.rotate(angle: 0.04,
                 child: _LoginCard(
                   s: s, w: cw, h: ch,
                   avatarInitial: 'R',
                   avatarColor: const Color(0xFF6B7FD4),
                   title: 'Apartment',
-                  memberInitials: const ['A', 'P', 'S'],
                   memberColors: const [Color(0xFF9CD246), Color(0xFF7B9ED9), Color(0xFFE8A08E)],
                   extra: 3, splitAmt: '₹12,000', totalAmt: '₹12,000',
                 )),
@@ -293,7 +294,7 @@ class _LoginCards extends StatelessWidget {
 
             // Middle
             Positioned(
-              bottom: ch * 0.60, left: 24 * s,
+              bottom: ch * 0.65, left: 20 * s,
               child: Transform.rotate(angle: -0.01,
                 child: _LoginCard(
                   s: s, w: cw, h: ch,
@@ -307,13 +308,12 @@ class _LoginCards extends StatelessWidget {
             // Front — Dinner
             Positioned(
               top: 0, left: 0,
-              child: Transform.rotate(angle: -0.07,
+              child: Transform.rotate(angle: -0.06,
                 child: _LoginCard(
                   s: s, w: cw, h: ch,
                   avatarInitial: 'V',
                   avatarColor: const Color(0xFF5B9BD5),
                   title: 'Dinner',
-                  memberInitials: const ['A', 'R', 'S'],
                   memberColors: const [Color(0xFF8EB5E8), Color(0xFFE8A08E), Color(0xFF9CD246)],
                   extra: 2, splitAmt: '₹400', totalAmt: '₹2,400',
                 )),
@@ -331,7 +331,6 @@ class _LoginCard extends StatelessWidget {
     required this.avatarInitial,
     required this.avatarColor,
     this.title, this.secondIcon,
-    this.memberInitials = const [],
     this.memberColors = const [], this.extra = 0,
     required this.splitAmt, required this.totalAmt,
   });
@@ -341,127 +340,109 @@ class _LoginCard extends StatelessWidget {
   final Color avatarColor;
   final String? title;
   final IconData? secondIcon;
-  final List<String> memberInitials;
   final List<Color> memberColors;
   final int extra;
   final String splitAmt, totalAmt;
 
   @override
   Widget build(BuildContext context) {
-    final av = h * 0.72;
-    final dot = h * 0.285;
-    final step = dot * 0.64; // overlap amount per avatar
+    final av = h * 0.68;
+    final dot = h * 0.22;
 
     return Container(
       width: w, height: h,
-      padding: EdgeInsets.symmetric(horizontal: w * 0.048, vertical: h * 0.08),
+      padding: EdgeInsets.symmetric(horizontal: w * 0.04, vertical: h * 0.09),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18 * s),
+        borderRadius: BorderRadius.circular(14 * s),
         boxShadow: [BoxShadow(
-            color: Colors.black.withOpacity(0.20),
-            blurRadius: 28, spreadRadius: 0, offset: const Offset(0, 8))],
+            color: Colors.black.withOpacity(0.18),
+            blurRadius: 20, offset: const Offset(0, 6))],
       ),
       child: Row(children: [
-        // Large circular avatar with initial
+        // Avatar circle with initial
         Container(
           width: av, height: av,
           decoration: BoxDecoration(shape: BoxShape.circle, color: avatarColor),
           child: Center(
             child: Text(avatarInitial,
               style: TextStyle(color: Colors.white,
-                  fontSize: av * 0.40, fontWeight: FontWeight.w800,
-                  letterSpacing: 0)),
+                  fontSize: av * 0.46, fontWeight: FontWeight.w700)),
           ),
         ),
         if (secondIcon != null) ...[
-          SizedBox(width: 6 * s),
+          SizedBox(width: 4 * s),
           Container(
-            width: av * 0.68, height: av * 0.68,
+            width: av * 0.72, height: av * 0.72,
             decoration: BoxDecoration(shape: BoxShape.circle,
                 color: _green.withOpacity(0.14)),
-            child: Icon(secondIcon, color: _green, size: av * 0.38),
+            child: Icon(secondIcon, color: _green, size: av * 0.40),
           ),
         ],
-        SizedBox(width: 10 * s),
+        SizedBox(width: 8 * s),
 
-        // Title + overlapping member avatars
+        // Title + member dots — flex to fill remaining space
         Expanded(child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             if (title != null)
               Text(title!,
-                style: TextStyle(
-                    color: const Color(0xFF0A0A0A),
-                    fontSize: h * 0.245, fontWeight: FontWeight.w800,
-                    letterSpacing: -0.2)),
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: const Color(0xFF0A0A0A),
+                    fontSize: h * 0.225, fontWeight: FontWeight.w700)),
             if (memberColors.isNotEmpty) ...[
-              if (title != null) SizedBox(height: 6 * s),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    height: dot,
-                    width: dot + (memberColors.length - 1) * step,
-                    child: Stack(
-                      children: [
-                        for (int i = 0; i < memberColors.length; i++)
-                          Positioned(
-                            left: i * step,
-                            child: Container(
-                              width: dot, height: dot,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: memberColors[i],
-                                border: Border.all(color: Colors.white, width: 1.8 * s),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  i < memberInitials.length ? memberInitials[i] : '',
-                                  style: TextStyle(color: Colors.white,
-                                      fontSize: dot * 0.42, fontWeight: FontWeight.w700),
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
+              if (title != null) SizedBox(height: 4 * s),
+              Row(mainAxisSize: MainAxisSize.min, children: [
+                // Overlapping dots
+                ...memberColors.asMap().entries.map((e) => Transform.translate(
+                  offset: Offset(-e.key * dot * 0.3, 0),
+                  child: Container(
+                    width: dot, height: dot,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: e.value,
+                      border: Border.all(color: Colors.white, width: 1.2 * s),
                     ),
                   ),
-                  if (extra > 0) ...[
-                    SizedBox(width: 5 * s),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 6 * s),
-                      height: dot,
-                      decoration: BoxDecoration(
-                          color: _green,
-                          borderRadius: BorderRadius.circular(dot / 2)),
-                      child: Center(child: Text('+$extra',
-                        style: TextStyle(color: Colors.black,
-                            fontSize: dot * 0.52, fontWeight: FontWeight.w800))),
-                    ),
-                  ],
-                ],
-              ),
+                )),
+                SizedBox(width: (memberColors.length - 1) * dot * 0.3 > 0
+                    ? 2 * s : 0),
+                if (extra > 0)
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 4 * s),
+                    height: dot,
+                    decoration: BoxDecoration(
+                        color: _green,
+                        borderRadius: BorderRadius.circular(dot)),
+                    child: Center(child: Text('+$extra',
+                      style: TextStyle(color: Colors.black,
+                          fontSize: dot * 0.60, fontWeight: FontWeight.w800))),
+                  ),
+              ]),
             ],
           ],
         )),
 
-        // Amounts
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(splitAmt,
-              style: TextStyle(color: const Color(0xFF999999),
-                  fontSize: h * 0.155, fontWeight: FontWeight.w500)),
-            SizedBox(height: 2 * s),
-            Text(totalAmt,
-              style: TextStyle(color: const Color(0xFF0A0A0A),
-                  fontSize: h * 0.295, fontWeight: FontWeight.w800,
-                  letterSpacing: -0.5)),
-          ],
+        // Amounts — right-aligned, fixed width to prevent overflow
+        SizedBox(
+          width: w * 0.34,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(splitAmt,
+                textAlign: TextAlign.right,
+                style: TextStyle(color: const Color(0xFF999999),
+                    fontSize: h * 0.155, fontWeight: FontWeight.w500)),
+              SizedBox(height: 1 * s),
+              Text(totalAmt,
+                textAlign: TextAlign.right,
+                style: TextStyle(color: const Color(0xFF0A0A0A),
+                    fontSize: h * 0.265, fontWeight: FontWeight.w800,
+                    letterSpacing: -0.3)),
+            ],
+          ),
         ),
       ]),
     );
@@ -475,14 +456,13 @@ class _GreenSparks extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Two diagonal slash marks matching the brand reference
     final slash = Transform.rotate(
       angle: -0.42,
       child: Container(
-        width: 5.5 * s, height: 28 * s,
+        width: 4.5 * s, height: 22 * s,
         decoration: BoxDecoration(
           color: _green,
-          borderRadius: BorderRadius.circular(3 * s),
+          borderRadius: BorderRadius.circular(2.5 * s),
         ),
       ),
     );
@@ -490,7 +470,7 @@ class _GreenSparks extends StatelessWidget {
     Widget sparks = Row(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
-      children: [slash, SizedBox(width: 10 * s), slash],
+      children: [slash, SizedBox(width: 8 * s), slash],
     );
 
     if (!mirrored) return sparks;
