@@ -235,7 +235,7 @@ class _AppShell extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(27),
                     child: NavigationBar(
                     backgroundColor: Colors.transparent,
-                    indicatorColor: colors.brandPrimaryLt,
+                    indicatorColor: Colors.transparent,
                     selectedIndex: shell.currentIndex,
                     onDestinationSelected: shell.goBranch,
                     labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,

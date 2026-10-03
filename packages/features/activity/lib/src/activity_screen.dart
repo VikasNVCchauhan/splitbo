@@ -25,14 +25,17 @@ class ActivityScreen extends ConsumerWidget {
               color: colors.textPrimary, fontSize: 20, fontWeight: FontWeight.w800),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/expense/new'),
-        backgroundColor: const Color(0xFF739800),
-        foregroundColor: Colors.black,
-        elevation: 2,
-        icon: const Icon(Icons.add),
-        label: const Text('Add Expense',
-            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 80),
+        child: FloatingActionButton.extended(
+          onPressed: () => context.push('/expense/new'),
+          backgroundColor: const Color(0xFF739800),
+          foregroundColor: Colors.black,
+          elevation: 2,
+          icon: const Icon(Icons.add),
+          label: const Text('Add Expense',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+        ),
       ),
       body: groupsAsync.when(
         loading: () => Center(

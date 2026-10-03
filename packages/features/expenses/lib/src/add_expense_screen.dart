@@ -1516,9 +1516,9 @@ class _ScanSheet extends StatelessWidget {
                 borderRadius: BorderRadius.circular(2)),
           ),
           const SizedBox(height: 16),
-          const Text('Scan Receipt',
+          Text('Scan Receipt',
               style: TextStyle(
-                  color: Colors.white,
+                  color: colors.textPrimary,
                   fontSize: 17,
                   fontWeight: FontWeight.w700)),
           const SizedBox(height: 4),
@@ -1587,8 +1587,8 @@ class _SheetOption extends StatelessWidget {
         child: Icon(icon, color: const Color(0xFF739800), size: 20),
       ),
       title: Text(label,
-          style: const TextStyle(
-              color: Colors.white, fontWeight: FontWeight.w600)),
+          style: TextStyle(
+              color: colors.textPrimary, fontWeight: FontWeight.w600)),
       subtitle: Text(subtitle,
           style: TextStyle(color: colors.textSecondary, fontSize: 12)),
       trailing:
