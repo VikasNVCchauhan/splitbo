@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 const _green = Color(0xFFC3FD00);
+const _dark = Color(0xFF0A0A0A);
 
 class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({super.key});
@@ -14,7 +15,6 @@ class SignInScreen extends ConsumerStatefulWidget {
 
 class _SignInScreenState extends ConsumerState<SignInScreen> {
   bool _loading = false;
-  // Rate limiting: max 3 Google sign-in attempts, lockout 60 s
   int _googleAttempts = 0;
   DateTime? _lockoutUntil;
 
@@ -48,7 +48,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(msg, style: const TextStyle(color: Colors.white)),
-      backgroundColor: context.colors.surfaceRaised,
+      backgroundColor: const Color(0xFF2A2A2A),
     ));
   }
 
@@ -66,98 +66,98 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
     return Scaffold(
-      backgroundColor: colors.backgroundDefault,
+      backgroundColor: _dark,
       body: Stack(
         children: [
-          // ── Decorative green glow blobs ───────────────────────────
+          // Green glow top-left
           Positioned(
-            top: -80, left: -60,
+            top: -120, left: -80,
+            child: Container(
+              width: 320, height: 320,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: _green.withOpacity(0.15),
+              ),
+            ),
+          ),
+          // Green glow bottom-right
+          Positioned(
+            bottom: -80, right: -60,
             child: Container(
               width: 260, height: 260,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: _green.withOpacity(0.18),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: -100, right: -60,
-            child: Container(
-              width: 300, height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: _green.withOpacity(0.12),
+                color: _green.withOpacity(0.10),
               ),
             ),
           ),
 
-          // ── Content ───────────────────────────────────────────────
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 28),
+              padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 48),
+                  const SizedBox(height: 40),
 
-                  // Logo + wordmark
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ClipOval(
-                        child: Image.asset(
-                          'assets/images/logo_icon.jpg',
-                          width: 40, height: 40,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      const Text.rich(
-                        TextSpan(children: [
-                          TextSpan(
-                              text: 'Split',
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 26,
-                                  fontWeight: FontWeight.w800)),
-                          TextSpan(
-                              text: 'bo',
-                              style: TextStyle(
-                                  color: _green,
-                                  fontSize: 26,
-                                  fontWeight: FontWeight.w800)),
-                        ]),
-                      ),
-                    ],
+                  // Full stacked logo (icon + SplitBo wordmark)
+                  Center(
+                    child: Image.asset(
+                      'assets/images/logo_full.jpg',
+                      height: 110,
+                      fit: BoxFit.contain,
+                    ),
                   ),
-                  const SizedBox(height: 52),
+                  const SizedBox(height: 20),
 
                   // Tagline
                   const Text(
-                    'Split Smarter\nLive Better',
+                    'Split bills. Keep friends.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 34,
-                        fontWeight: FontWeight.w800,
-                        height: 1.15),
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.2,
+                    ),
                   ),
-                  const SizedBox(height: 48),
+                  const SizedBox(height: 36),
 
-                  // Feature list
-                  _FeatureRow(icon: Icons.receipt_long_outlined, label: 'Split a Bill', onTap: _signIn),
-                  const SizedBox(height: 12),
-                  _FeatureRow(icon: Icons.bar_chart_rounded, label: 'Track Expenses', onTap: _signIn),
-                  const SizedBox(height: 12),
-                  _FeatureRow(icon: Icons.bolt_rounded, label: 'Settle Up', onTap: _signIn),
-                  const SizedBox(height: 12),
-                  _FeatureRow(icon: Icons.sync_rounded, label: 'Stay in Sync', onTap: _signIn),
+                  // Illustrated expense cards
+                  const _ExpenseIllustration(),
+                  const SizedBox(height: 28),
+
+                  // Subtitle
+                  const Text(
+                    'Share expenses, not stress.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Color(0xFFAAAAAA),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                      letterSpacing: 0.1,
+                    ),
+                  ),
 
                   const Spacer(),
 
-                  // Primary CTA — Google sign in
+                  // Feature pills row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _FeaturePill(icon: Icons.bolt_rounded, label: 'Split'),
+                      const SizedBox(width: 10),
+                      _FeaturePill(icon: Icons.bar_chart_rounded, label: 'Track'),
+                      const SizedBox(width: 10),
+                      _FeaturePill(icon: Icons.sync_rounded, label: 'Settle'),
+                      const SizedBox(width: 10),
+                      _FeaturePill(icon: Icons.favorite_border_rounded, label: 'Together'),
+                    ],
+                  ),
+                  const SizedBox(height: 28),
+
+                  // Get Started button
                   if (_loading)
                     const Center(
                         child: CircularProgressIndicator(
@@ -174,58 +174,59 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                           elevation: 0,
                           shape: const StadiumBorder(),
                         ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text('Get Started',
-                                style: TextStyle(
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.w800,
-                                    color: Colors.black)),
-                            SizedBox(width: 8),
-                            Icon(Icons.arrow_forward_rounded,
-                                color: Colors.black, size: 20),
-                          ],
+                        child: const Text(
+                          'Get Started',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.black,
+                          ),
                         ),
                       ),
                     ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
 
-                  // Secondary — email magic link
-                  GestureDetector(
-                    onTap: _showEmailSheet,
-                    child: Container(
-                      height: 52,
-                      decoration: BoxDecoration(
-                        color: colors.backgroundSubtle,
-                        borderRadius: BorderRadius.circular(100),
-                        border: Border.all(color: colors.borderDefault),
+                  // Continue with Email
+                  SizedBox(
+                    height: 52,
+                    child: OutlinedButton(
+                      onPressed: _showEmailSheet,
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFF333333)),
+                        shape: const StadiumBorder(),
+                        foregroundColor: Colors.white,
+                        backgroundColor: const Color(0xFF141414),
                       ),
-                      child: Row(
+                      child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.email_outlined,
-                              color: colors.textSecondary, size: 18),
-                          const SizedBox(width: 8),
-                          const Text('Continue with Email',
-                              style: TextStyle(
-                                  fontSize: 15,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600)),
+                          Icon(Icons.email_outlined, size: 18, color: Color(0xFFAAAAAA)),
+                          SizedBox(width: 8),
+                          Text(
+                            'Continue with Email',
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 16),
+
+                  // Sign In link
                   GestureDetector(
                     onTap: _signIn,
-                    child: Text(
-                      'Already have an account? Sign In',
+                    child: const Text(
+                      'Sign In',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                          fontSize: 14,
-                          color: colors.textSecondary,
-                          fontWeight: FontWeight.w500),
+                        fontSize: 15,
+                        color: _green,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 32),
@@ -239,40 +240,189 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   }
 }
 
-// ── Feature row ───────────────────────────────────────────────────────────────
-class _FeatureRow extends StatelessWidget {
-  const _FeatureRow({required this.icon, required this.label, required this.onTap});
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
+// ── Expense illustration ───────────────────────────────────────────────────────
+class _ExpenseIllustration extends StatelessWidget {
+  const _ExpenseIllustration();
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-        decoration: BoxDecoration(
-          color: colors.backgroundSubtle,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFF242424)),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: Colors.white, size: 22),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(label,
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600)),
+    return SizedBox(
+      height: 160,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Back card (tilted left)
+          Positioned(
+            left: 20,
+            top: 10,
+            child: Transform.rotate(
+              angle: -0.12,
+              child: const _ExpenseCard(
+                title: 'Apartment',
+                amount: '₹12,000',
+                members: 4,
+                color: Color(0xFF1E1E1E),
+              ),
             ),
-            Icon(Icons.chevron_right_rounded,
-                color: colors.textSecondary, size: 20),
-          ],
+          ),
+          // Front card (slightly tilted right)
+          Positioned(
+            right: 20,
+            top: 0,
+            child: Transform.rotate(
+              angle: 0.08,
+              child: const _ExpenseCard(
+                title: 'Dinner',
+                amount: '₹2,400',
+                members: 3,
+                color: Color(0xFF232323),
+                accent: _green,
+              ),
+            ),
+          ),
+          // Center card (straight, on top)
+          const _ExpenseCard(
+            title: 'Road Trip',
+            amount: '₹6,300',
+            members: 5,
+            color: Color(0xFF1A1A1A),
+            elevated: true,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ExpenseCard extends StatelessWidget {
+  const _ExpenseCard({
+    required this.title,
+    required this.amount,
+    required this.members,
+    required this.color,
+    this.accent,
+    this.elevated = false,
+  });
+
+  final String title;
+  final String amount;
+  final int members;
+  final Color color;
+  final Color? accent;
+  final bool elevated;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 160,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: elevated ? _green.withOpacity(0.4) : const Color(0xFF303030),
         ),
+        boxShadow: elevated
+            ? [
+                BoxShadow(
+                  color: _green.withOpacity(0.15),
+                  blurRadius: 20,
+                  spreadRadius: 2,
+                )
+              ]
+            : null,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: (accent ?? const Color(0xFF444444)).withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.receipt_long_rounded,
+                  size: 14,
+                  color: accent ?? Colors.white70,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                amount,
+                style: TextStyle(
+                  color: accent ?? Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: List.generate(
+              members.clamp(0, 4),
+              (i) => Container(
+                width: 18,
+                height: 18,
+                margin: EdgeInsets.only(right: i < members - 1 ? 3 : 0),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFF444444),
+                  border: Border.all(color: color, width: 1.5),
+                ),
+                child: const Icon(Icons.person, size: 10, color: Colors.white54),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Feature pill ──────────────────────────────────────────────────────────────
+class _FeaturePill extends StatelessWidget {
+  const _FeaturePill({required this.icon, required this.label});
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFF141414),
+        borderRadius: BorderRadius.circular(100),
+        border: Border.all(color: const Color(0xFF2A2A2A)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: _green),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -290,7 +440,6 @@ class _EmailSignInSheetState extends ConsumerState<_EmailSignInSheet> {
   final _emailCtrl = TextEditingController();
   bool _sending = false;
   bool _sent = false;
-  // Rate limiting: max 3 email sends per session
   int _attempts = 0;
   static const _maxAttempts = 3;
 
@@ -326,20 +475,19 @@ class _EmailSignInSheetState extends ConsumerState<_EmailSignInSheet> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(msg, style: const TextStyle(color: Colors.white)),
-      backgroundColor: context.colors.surfaceRaised,
+      backgroundColor: const Color(0xFF2A2A2A),
     ));
   }
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
     return Padding(
       padding:
           EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
-        decoration: BoxDecoration(
-          color: colors.backgroundSubtle,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        decoration: const BoxDecoration(
+          color: Color(0xFF141414),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -370,8 +518,8 @@ class _EmailSignInSheetState extends ConsumerState<_EmailSignInSheet> {
                 child: Text(
                   'We sent a sign-in link to ${_emailCtrl.text.trim()}.\nTap it to sign in — no password needed.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                      color: colors.textSecondary, fontSize: 14, height: 1.5),
+                  style: const TextStyle(
+                      color: Color(0xFFAAAAAA), fontSize: 14, height: 1.5),
                 ),
               ),
               const SizedBox(height: 24),
@@ -388,7 +536,7 @@ class _EmailSignInSheetState extends ConsumerState<_EmailSignInSheet> {
                       });
                     },
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: colors.borderDefault),
+                      side: const BorderSide(color: Color(0xFF333333)),
                       shape: const StadiumBorder(),
                       foregroundColor: Colors.white,
                     ),
@@ -409,13 +557,13 @@ class _EmailSignInSheetState extends ConsumerState<_EmailSignInSheet> {
                 ),
               ),
               const SizedBox(height: 6),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
                     'We\'ll send you a one-tap sign-in link. No password needed.',
-                    style: TextStyle(color: colors.textSecondary, fontSize: 13),
+                    style: TextStyle(color: Color(0xFFAAAAAA), fontSize: 13),
                   ),
                 ),
               ),
@@ -427,24 +575,24 @@ class _EmailSignInSheetState extends ConsumerState<_EmailSignInSheet> {
                   keyboardType: TextInputType.emailAddress,
                   autofocus: true,
                   style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     hintText: 'you@example.com',
-                    hintStyle: TextStyle(color: colors.textSecondary),
+                    hintStyle: TextStyle(color: Color(0xFF666666)),
                     prefixIcon: Icon(Icons.email_outlined,
-                        color: colors.textSecondary, size: 20),
+                        color: Color(0xFF666666), size: 20),
                     filled: true,
-                    fillColor: colors.surfaceRaised,
+                    fillColor: Color(0xFF1E1E1E),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: colors.borderDefault),
+                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                      borderSide: BorderSide(color: Color(0xFF333333)),
                     ),
                     enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: colors.borderDefault),
+                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                      borderSide: BorderSide(color: Color(0xFF333333)),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: _green),
+                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                      borderSide: BorderSide(color: _green),
                     ),
                   ),
                   onSubmitted: (_) => _send(),
