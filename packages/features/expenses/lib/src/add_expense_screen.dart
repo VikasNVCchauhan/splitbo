@@ -368,9 +368,22 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
     } catch (e) {
       // ignore: avoid_print
       print('OCR error: $e');
-      final msg = e.toString().contains('NOT_FOUND') || e.toString().contains('not-found')
-          ? 'OCR service not yet deployed. Fill in manually.'
-          : 'Scan failed — try a clearer photo or fill manually.';
+      final String msg;
+      if (e is FirebaseFunctionsException) {
+        if (e.code == 'not-found' || e.code == 'unimplemented') {
+          msg = 'Document scan not yet available. Fill in manually.';
+        } else if (e.code == 'resource-exhausted') {
+          msg = e.message ?? 'Daily scan limit reached. Try again tomorrow.';
+        } else if (e.code == 'unauthenticated') {
+          msg = 'Sign in required to scan documents.';
+        } else {
+          msg = e.message?.isNotEmpty == true
+              ? 'Scan failed: ${e.message}'
+              : 'Scan failed. Please try again.';
+        }
+      } else {
+        msg = 'Scan failed. Please try again.';
+      }
       if (mounted) setState(() => _scanHint = msg);
       _toastError(msg);
     } finally {
