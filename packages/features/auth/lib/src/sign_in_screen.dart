@@ -259,12 +259,15 @@ class _LoginCards extends StatelessWidget {
   const _LoginCards({required this.s});
   final double s;
 
+  // Stable pravatar.cc face photos for demo cards
+  static const _p = 'https://i.pravatar.cc/150?img=';
+
   @override
   Widget build(BuildContext context) {
-    final cw = 230.0 * s;
-    final ch = 60.0 * s;
-    final totalH = ch * 2.7;
-    final totalW = cw + 56 * s;
+    final cw = 232.0 * s;
+    final ch = 62.0 * s;
+    final totalH = ch * 2.68;
+    final totalW = cw + 54 * s;
 
     return Center(
       child: SizedBox(
@@ -273,9 +276,9 @@ class _LoginCards extends StatelessWidget {
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            Positioned(left: 2 * s, top: ch * 0.5,
+            Positioned(left: 2 * s, top: ch * 0.48,
                 child: _GreenSparks(s: s)),
-            Positioned(right: 2 * s, top: ch * 0.12,
+            Positioned(right: 2 * s, top: ch * 0.10,
                 child: _GreenSparks(s: s, mirrored: true)),
 
             // Back — Apartment
@@ -284,23 +287,21 @@ class _LoginCards extends StatelessWidget {
               child: Transform.rotate(angle: 0.04,
                 child: _LoginCard(
                   s: s, w: cw, h: ch,
-                  avatarInitial: 'R',
-                  avatarColor: const Color(0xFF6B7FD4),
+                  avatarUrl: '${_p}47',
                   title: 'Apartment',
-                  memberColors: const [Color(0xFF9CD246), Color(0xFF7B9ED9), Color(0xFFE8A08E)],
+                  memberUrls: const ['${_p}9', '${_p}20', '${_p}29'],
                   extra: 3, splitAmt: '₹12,000', totalAmt: '₹12,000',
                 )),
             ),
 
-            // Middle
+            // Middle — Groceries (no title, emoji badge)
             Positioned(
-              bottom: ch * 0.65, left: 20 * s,
+              bottom: ch * 0.63, left: 20 * s,
               child: Transform.rotate(angle: -0.01,
                 child: _LoginCard(
                   s: s, w: cw, h: ch,
-                  avatarInitial: 'K',
-                  avatarColor: const Color(0xFF3A3A3A),
-                  secondIcon: Icons.shopping_bag_outlined,
+                  avatarUrl: '${_p}3',
+                  secondEmoji: '🛒',
                   splitAmt: '₹700', totalAmt: '₹6,300',
                 )),
             ),
@@ -311,10 +312,9 @@ class _LoginCards extends StatelessWidget {
               child: Transform.rotate(angle: -0.06,
                 child: _LoginCard(
                   s: s, w: cw, h: ch,
-                  avatarInitial: 'V',
-                  avatarColor: const Color(0xFF5B9BD5),
+                  avatarUrl: '${_p}8',
                   title: 'Dinner',
-                  memberColors: const [Color(0xFF8EB5E8), Color(0xFFE8A08E), Color(0xFF9CD246)],
+                  memberUrls: const ['${_p}11', '${_p}5', '${_p}17'],
                   extra: 2, splitAmt: '₹400', totalAmt: '₹2,400',
                 )),
             ),
@@ -328,30 +328,28 @@ class _LoginCards extends StatelessWidget {
 class _LoginCard extends StatelessWidget {
   const _LoginCard({
     required this.s, required this.w, required this.h,
-    required this.avatarInitial,
-    required this.avatarColor,
-    this.title, this.secondIcon,
-    this.memberColors = const [], this.extra = 0,
+    required this.avatarUrl,
+    this.title, this.secondEmoji,
+    this.memberUrls = const [], this.extra = 0,
     required this.splitAmt, required this.totalAmt,
   });
 
   final double s, w, h;
-  final String avatarInitial;
-  final Color avatarColor;
+  final String avatarUrl;
   final String? title;
-  final IconData? secondIcon;
-  final List<Color> memberColors;
+  final String? secondEmoji;
+  final List<String> memberUrls;
   final int extra;
   final String splitAmt, totalAmt;
 
   @override
   Widget build(BuildContext context) {
-    final av = h * 0.68;
-    final dot = h * 0.22;
+    final av = h * 0.70;
+    final dot = h * 0.23;
 
     return Container(
       width: w, height: h,
-      padding: EdgeInsets.symmetric(horizontal: w * 0.04, vertical: h * 0.09),
+      padding: EdgeInsets.symmetric(horizontal: w * 0.04, vertical: h * 0.08),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14 * s),
@@ -360,28 +358,31 @@ class _LoginCard extends StatelessWidget {
             blurRadius: 20, offset: const Offset(0, 6))],
       ),
       child: Row(children: [
-        // Avatar circle with initial
-        Container(
-          width: av, height: av,
-          decoration: BoxDecoration(shape: BoxShape.circle, color: avatarColor),
-          child: Center(
-            child: Text(avatarInitial,
-              style: TextStyle(color: Colors.white,
-                  fontSize: av * 0.46, fontWeight: FontWeight.w700)),
+        // Face photo avatar
+        ClipOval(
+          child: Image.network(
+            avatarUrl,
+            width: av, height: av,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Container(
+              width: av, height: av,
+              color: const Color(0xFF8EB5E8),
+            ),
           ),
         ),
-        if (secondIcon != null) ...[
+        if (secondEmoji != null) ...[
           SizedBox(width: 4 * s),
-          Container(
-            width: av * 0.72, height: av * 0.72,
-            decoration: BoxDecoration(shape: BoxShape.circle,
-                color: _green.withOpacity(0.14)),
-            child: Icon(secondIcon, color: _green, size: av * 0.40),
+          SizedBox(
+            width: av * 0.70, height: av * 0.70,
+            child: Center(
+              child: Text(secondEmoji!,
+                style: TextStyle(fontSize: av * 0.56)),
+            ),
           ),
         ],
         SizedBox(width: 8 * s),
 
-        // Title + member dots — flex to fill remaining space
+        // Title + overlapping face member circles
         Expanded(child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
@@ -391,23 +392,32 @@ class _LoginCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: const Color(0xFF0A0A0A),
                     fontSize: h * 0.225, fontWeight: FontWeight.w700)),
-            if (memberColors.isNotEmpty) ...[
+            if (memberUrls.isNotEmpty) ...[
               if (title != null) SizedBox(height: 4 * s),
               Row(mainAxisSize: MainAxisSize.min, children: [
-                // Overlapping dots
-                ...memberColors.asMap().entries.map((e) => Transform.translate(
-                  offset: Offset(-e.key * dot * 0.3, 0),
-                  child: Container(
-                    width: dot, height: dot,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: e.value,
-                      border: Border.all(color: Colors.white, width: 1.2 * s),
+                ...memberUrls.asMap().entries.map((e) => Transform.translate(
+                  offset: Offset(-e.key * dot * 0.28, 0),
+                  child: ClipOval(
+                    child: Image.network(
+                      e.value,
+                      width: dot, height: dot,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        width: dot, height: dot,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: const [
+                            Color(0xFF8EB5E8),
+                            Color(0xFFE8A08E),
+                            Color(0xFF9CD246),
+                          ][e.key % 3],
+                        ),
+                      ),
                     ),
                   ),
                 )),
-                SizedBox(width: (memberColors.length - 1) * dot * 0.3 > 0
-                    ? 2 * s : 0),
+                SizedBox(width: (memberUrls.length - 1) * dot * 0.28 > 0
+                    ? 3 * s : 0),
                 if (extra > 0)
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 4 * s),
@@ -417,14 +427,14 @@ class _LoginCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(dot)),
                     child: Center(child: Text('+$extra',
                       style: TextStyle(color: Colors.black,
-                          fontSize: dot * 0.60, fontWeight: FontWeight.w800))),
+                          fontSize: dot * 0.58, fontWeight: FontWeight.w800))),
                   ),
               ]),
             ],
           ],
         )),
 
-        // Amounts — right-aligned, fixed width to prevent overflow
+        // Amounts — fixed width to prevent overflow
         SizedBox(
           width: w * 0.34,
           child: Column(
@@ -439,7 +449,7 @@ class _LoginCard extends StatelessWidget {
               Text(totalAmt,
                 textAlign: TextAlign.right,
                 style: TextStyle(color: const Color(0xFF0A0A0A),
-                    fontSize: h * 0.265, fontWeight: FontWeight.w800,
+                    fontSize: h * 0.268, fontWeight: FontWeight.w800,
                     letterSpacing: -0.3)),
             ],
           ),
