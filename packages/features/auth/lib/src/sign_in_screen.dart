@@ -24,9 +24,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     precacheImage(const AssetImage('assets/images/login_cards.png'), context);
-    precacheImage(const AssetImage('assets/images/face_18.jpg'), context);
-    precacheImage(const AssetImage('assets/images/face_19.jpg'), context);
-    precacheImage(const AssetImage('assets/images/face_20.jpg'), context);
   }
 
   bool get _isLockedOut =>

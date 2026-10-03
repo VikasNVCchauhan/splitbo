@@ -40,7 +40,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   ref.onDispose(authNotifier.dispose);
 
   return GoRouter(
-    initialLocation: AppRoutes.signIn,
+    initialLocation: '/splash',
     debugLogDiagnostics: true,
     refreshListenable: authNotifier,
     redirect: (context, state) {
@@ -57,7 +57,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final isGuest = container.read(guestModeProvider);
       final onAuthPage = state.matchedLocation.startsWith('/auth');
 
+      final onSplash = state.matchedLocation == '/splash';
       final onJoinPage = state.matchedLocation.startsWith('/join');
+      if (onSplash) return null; // always allow splash
       if (!isSignedIn && !isGuest && !onAuthPage && !onJoinPage) return AppRoutes.signIn;
       if (isSignedIn && onAuthPage) return AppRoutes.home; // signed-in users don't need auth pages; guests can visit to upgrade
       return null;
@@ -112,6 +114,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           fullscreenDialog: true,
           child: SearchScreen(),
         ),
+      ),
+      GoRoute(
+        path: '/splash',
+        builder: (_, __) => const SplashScreen(),
       ),
       GoRoute(
         path: AppRoutes.signIn,
