@@ -202,8 +202,8 @@ class _ActivityTile extends ConsumerWidget {
                       ),
                       TextSpan(
                         text: '"$groupName"',
-                        style: const TextStyle(
-                            color: Color(0xFFC3FD00),
+                        style: TextStyle(
+                            color: colors.brandPrimary,
                             fontSize: 13,
                             fontWeight: FontWeight.w600),
                       ),
@@ -222,7 +222,7 @@ class _ActivityTile extends ConsumerWidget {
                           : 'You owe $symbol${netForMe.abs().toStringAsFixed(0)}',
                       style: TextStyle(
                         color: netForMe > 0
-                            ? const Color(0xFFC3FD00)
+                            ? colors.semanticPositive
                             : const Color(0xFFFF6B6B),
                         fontSize: 12,
                         fontWeight: FontWeight.w600,

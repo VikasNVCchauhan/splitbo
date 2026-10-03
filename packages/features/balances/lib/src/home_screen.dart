@@ -7,14 +7,13 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 const _green = Color(0xFFC3FD00);
-const _surface = Color(0xFF141414);
-const _textSecondary = Color(0xFF9E9E9E);
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.colors;
     final userAsync = ref.watch(authStateProvider);
     final groupsAsync = ref.watch(watchGroupsProvider);
     final balancesAsync = ref.watch(watchBalancesProvider);
@@ -22,7 +21,7 @@ class HomeScreen extends ConsumerWidget {
     final firstName = user?.displayName.split(' ').first ?? 'there';
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: colors.backgroundDefault,
       appBar: _HomeAppBar(user: user),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -34,10 +33,10 @@ class HomeScreen extends ConsumerWidget {
             // ── Greeting ─────────────────────────────────────────────
             Text.rich(
               TextSpan(children: [
-                const TextSpan(
+                TextSpan(
                   text: 'Good to see you\nagain, ',
                   style: TextStyle(
-                      color: Colors.white,
+                      color: colors.textPrimary,
                       fontSize: 28,
                       fontWeight: FontWeight.w800,
                       height: 1.2),
@@ -60,16 +59,16 @@ class HomeScreen extends ConsumerWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 decoration: BoxDecoration(
-                  color: _surface,
+                  color: colors.surfaceRaised,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFF2C2C2C)),
+                  border: Border.all(color: colors.borderDefault),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.search_rounded, color: Color(0xFF555555), size: 20),
-                    SizedBox(width: 10),
+                    Icon(Icons.search_rounded, color: colors.textSecondary, size: 20),
+                    const SizedBox(width: 10),
                     Text('Search groups, people, expenses…',
-                        style: TextStyle(color: Color(0xFF555555), fontSize: 14)),
+                        style: TextStyle(color: colors.textSecondary, fontSize: 14)),
                   ],
                 ),
               ),
@@ -83,17 +82,17 @@ class HomeScreen extends ConsumerWidget {
                 return Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
-                    color: _surface,
+                    color: colors.surfaceRaised,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text('🎉', style: TextStyle(fontSize: 14)),
-                      SizedBox(width: 8),
+                      const Text('🎉', style: TextStyle(fontSize: 14)),
+                      const SizedBox(width: 8),
                       Text('All settled up!',
                           style: TextStyle(
-                              color: _textSecondary, fontSize: 13)),
+                              color: colors.textSecondary, fontSize: 13)),
                     ],
                   ),
                 );
@@ -130,8 +129,7 @@ class HomeScreen extends ConsumerWidget {
                             ? 'You are owed ₹${totalNet.toStringAsFixed(0)} overall'
                             : 'You owe ₹${totalNet.abs().toStringAsFixed(0)} overall',
                         style: TextStyle(
-                          color:
-                              isOwed ? _green : const Color(0xFFFF6B6B),
+                          color: isOwed ? _green : const Color(0xFFFF6B6B),
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                         ),
@@ -190,12 +188,12 @@ class HomeScreen extends ConsumerWidget {
             // ── Recent Groups ─────────────────────────────────────────
             Row(
               children: [
-                const Text(
+                Text(
                   'Recent Groups',
                   style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white),
+                      color: colors.textPrimary),
                 ),
                 const Spacer(),
                 GestureDetector(
@@ -258,6 +256,7 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final initials = user?.displayName != null
         ? user!.displayName
             .split(' ')
@@ -268,19 +267,17 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
         : '?';
 
     return AppBar(
-      backgroundColor: Colors.black,
+      backgroundColor: colors.backgroundDefault,
       elevation: 0,
       automaticallyImplyLeading: false,
       centerTitle: false,
       titleSpacing: 20,
       title: const SplitboWordmark(height: 32),
       actions: [
-        // Search
         IconButton(
-          icon: const Icon(Icons.search_rounded, color: Colors.white, size: 24),
+          icon: Icon(Icons.search_rounded, color: colors.textPrimary, size: 24),
           onPressed: () => context.push('/search'),
         ),
-        // Profile avatar → settings
         Padding(
           padding: const EdgeInsets.only(right: 16),
           child: GestureDetector(
@@ -327,23 +324,25 @@ class _QuickTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 18),
         decoration: BoxDecoration(
-          color: _surface,
+          color: colors.surfaceRaised,
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: colors.borderDefault),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: Colors.white, size: 26),
+            Icon(icon, color: colors.textPrimary, size: 26),
             const SizedBox(height: 8),
             Text(
               label,
-              style: const TextStyle(
-                  color: Colors.white,
+              style: TextStyle(
+                  color: colors.textPrimary,
                   fontSize: 13,
                   fontWeight: FontWeight.w600),
             ),
@@ -422,8 +421,8 @@ class _GroupCircle extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: context.colors.textPrimary,
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
               ),
@@ -453,7 +452,7 @@ class _NewGroupCircle extends StatelessWidget {
               width: 64,
               height: 64,
               decoration: BoxDecoration(
-                color: const Color(0xFF1E1E1E),
+                color: context.colors.surfaceRaised,
                 shape: BoxShape.circle,
                 border: Border.all(
                   color: _green.withOpacity(0.5),
@@ -488,29 +487,30 @@ class _EmptyGroupsHint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: _surface,
+          color: colors.surfaceRaised,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFF252525)),
+          border: Border.all(color: colors.borderDefault),
         ),
         child: Column(
           children: [
-            const Icon(Icons.group_add_outlined,
-                size: 36, color: _textSecondary),
+            Icon(Icons.group_add_outlined,
+                size: 36, color: colors.textSecondary),
             const SizedBox(height: 10),
-            const Text('No groups yet',
+            Text('No groups yet',
                 style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: Colors.white)),
+                    color: colors.textPrimary)),
             const SizedBox(height: 4),
-            const Text('Create a group to start splitting expenses',
+            Text('Create a group to start splitting expenses',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: _textSecondary)),
+                style: TextStyle(fontSize: 13, color: colors.textSecondary)),
           ],
         ),
       ),
