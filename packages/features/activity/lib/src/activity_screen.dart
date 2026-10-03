@@ -27,7 +27,7 @@ class ActivityScreen extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/expense/new'),
-        backgroundColor: const Color(0xFFC3FD00),
+        backgroundColor: const Color(0xFF739800),
         foregroundColor: Colors.black,
         elevation: 2,
         icon: const Icon(Icons.add),

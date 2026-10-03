@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-const _green = Color(0xFFC3FD00);
+const _green = Color(0xFF739800);
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});

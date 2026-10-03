@@ -47,7 +47,7 @@ class SettingsScreen extends ConsumerWidget {
                     children: [
                       CircleAvatar(
                         radius: 44,
-                        backgroundColor: const Color(0xFFC3FD00).withOpacity(0.15),
+                        backgroundColor: const Color(0xFF739800).withOpacity(0.15),
                         backgroundImage: user?.avatarUrl != null
                             ? NetworkImage(user!.avatarUrl!)
                             : null,
@@ -57,7 +57,7 @@ class SettingsScreen extends ConsumerWidget {
                                 style: const TextStyle(
                                   fontSize: 32,
                                   fontWeight: FontWeight.w800,
-                                  color: Color(0xFFC3FD00),
+                                  color: Color(0xFF739800),
                                 ),
                               )
                             : null,
@@ -510,7 +510,7 @@ class SettingsScreen extends ConsumerWidget {
                 padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
                 child: Row(
                   children: [
-                    Icon(icon, color: const Color(0xFFC3FD00), size: 22),
+                    Icon(icon, color: const Color(0xFF739800), size: 22),
                     const SizedBox(width: 10),
                     Text(title,
                         style: const TextStyle(
@@ -538,7 +538,7 @@ class SettingsScreen extends ConsumerWidget {
                             children: [
                               Text(item.label,
                                   style: const TextStyle(
-                                      color: Color(0xFFC3FD00),
+                                      color: Color(0xFF739800),
                                       fontSize: 12,
                                       fontWeight: FontWeight.w700,
                                       letterSpacing: 0.4)),
@@ -655,7 +655,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
 
   @override
   Widget build(BuildContext context) {
-    const brandGreen = Color(0xFFC3FD00);
+    const brandGreen = Color(0xFF739800);
     final colors = context.colors;
 
     return Padding(
@@ -768,7 +768,7 @@ class _DarkField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFFC3FD00)),
+          borderSide: const BorderSide(color: Color(0xFF739800)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
@@ -935,7 +935,7 @@ class _SecuritySheetState extends State<_SecuritySheet> {
 
   @override
   Widget build(BuildContext context) {
-    const green = Color(0xFFC3FD00);
+    const green = Color(0xFF739800);
     final colors = context.colors;
 
     return Container(
@@ -1107,7 +1107,7 @@ class _WhatsAppSheetState extends State<_WhatsAppSheet> {
 
   @override
   Widget build(BuildContext context) {
-    const green = Color(0xFFC3FD00);
+    const green = Color(0xFF739800);
     final colors = context.colors;
 
     return Padding(
@@ -1309,7 +1309,7 @@ class _ThemeOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const green = Color(0xFFC3FD00);
+    const green = Color(0xFF739800);
     final colors = context.colors;
     return Expanded(
       child: GestureDetector(

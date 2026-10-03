@@ -17,7 +17,7 @@ import 'csv_export_stub.dart'
     if (dart.library.html) 'csv_export_web.dart'
     if (dart.library.io) 'csv_export_io.dart';
 
-const _green = Color(0xFFC3FD00);
+const _green = Color(0xFF739800);
 
 class GroupDetailScreen extends ConsumerWidget {
   const GroupDetailScreen({super.key, required this.groupId});
@@ -417,7 +417,7 @@ class _LinkedInHeader extends StatelessWidget {
   final VoidCallback onEditPhoto;
 
   static const _memberColors = [
-    Color(0xFFC3FD00), Color(0xFF00D4FF), Color(0xFFFF6B9D),
+    Color(0xFF739800), Color(0xFF00D4FF), Color(0xFFFF6B9D),
     Color(0xFFFFB347), Color(0xFF9B59B6), Color(0xFF2ECC71),
   ];
 
@@ -921,7 +921,7 @@ class _GroupSettingsSheetState extends ConsumerState<_GroupSettingsSheet> {
                   itemCount: group.memberIds.length,
                   itemBuilder: (_, i) {
                     const memberColors = [
-                      Color(0xFFC3FD00), Color(0xFF00D4FF),
+                      Color(0xFF739800), Color(0xFF00D4FF),
                       Color(0xFFFF6B9D), Color(0xFFFFB347),
                       Color(0xFF9B59B6), Color(0xFF2ECC71),
                     ];
@@ -1087,7 +1087,7 @@ class _ChartsTab extends StatelessWidget {
     final max = sorted.isEmpty ? 1.0 : sorted.first.value;
 
     const barColors = [
-      Color(0xFFC3FD00), Color(0xFF00D4FF), Color(0xFFFF6B9D),
+      Color(0xFF739800), Color(0xFF00D4FF), Color(0xFFFF6B9D),
       Color(0xFFFFB347), Color(0xFF9B59B6), Color(0xFF2ECC71),
       Color(0xFFFF6B6B), Color(0xFFE91E63), Color(0xFF03A9F4),
     ];
@@ -1422,7 +1422,7 @@ class _MembersTab extends StatelessWidget {
   final VoidCallback onAddMember;
 
   static const _memberColors = [
-    Color(0xFFC3FD00), Color(0xFF00D4FF), Color(0xFFFF6B9D),
+    Color(0xFF739800), Color(0xFF00D4FF), Color(0xFFFF6B9D),
     Color(0xFFFFB347), Color(0xFF9B59B6), Color(0xFF2ECC71),
   ];
 

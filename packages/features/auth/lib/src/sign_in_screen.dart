@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 // Brand tokens
-const _green = Color(0xFF9CD246);
+const _green = Color(0xFF739800);
 const _black = Color(0xFF000000);
 
 class SignInScreen extends ConsumerStatefulWidget {
@@ -283,9 +283,9 @@ class _LoginCards extends StatelessWidget {
             Positioned(right: 2 * s, top: ch * 0.10,
                 child: _GreenSparks(s: s, mirrored: true)),
 
-            // Back — Apartment
+            // Back — Apartment (bottom-LEFT, tilted clockwise)
             Positioned(
-              bottom: 0, right: 0,
+              bottom: 0, left: 0,
               child: Transform.rotate(angle: 0.04,
                 child: _LoginCard(
                   s: s, w: cw, h: ch,
@@ -296,21 +296,22 @@ class _LoginCards extends StatelessWidget {
                 )),
             ),
 
-            // Middle — Groceries (no title, emoji badge)
+            // Middle — Groceries (center)
             Positioned(
-              bottom: ch * 0.63, left: 20 * s,
+              bottom: ch * 0.63, left: 27 * s,
               child: Transform.rotate(angle: -0.01,
                 child: _LoginCard(
                   s: s, w: cw, h: ch,
                   avatarAsset: _f2,
+                  title: 'Grocery',
                   secondEmoji: '🛒',
                   splitAmt: '₹700', totalAmt: '₹6,300',
                 )),
             ),
 
-            // Front — Dinner
+            // Front — Dinner (top-RIGHT, tilted counter-clockwise)
             Positioned(
-              top: 0, left: 0,
+              top: 0, right: 0,
               child: Transform.rotate(angle: -0.06,
                 child: _LoginCard(
                   s: s, w: cw, h: ch,

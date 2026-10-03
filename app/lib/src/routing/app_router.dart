@@ -186,39 +186,44 @@ class _AppShell extends ConsumerWidget {
           child: shell,
         ),
       ),
-      bottomNavigationBar: NavigationBar(
-        backgroundColor: colors.surfaceDefault,
-        indicatorColor: colors.brandPrimaryLt,
-        selectedIndex: shell.currentIndex,
-        onDestinationSelected: shell.goBranch,
-        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-        destinations: [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined, color: colors.textSecondary),
-            selectedIcon: Icon(Icons.home_rounded, color: colors.brandPrimary),
-            label: 'Home',
+      bottomNavigationBar: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: NavigationBar(
+            backgroundColor: colors.surfaceDefault,
+            indicatorColor: colors.brandPrimaryLt,
+            selectedIndex: shell.currentIndex,
+            onDestinationSelected: shell.goBranch,
+            labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+            destinations: [
+              NavigationDestination(
+                icon: Icon(Icons.home_outlined, color: colors.textSecondary),
+                selectedIcon: Icon(Icons.home_rounded, color: colors.brandPrimary),
+                label: 'Home',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.group_outlined, color: colors.textSecondary),
+                selectedIcon: Icon(Icons.group_rounded, color: colors.brandPrimary),
+                label: 'Groups',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.people_outline_rounded, color: colors.textSecondary),
+                selectedIcon: Icon(Icons.people_rounded, color: colors.brandPrimary),
+                label: 'Friends',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.receipt_long_outlined, color: colors.textSecondary),
+                selectedIcon: Icon(Icons.receipt_long_rounded, color: colors.brandPrimary),
+                label: 'Activity',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.person_outline_rounded, color: colors.textSecondary),
+                selectedIcon: Icon(Icons.person_rounded, color: colors.brandPrimary),
+                label: 'Profile',
+              ),
+            ],
           ),
-          NavigationDestination(
-            icon: Icon(Icons.group_outlined, color: colors.textSecondary),
-            selectedIcon: Icon(Icons.group_rounded, color: colors.brandPrimary),
-            label: 'Groups',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.people_outline_rounded, color: colors.textSecondary),
-            selectedIcon: Icon(Icons.people_rounded, color: colors.brandPrimary),
-            label: 'Friends',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.receipt_long_outlined, color: colors.textSecondary),
-            selectedIcon: Icon(Icons.receipt_long_rounded, color: colors.brandPrimary),
-            label: 'Activity',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline_rounded, color: colors.textSecondary),
-            selectedIcon: Icon(Icons.person_rounded, color: colors.brandPrimary),
-            label: 'Profile',
-          ),
-        ],
+        ),
       ),
     );
   }

@@ -4,7 +4,7 @@ import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-const _green = Color(0xFFC3FD00);
+const _green = Color(0xFF739800);
 
 // ── Provider: watch contacts for current user ─────────────────────────────────
 final _contactsProvider = StreamProvider<List<_Contact>>((ref) {
@@ -306,7 +306,7 @@ class _FriendTile extends StatelessWidget {
   final VoidCallback onTap;
 
   static const _avatarColors = [
-    Color(0xFFC3FD00), Color(0xFF00D4FF), Color(0xFFFF6B9D),
+    Color(0xFF739800), Color(0xFF00D4FF), Color(0xFFFF6B9D),
     Color(0xFFFFB347), Color(0xFF9B59B6), Color(0xFF2ECC71),
   ];
 

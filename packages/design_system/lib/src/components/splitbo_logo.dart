@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-const _green = Color(0xFFC3FD00);
+const _green = Color(0xFF739800);
 const _charcoal = Color(0xFF141414);
 const _charcoalHome = Color(0xFF090A0D);
 

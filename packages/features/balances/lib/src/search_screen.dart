@@ -10,7 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-const _green = Color(0xFFC3FD00);
+const _green = Color(0xFF739800);
 const _surface = Color(0xFF1A1A1A);
 const _border = Color(0xFF2C2C2C);
 const _textSecondary = Color(0xFF9E9E9E);
@@ -79,7 +79,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   _SearchResults _results = _SearchResults.empty;
 
   static const _avatarColors = [
-    Color(0xFFC3FD00), Color(0xFF00D4FF), Color(0xFFFF6B9D),
+    Color(0xFF739800), Color(0xFF00D4FF), Color(0xFFFF6B9D),
     Color(0xFFFFB347), Color(0xFF9B59B6), Color(0xFF2ECC71),
   ];
 
