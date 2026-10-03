@@ -1,0 +1,10 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <g fill="#C3FD00">
+    <!-- Dot -->
+    <circle cx="178" cy="120" r="48"/>
+    <!-- Blade (diagonal slash) -->
+    <path d="M 166 218 C 105 275 100 324 154 378 C 192 416 246 364 290 320 L 426 184 L 426 84 L 326 84 Z"/>
+    <!-- Crescent with punched hole (evenodd) -->
+    <path fill-rule="evenodd" d="M 346 294 C 407 237 412 188 358 134 C 320 96 266 148 222 192 L 86 328 L 86 428 L 186 428 Z M 326 368 A 38 38 0 1 1 326 367.9 Z"/>
+  </g>
+</svg>
