@@ -259,8 +259,10 @@ class _LoginCards extends StatelessWidget {
   const _LoginCards({required this.s});
   final double s;
 
-  // Stable pravatar.cc face photos for demo cards
-  static const _p = 'https://i.pravatar.cc/150?img=';
+  // Local asset face photos — 200×200 JPEG, ~13KB each
+  static const _f1 = 'assets/images/face_18.jpg'; // woman, classical
+  static const _f2 = 'assets/images/face_19.jpg'; // woman, short hair
+  static const _f3 = 'assets/images/face_20.jpg'; // man
 
   @override
   Widget build(BuildContext context) {
@@ -287,9 +289,9 @@ class _LoginCards extends StatelessWidget {
               child: Transform.rotate(angle: 0.04,
                 child: _LoginCard(
                   s: s, w: cw, h: ch,
-                  avatarUrl: '${_p}47',
+                  avatarAsset: _f1,
                   title: 'Apartment',
-                  memberUrls: const ['${_p}9', '${_p}20', '${_p}29'],
+                  memberAssets: const [_f3, _f2, _f1],
                   extra: 3, splitAmt: '₹12,000', totalAmt: '₹12,000',
                 )),
             ),
@@ -300,7 +302,7 @@ class _LoginCards extends StatelessWidget {
               child: Transform.rotate(angle: -0.01,
                 child: _LoginCard(
                   s: s, w: cw, h: ch,
-                  avatarUrl: '${_p}3',
+                  avatarAsset: _f2,
                   secondEmoji: '🛒',
                   splitAmt: '₹700', totalAmt: '₹6,300',
                 )),
@@ -312,9 +314,9 @@ class _LoginCards extends StatelessWidget {
               child: Transform.rotate(angle: -0.06,
                 child: _LoginCard(
                   s: s, w: cw, h: ch,
-                  avatarUrl: '${_p}8',
+                  avatarAsset: _f3,
                   title: 'Dinner',
-                  memberUrls: const ['${_p}11', '${_p}5', '${_p}17'],
+                  memberAssets: const [_f2, _f1, _f3],
                   extra: 2, splitAmt: '₹400', totalAmt: '₹2,400',
                 )),
             ),
@@ -328,17 +330,17 @@ class _LoginCards extends StatelessWidget {
 class _LoginCard extends StatelessWidget {
   const _LoginCard({
     required this.s, required this.w, required this.h,
-    required this.avatarUrl,
+    required this.avatarAsset,
     this.title, this.secondEmoji,
-    this.memberUrls = const [], this.extra = 0,
+    this.memberAssets = const [], this.extra = 0,
     required this.splitAmt, required this.totalAmt,
   });
 
   final double s, w, h;
-  final String avatarUrl;
+  final String avatarAsset;
   final String? title;
   final String? secondEmoji;
-  final List<String> memberUrls;
+  final List<String> memberAssets;
   final int extra;
   final String splitAmt, totalAmt;
 
@@ -358,16 +360,12 @@ class _LoginCard extends StatelessWidget {
             blurRadius: 20, offset: const Offset(0, 6))],
       ),
       child: Row(children: [
-        // Face photo avatar
+        // Face photo avatar — local asset
         ClipOval(
-          child: Image.network(
-            avatarUrl,
+          child: Image.asset(
+            avatarAsset,
             width: av, height: av,
             fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Container(
-              width: av, height: av,
-              color: const Color(0xFF8EB5E8),
-            ),
           ),
         ),
         if (secondEmoji != null) ...[
@@ -392,31 +390,20 @@ class _LoginCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: const Color(0xFF0A0A0A),
                     fontSize: h * 0.225, fontWeight: FontWeight.w700)),
-            if (memberUrls.isNotEmpty) ...[
+            if (memberAssets.isNotEmpty) ...[
               if (title != null) SizedBox(height: 4 * s),
               Row(mainAxisSize: MainAxisSize.min, children: [
-                ...memberUrls.asMap().entries.map((e) => Transform.translate(
+                ...memberAssets.asMap().entries.map((e) => Transform.translate(
                   offset: Offset(-e.key * dot * 0.28, 0),
                   child: ClipOval(
-                    child: Image.network(
+                    child: Image.asset(
                       e.value,
                       width: dot, height: dot,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        width: dot, height: dot,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: const [
-                            Color(0xFF8EB5E8),
-                            Color(0xFFE8A08E),
-                            Color(0xFF9CD246),
-                          ][e.key % 3],
-                        ),
-                      ),
                     ),
                   ),
                 )),
-                SizedBox(width: (memberUrls.length - 1) * dot * 0.28 > 0
+                SizedBox(width: (memberAssets.length - 1) * dot * 0.28 > 0
                     ? 3 * s : 0),
                 if (extra > 0)
                   Container(
