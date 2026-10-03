@@ -67,11 +67,22 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final sh = MediaQuery.sizeOf(context).height;
+
+    // Width scales with screen height so on a tall laptop the column
+    // is wider — not full-bleed, just proportionally bigger.
+    final contentW = (sh * 0.52).clamp(300.0, 500.0);
+    final iconSize = (sh * 0.12).clamp(68.0, 110.0);
+    final wordmarkSize = (sh * 0.050).clamp(30.0, 46.0);
+    final taglineSize = (sh * 0.019).clamp(13.0, 17.0);
+    final vGap = (sh * 0.036).clamp(18.0, 38.0);
+    final buttonH = (sh * 0.070).clamp(50.0, 62.0);
+
     return Scaffold(
       backgroundColor: _black,
       body: Stack(
         children: [
-          // Green ambient glow — top-left
+          // Ambient glow — top-left
           Positioned(
             top: -140, left: -100,
             child: Container(
@@ -82,7 +93,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               ),
             ),
           ),
-          // Green ambient glow — bottom-right
+          // Ambient glow — bottom-right
           Positioned(
             bottom: -100, right: -80,
             child: Container(
@@ -94,109 +105,121 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             ),
           ),
 
-          // Main content — constrained + centered for web
+          // Main content — vertically centered, width scales with screen height
           SafeArea(
             child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 440),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 28),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const SizedBox(height: 36),
-
-                      // ── Logo wordmark ─────────────────────────────────────
-                      const Center(child: SplitboWordmark(height: 64)),
-                      const SizedBox(height: 10),
-
-                      // Tagline
-                      const Text(
-                        'Split bills. Keep friends.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Color(0xFFAAAAAA),
-                          fontSize: 15,
-                          fontWeight: FontWeight.w400,
-                          letterSpacing: 0.3,
-                        ),
-                      ),
-                      const SizedBox(height: 40),
-
-                      // ── Expense card illustration ────────────────────────
-                      Image.asset(
-                        'assets/images/login_cards.png',
-                        width: double.infinity,
-                      ),
-
-                      const Text(
-                        'Share expenses, not stress.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Color(0xFF888888),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                      const SizedBox(height: 40),
-
-                      // ── Get Started ──────────────────────────────────────
-                      if (_loading)
-                        const Center(
-                          child: CircularProgressIndicator(
-                              color: _green, strokeWidth: 2.5),
-                        )
-                      else
-                        SizedBox(
-                          height: 56,
-                          child: ElevatedButton(
-                            onPressed: _isLockedOut ? null : _signIn,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: _green,
-                              foregroundColor: Colors.black,
-                              disabledBackgroundColor:
-                                  _green.withOpacity(0.4),
-                              elevation: 0,
-                              shape: const StadiumBorder(),
-                            ),
-                            child: const Text(
-                              'Get Started',
-                              style: TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.black,
+              child: SizedBox(
+                width: contentW,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // ── Logo: icon mark + wordmark stacked ───────────────
+                    Center(
+                      child: Column(
+                        children: [
+                          SplitboLogoMark(size: iconSize),
+                          SizedBox(height: vGap * 0.25),
+                          Text.rich(
+                            TextSpan(children: [
+                              TextSpan(
+                                text: 'Split',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: wordmarkSize,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
+                              TextSpan(
+                                text: 'Bo',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: wordmarkSize,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ]),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: vGap * 0.35),
+
+                    // Tagline
+                    Text(
+                      'Split bills. Keep friends.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: const Color(0xFFAAAAAA),
+                        fontSize: taglineSize,
+                        fontWeight: FontWeight.w400,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                    SizedBox(height: vGap),
+
+                    // ── Card illustration ─────────────────────────────────
+                    Image.asset(
+                      'assets/images/login_cards.png',
+                      width: double.infinity,
+                      filterQuality: FilterQuality.high,
+                    ),
+                    SizedBox(height: vGap * 0.35),
+
+                    Text(
+                      'Share expenses, not stress.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: const Color(0xFF888888),
+                        fontSize: taglineSize - 1,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                    SizedBox(height: vGap),
+
+                    // ── Get Started ───────────────────────────────────────
+                    if (_loading)
+                      const Center(
+                        child: CircularProgressIndicator(
+                            color: _green, strokeWidth: 2.5),
+                      )
+                    else
+                      SizedBox(
+                        height: buttonH,
+                        child: ElevatedButton(
+                          onPressed: _isLockedOut ? null : _signIn,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _green,
+                            foregroundColor: Colors.black,
+                            disabledBackgroundColor: _green.withOpacity(0.4),
+                            elevation: 0,
+                            shape: const StadiumBorder(),
+                          ),
+                          child: const Text(
+                            'Get Started',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.black,
                             ),
                           ),
                         ),
-                      const SizedBox(height: 12),
-
-                      // ── Sign In (text-only, matching reference) ──────────
-                      TextButton(
-                        onPressed: _showEmailSheet,
-                        child: const Text(
-                          'Sign In',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
                       ),
-                      const SizedBox(height: 24),
+                    SizedBox(height: vGap * 0.4),
 
-                      // Fine print
-                      const Text(
-                        'Better splits. Brighter relationships.',
-                        textAlign: TextAlign.center,
+                    // ── Sign In ───────────────────────────────────────────
+                    TextButton(
+                      onPressed: _showEmailSheet,
+                      child: const Text(
+                        'Sign In',
                         style: TextStyle(
-                          color: Color(0xFF555555),
-                          fontSize: 12,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
                         ),
                       ),
-                      const SizedBox(height: 24),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
