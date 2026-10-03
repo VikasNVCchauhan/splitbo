@@ -19,6 +19,12 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   int _googleAttempts = 0;
   DateTime? _lockoutUntil;
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    precacheImage(const AssetImage('assets/images/login_cards.png'), context);
+  }
+
   bool get _isLockedOut =>
       _lockoutUntil != null && DateTime.now().isBefore(_lockoutUntil!);
 
@@ -111,13 +117,14 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               child: SizedBox(
                 width: contentW,
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // ── Logo: icon mark + wordmark stacked ───────────────
-                    Center(
+                    // ── Upper section: logo + cards — fills available space ──
+                    Expanded(
                       child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
+                          // Icon mark + wordmark stacked
                           SplitboLogoMark(size: iconSize),
                           SizedBox(height: vGap * 0.25),
                           Text.rich(
@@ -140,44 +147,44 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                               ),
                             ]),
                           ),
+                          SizedBox(height: vGap * 0.35),
+
+                          // Tagline
+                          Text(
+                            'Split bills. Keep friends.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: const Color(0xFFAAAAAA),
+                              fontSize: taglineSize,
+                              fontWeight: FontWeight.w400,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                          SizedBox(height: vGap),
+
+                          // Card illustration
+                          Image.asset(
+                            'assets/images/login_cards.png',
+                            width: double.infinity,
+                            filterQuality: FilterQuality.high,
+                          ),
+                          SizedBox(height: vGap * 0.35),
+
+                          Text(
+                            'Share expenses, not stress.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: const Color(0xFF888888),
+                              fontSize: taglineSize - 1,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
                         ],
                       ),
                     ),
-                    SizedBox(height: vGap * 0.35),
 
-                    // Tagline
-                    Text(
-                      'Split bills. Keep friends.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: const Color(0xFFAAAAAA),
-                        fontSize: taglineSize,
-                        fontWeight: FontWeight.w400,
-                        letterSpacing: 0.3,
-                      ),
-                    ),
+                    // ── Bottom section: buttons pinned ───────────────────────
                     SizedBox(height: vGap),
-
-                    // ── Card illustration ─────────────────────────────────
-                    Image.asset(
-                      'assets/images/login_cards.png',
-                      width: double.infinity,
-                      filterQuality: FilterQuality.high,
-                    ),
-                    SizedBox(height: vGap * 0.35),
-
-                    Text(
-                      'Share expenses, not stress.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: const Color(0xFF888888),
-                        fontSize: taglineSize - 1,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                    SizedBox(height: vGap),
-
-                    // ── Get Started ───────────────────────────────────────
                     if (_loading)
                       const Center(
                         child: CircularProgressIndicator(
@@ -206,8 +213,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                         ),
                       ),
                     SizedBox(height: vGap * 0.4),
-
-                    // ── Sign In ───────────────────────────────────────────
                     TextButton(
                       onPressed: _showEmailSheet,
                       child: const Text(
@@ -219,6 +224,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 16),
                   ],
                 ),
               ),
