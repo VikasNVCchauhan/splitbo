@@ -111,123 +111,136 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             ),
           ),
 
-          // Main content — vertically centered, width scales with screen height
+          // Main content — proportional layout, scrollable on tiny screens
           SafeArea(
-            child: Center(
-              child: SizedBox(
-                width: contentW,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // ── Upper section: logo + cards — fills available space ──
-                    Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          // Icon mark + wordmark stacked
-                          SplitboLogoMark(size: iconSize),
-                          SizedBox(height: vGap * 0.25),
-                          Text.rich(
-                            TextSpan(children: [
-                              TextSpan(
-                                text: 'Split',
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
+                    child: Center(
+                      child: SizedBox(
+                        width: contentW,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            SizedBox(height: vGap * 0.5),
+
+                            // ── Logo: icon mark + wordmark stacked ──────────
+                            Center(child: SplitboLogoMark(size: iconSize)),
+                            SizedBox(height: vGap * 0.25),
+                            Center(
+                              child: Text.rich(
+                                TextSpan(children: [
+                                  TextSpan(
+                                    text: 'Split',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: wordmarkSize,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: 'Bo',
+                                    style: TextStyle(
+                                      color: _green,
+                                      fontSize: wordmarkSize,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ]),
+                              ),
+                            ),
+                            SizedBox(height: vGap * 0.35),
+
+                            // Tagline
+                            Text(
+                              'Split bills. Keep friends.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: const Color(0xFFAAAAAA),
+                                fontSize: taglineSize,
+                                fontWeight: FontWeight.w400,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                            SizedBox(height: vGap),
+
+                            // ── Card illustration — height-constrained ───────
+                            Image.asset(
+                              'assets/images/login_cards.png',
+                              height: (sh * 0.30).clamp(160.0, 280.0),
+                              fit: BoxFit.contain,
+                              filterQuality: FilterQuality.medium,
+                            ),
+                            SizedBox(height: vGap * 0.35),
+
+                            Text(
+                              'Share expenses, not stress.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: const Color(0xFF888888),
+                                fontSize: taglineSize - 1,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                            SizedBox(height: vGap),
+
+                            // ── Get Started ──────────────────────────────────
+                            if (_loading)
+                              const Center(
+                                child: CircularProgressIndicator(
+                                    color: _green, strokeWidth: 2.5),
+                              )
+                            else
+                              SizedBox(
+                                height: buttonH,
+                                child: ElevatedButton(
+                                  onPressed: _isLockedOut ? null : _signIn,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: _green,
+                                    foregroundColor: Colors.black,
+                                    disabledBackgroundColor:
+                                        _green.withOpacity(0.4),
+                                    elevation: 0,
+                                    shape: const StadiumBorder(),
+                                  ),
+                                  child: const Text(
+                                    'Get Started',
+                                    style: TextStyle(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            SizedBox(height: vGap * 0.4),
+
+                            // ── Sign In ──────────────────────────────────────
+                            TextButton(
+                              onPressed: _showEmailSheet,
+                              child: const Text(
+                                'Sign In',
                                 style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: wordmarkSize,
+                                  fontSize: 16,
                                   fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              TextSpan(
-                                text: 'Bo',
-                                style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: wordmarkSize,
-                                  fontWeight: FontWeight.w800,
                                 ),
                               ),
-                            ]),
-                          ),
-                          SizedBox(height: vGap * 0.35),
-
-                          // Tagline
-                          Text(
-                            'Split bills. Keep friends.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: const Color(0xFFAAAAAA),
-                              fontSize: taglineSize,
-                              fontWeight: FontWeight.w400,
-                              letterSpacing: 0.3,
                             ),
-                          ),
-                          SizedBox(height: vGap),
-
-                          // Card illustration
-                          Image.asset(
-                            'assets/images/login_cards.png',
-                            width: double.infinity,
-                            filterQuality: FilterQuality.high,
-                          ),
-                          SizedBox(height: vGap * 0.35),
-
-                          Text(
-                            'Share expenses, not stress.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: const Color(0xFF888888),
-                              fontSize: taglineSize - 1,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // ── Bottom section: buttons pinned ───────────────────────
-                    SizedBox(height: vGap),
-                    if (_loading)
-                      const Center(
-                        child: CircularProgressIndicator(
-                            color: _green, strokeWidth: 2.5),
-                      )
-                    else
-                      SizedBox(
-                        height: buttonH,
-                        child: ElevatedButton(
-                          onPressed: _isLockedOut ? null : _signIn,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: _green,
-                            foregroundColor: Colors.black,
-                            disabledBackgroundColor: _green.withOpacity(0.4),
-                            elevation: 0,
-                            shape: const StadiumBorder(),
-                          ),
-                          child: const Text(
-                            'Get Started',
-                            style: TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.black,
-                            ),
-                          ),
-                        ),
-                      ),
-                    SizedBox(height: vGap * 0.4),
-                    TextButton(
-                      onPressed: _showEmailSheet,
-                      child: const Text(
-                        'Sign In',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                            SizedBox(height: vGap * 0.5),
+                          ],
                         ),
                       ),
                     ),
-                    const SizedBox(height: 16),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
             ),
           ),
         ],
