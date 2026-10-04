@@ -333,8 +333,10 @@ class _PillTabBar extends StatefulWidget {
 
 class _PillTabBarState extends State<_PillTabBar> {
   static const _labels = [
-    'Members', 'Expenses', 'Balances', 'Charts', 'Totals', 'Notes'
+    'Members', 'Expenses', 'Balances', 'Charts', 'Totals', 'Chat'
   ];
+
+  final _keys = List.generate(_labels.length, (_) => GlobalKey());
 
   @override
   void initState() {
@@ -343,7 +345,19 @@ class _PillTabBarState extends State<_PillTabBar> {
   }
 
   void _onTabChange() {
-    if (mounted) setState(() {});
+    if (mounted) {
+      setState(() {});
+      final sel = widget.controller.index;
+      final ctx = _keys[sel].currentContext;
+      if (ctx != null) {
+        Scrollable.ensureVisible(
+          ctx,
+          alignment: 0.5,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOut,
+        );
+      }
+    }
   }
 
   @override
@@ -366,6 +380,7 @@ class _PillTabBarState extends State<_PillTabBar> {
           itemBuilder: (context, i) {
             final isSelected = i == sel;
             return GestureDetector(
+              key: _keys[i],
               onTap: () => widget.controller.animateTo(i),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 150),

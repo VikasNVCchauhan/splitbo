@@ -20,6 +20,9 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
   CollectionReference<Map<String, dynamic>> _expenses(String groupId) =>
       _firestore.collection('${dbPrefix}groups').doc(groupId).collection('expenses');
 
+  DocumentReference<Map<String, dynamic>> _group(String groupId) =>
+      _firestore.collection('${dbPrefix}groups').doc(groupId);
+
   @override
   Stream<List<ExpenseEntity>> watchExpenses(String groupId) => _expenses(groupId)
       .orderBy('createdAt', descending: true)
@@ -70,6 +73,7 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
         updatedAt: now,
       );
       await docRef.set(dto.toFirestore());
+      await _group(groupId).update({'totalExpenses': FieldValue.increment(amount)});
       return Ok(dto.toEntity());
     } on FirebaseException catch (e) {
       return Err(_mapError(e));
@@ -92,6 +96,12 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
   }) async {
     try {
       final docRef = _expenses(groupId).doc(expenseId);
+      // Read old amount before updating so we can adjust the group total
+      double? oldAmount;
+      if (amount != null) {
+        final snap = await docRef.get();
+        oldAmount = (snap.data()?['amount'] as num?)?.toDouble() ?? 0.0;
+      }
       final updates = <String, dynamic>{
         if (description != null) 'description': description,
         if (amount != null) 'amount': amount,
@@ -106,6 +116,12 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
         'updatedAt': FieldValue.serverTimestamp(),
       };
       await docRef.update(updates);
+      if (amount != null && oldAmount != null) {
+        final delta = amount - oldAmount;
+        if (delta != 0) {
+          await _group(groupId).update({'totalExpenses': FieldValue.increment(delta)});
+        }
+      }
       final updated = await docRef.get();
       return Ok(ExpenseDto.fromFirestore(updated).toEntity());
     } on FirebaseException catch (e) {
@@ -122,7 +138,12 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
   }) async {
     try {
       final docRef = _expenses(groupId).doc(expenseId);
+      final snap = await docRef.get();
+      final oldAmount = (snap.data()?['amount'] as num?)?.toDouble() ?? 0.0;
       await docRef.delete();
+      if (oldAmount > 0) {
+        await _group(groupId).update({'totalExpenses': FieldValue.increment(-oldAmount)});
+      }
       return const Ok(null);
     } on FirebaseException catch (e) {
       return Err(_mapError(e));
