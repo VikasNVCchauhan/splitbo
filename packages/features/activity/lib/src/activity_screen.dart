@@ -1,3 +1,5 @@
+import 'dart:math' show max;
+
 import 'package:data/data.dart';
 import 'package:design_system/design_system.dart';
 import 'package:domain/domain.dart';
@@ -262,7 +264,8 @@ class _ActivityTile extends ConsumerWidget {
       backgroundColor: Colors.transparent,
       builder: (_) => Container(
         margin: const EdgeInsets.all(12),
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        padding: EdgeInsets.fromLTRB(20, 16, 20,
+            MediaQuery.of(context).padding.bottom + 80),
         decoration: BoxDecoration(
           color: colors.surfaceRaised,
           borderRadius: BorderRadius.circular(20),
@@ -446,10 +449,12 @@ class _EditExpenseSheetState extends ConsumerState<_EditExpenseSheet> {
     final colors = context.colors;
     return Padding(
       padding:
-          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          EdgeInsets.only(bottom: max(MediaQuery.of(context).viewInsets.bottom,
+              MediaQuery.of(context).padding.bottom + 80)),
       child: Container(
         margin: const EdgeInsets.all(12),
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+        padding: EdgeInsets.fromLTRB(24, 20, 24,
+            MediaQuery.of(context).padding.bottom + 80),
         decoration: BoxDecoration(
           color: colors.surfaceRaised,
           borderRadius: BorderRadius.circular(24),

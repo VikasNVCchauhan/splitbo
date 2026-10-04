@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' show max;
 import 'dart:typed_data';
 
 import 'package:cloud_functions/cloud_functions.dart';
@@ -499,7 +500,8 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
       backgroundColor: Colors.transparent,
       builder: (_) => Container(
         margin: const EdgeInsets.all(12),
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+        padding: EdgeInsets.fromLTRB(20, 20, 20,
+            MediaQuery.of(context).padding.bottom + 80),
         decoration: BoxDecoration(
           color: colors.surfaceDefault,
           borderRadius: BorderRadius.circular(24),
@@ -988,7 +990,8 @@ class _GroupPickerSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     return Container(
-      margin: const EdgeInsets.all(12),
+      margin: EdgeInsets.fromLTRB(12, 12, 12,
+          max(12.0, MediaQuery.of(context).padding.bottom + 80)),
       decoration: BoxDecoration(
         color: colors.surfaceDefault,
         borderRadius: BorderRadius.circular(24),
@@ -1572,7 +1575,8 @@ class _ScanSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     return Container(
-      margin: const EdgeInsets.all(12),
+      margin: EdgeInsets.fromLTRB(12, 12, 12,
+          max(12.0, MediaQuery.of(context).padding.bottom + 80)),
       decoration: BoxDecoration(
         color: colors.surfaceDefault,
         borderRadius: BorderRadius.circular(20),

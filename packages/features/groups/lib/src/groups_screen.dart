@@ -1,3 +1,5 @@
+import 'dart:math' show max;
+
 import 'package:data/data.dart';
 import 'package:design_system/design_system.dart';
 import 'package:domain/domain.dart';
@@ -308,7 +310,8 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
         left: 24,
         right: 24,
         top: 24,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        bottom: max(MediaQuery.of(context).viewInsets.bottom,
+                    MediaQuery.of(context).padding.bottom + 80),
       ),
       decoration: BoxDecoration(
         color: colors.surfaceDefault,
