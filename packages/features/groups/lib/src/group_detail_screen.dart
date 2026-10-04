@@ -34,15 +34,15 @@ class GroupDetailScreen extends ConsumerWidget {
       ),
       error: (e, _) => Scaffold(
         backgroundColor: colors.backgroundDefault,
-        body: Center(child: Text(e.toString(), style: const TextStyle(color: Colors.white))),
+        body: Center(child: Text(e.toString(), style: TextStyle(color: colors.textSecondary))),
       ),
       data: (groups) {
         final group = groups.where((g) => g.id == groupId).firstOrNull;
         if (group == null) {
           return Scaffold(
             backgroundColor: colors.backgroundDefault,
-            appBar: AppBar(backgroundColor: colors.backgroundDefault, iconTheme: const IconThemeData(color: Colors.white)),
-            body: const Center(child: Text('Group not found', style: TextStyle(color: Colors.white))),
+            appBar: AppBar(backgroundColor: colors.backgroundDefault, iconTheme: IconThemeData(color: colors.textPrimary)),
+            body: Center(child: Text('Group not found', style: TextStyle(color: colors.textPrimary))),
           );
         }
         return _GroupDetailBody(group: group);
@@ -62,18 +62,26 @@ class _GroupDetailBody extends ConsumerStatefulWidget {
 class _GroupDetailBodyState extends ConsumerState<_GroupDetailBody>
     with SingleTickerProviderStateMixin {
   late final TabController _tab;
+  late final ScrollController _scrollCtrl;
   bool _scrolled = false;
   bool _totalHealed = false;
+  bool _namesHealed = false;
 
   @override
   void initState() {
     super.initState();
     _tab = TabController(length: 4, vsync: this);
+    _scrollCtrl = ScrollController()
+      ..addListener(() {
+        final scrolled = _scrollCtrl.offset > 180;
+        if (scrolled != _scrolled) setState(() => _scrolled = scrolled);
+      });
   }
 
   @override
   void dispose() {
     _tab.dispose();
+    _scrollCtrl.dispose();
     super.dispose();
   }
 
@@ -96,6 +104,18 @@ class _GroupDetailBodyState extends ConsumerState<_GroupDetailBody>
           totalExpenses: computedTotal,
         );
       });
+    }
+
+    // Heal missing memberDisplayNames for existing groups
+    if (!_namesHealed) {
+      final anyMissing = group.memberIds.any(
+          (id) => !group.memberDisplayNames.containsKey(id));
+      if (anyMissing) {
+        _namesHealed = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.read(healGroupDisplayNamesProvider(group.id));
+        });
+      }
     }
 
     return Scaffold(
@@ -166,86 +186,78 @@ class _GroupDetailBodyState extends ConsumerState<_GroupDetailBody>
           );
         },
       ),
-      body: NotificationListener<ScrollNotification>(
-        onNotification: (n) {
-          if (n.depth == 0) {
-            final scrolled = n.metrics.pixels > 220;
-            if (scrolled != _scrolled) setState(() => _scrolled = scrolled);
-          }
-          return false;
-        },
-        child: NestedScrollView(
-          floatHeaderSlivers: false,
-          headerSliverBuilder: (_, __) => [
-            SliverToBoxAdapter(
-              child: _GroupHeader(
-                group: group,
-                computedTotal: computedTotal,
-                onAddExpense: () => context.push('/expense/new?groupId=${group.id}'),
-                onViewBalances: () => _tab.animateTo(2),
-                onAddMember: () => _showAddMemberSheet(context),
-                onShare: () {
-                  Clipboard.setData(ClipboardData(
-                    text: 'https://vikasnvcchauhan.github.io/splitbo/#/invite/${group.id}',
-                  ));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Invite link copied')),
-                  );
-                },
-              ),
+      body: CustomScrollView(
+        controller: _scrollCtrl,
+        slivers: [
+          SliverToBoxAdapter(
+            child: _GroupHeader(
+              group: group,
+              computedTotal: computedTotal,
+              onAddExpense: () => context.push('/expense/new?groupId=${group.id}'),
+              onViewBalances: () => _tab.animateTo(2),
+              onAddMember: () => _showAddMemberSheet(context),
+              onShare: () {
+                Clipboard.setData(ClipboardData(
+                  text: 'https://vikasnvcchauhan.github.io/splitbo/#/invite/${group.id}',
+                ));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Invite link copied')),
+                );
+              },
             ),
-            SliverPersistentHeader(
-              pinned: true,
-              delegate: _PillTabDelegate(
-                controller: _tab,
-              ),
-            ),
-          ],
-          body: TabBarView(
-            controller: _tab,
-            children: [
-              // ── Members ───────────────────────────────────────
-              _MembersTab(
-                group: group,
-                onAddMember: () => _showAddMemberSheet(context),
-              ),
-              // ── Expenses ──────────────────────────────────────
-              expensesAsync.when(
-                loading: () => const Center(
-                    child: CircularProgressIndicator(
-                        color: _green, strokeWidth: 2)),
-                error: (e, _) => Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.cloud_off_rounded, color: colors.textDisabled, size: 40),
-                        const SizedBox(height: 12),
-                        Text('Could not load expenses',
-                            style: TextStyle(color: colors.textPrimary, fontSize: 15, fontWeight: FontWeight.w600)),
-                        const SizedBox(height: 6),
-                        Text('Check your connection and try again.',
-                            style: TextStyle(color: colors.textSecondary, fontSize: 13)),
-                      ],
-                    )),
-                data: (expenses) => expenses.isEmpty
-                    ? _EmptyExpenses(groupId: group.id)
-                    : _ExpenseList(expenses: expenses, group: group),
-              ),
-              // ── Stats (Balances + Charts + Totals) ───────────
-              expensesAsync.when(
-                loading: () => const Center(
-                    child: CircularProgressIndicator(
-                        color: _green, strokeWidth: 2)),
-                error: (_, __) => const _ComingSoon(label: 'Stats'),
-                data: (expenses) => expenses.isEmpty
-                    ? const _ComingSoon(label: 'Stats')
-                    : _StatsTab(expenses: expenses, group: group),
-              ),
-              // ── Chat ──────────────────────────────────────────
-              _WhiteboardTab(groupId: group.id),
-            ],
           ),
-        ),
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: _PillTabDelegate(controller: _tab),
+          ),
+          SliverFillRemaining(
+            hasScrollBody: true,
+            child: TabBarView(
+              controller: _tab,
+              children: [
+                // ── Members ─────────────────────────────────────
+                _MembersTab(
+                  group: group,
+                  onAddMember: () => _showAddMemberSheet(context),
+                ),
+                // ── Expenses ────────────────────────────────────
+                expensesAsync.when(
+                  loading: () => const Center(
+                      child: CircularProgressIndicator(
+                          color: _green, strokeWidth: 2)),
+                  error: (e, _) => Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.cloud_off_rounded, color: colors.textDisabled, size: 40),
+                          const SizedBox(height: 12),
+                          Text('Could not load expenses',
+                              style: TextStyle(color: colors.textPrimary, fontSize: 15, fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 6),
+                          Text('Check your connection and try again.',
+                              style: TextStyle(color: colors.textSecondary, fontSize: 13)),
+                        ],
+                      )),
+                  data: (expenses) => expenses.isEmpty
+                      ? _EmptyExpenses(groupId: group.id)
+                      : _ExpenseList(expenses: expenses, group: group),
+                ),
+                // ── Stats ───────────────────────────────────────
+                expensesAsync.when(
+                  loading: () => const Center(
+                      child: CircularProgressIndicator(
+                          color: _green, strokeWidth: 2)),
+                  error: (_, __) => const _ComingSoon(label: 'Stats'),
+                  data: (expenses) => expenses.isEmpty
+                      ? const _ComingSoon(label: 'Stats')
+                      : _StatsTab(expenses: expenses, group: group),
+                ),
+                // ── Chat ────────────────────────────────────────
+                _ChatTab(groupId: group.id),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -504,7 +516,7 @@ class _GroupHeader extends StatelessWidget {
             '$symbol${computedTotal.toStringAsFixed(0)} total spent',
             style: TextStyle(color: colors.textSecondary, fontSize: 12),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
 
           // ── Quick actions row ────────────────────────────────────
           Padding(
@@ -539,7 +551,7 @@ class _GroupHeader extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
         ],
       ),
     );
@@ -562,24 +574,14 @@ class _QuickAction extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: colors.surfaceDefault,
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Icon(icon, color: _green, size: 24),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            label,
-            style: TextStyle(color: colors.textSecondary, fontSize: 12),
-          ),
-        ],
+      child: Container(
+        width: 52,
+        height: 52,
+        decoration: BoxDecoration(
+          color: colors.surfaceDefault,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Icon(icon, color: _green, size: 22),
       ),
     );
   }
@@ -784,7 +786,6 @@ class _GroupSettingsSheetState extends ConsumerState<_GroupSettingsSheet> {
           children: [
             const Text('Invite via QR',
                 style: TextStyle(
-                    color: Colors.white,
                     fontSize: 17,
                     fontWeight: FontWeight.w700)),
             const SizedBox(height: 20),
@@ -842,8 +843,8 @@ class _GroupSettingsSheetState extends ConsumerState<_GroupSettingsSheet> {
                 child: Row(
                   children: [
                     Text('Members (${group.memberCount})',
-                        style: const TextStyle(
-                            color: Colors.white,
+                        style: TextStyle(
+                            color: colors.textPrimary,
                             fontSize: 17,
                             fontWeight: FontWeight.w700)),
                     const Spacer(),
@@ -885,7 +886,7 @@ class _GroupSettingsSheetState extends ConsumerState<_GroupSettingsSheet> {
                         ),
                       ),
                       title: Text('Member ${i + 1}',
-                          style: const TextStyle(color: Colors.white)),
+                          style: TextStyle(color: colors.textPrimary)),
                       subtitle: Text(
                           i == 0 ? 'Admin' : 'Member',
                           style: TextStyle(
@@ -907,8 +908,7 @@ class _GroupSettingsSheetState extends ConsumerState<_GroupSettingsSheet> {
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: colors.surfaceDefault,
-        title: const Text('Leave Group',
-            style: TextStyle(color: Colors.white)),
+        title: const Text('Leave Group'),
         content: Text('Leave "${group.name}"?',
             style: TextStyle(color: colors.textSecondary)),
         actions: [
@@ -943,8 +943,7 @@ class _GroupSettingsSheetState extends ConsumerState<_GroupSettingsSheet> {
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: colors.surfaceDefault,
-        title: const Text('Delete Group',
-            style: TextStyle(color: Colors.white)),
+        title: const Text('Delete Group'),
         content: Text(
           'Delete "${group.name}"? This cannot be undone.',
           style: TextStyle(color: colors.textSecondary),
@@ -1274,56 +1273,256 @@ class _DonutChartPainter extends CustomPainter {
 }
 
 // ── Whiteboard tab ────────────────────────────────────────────────────────────
-class _WhiteboardTab extends StatefulWidget {
-  const _WhiteboardTab({required this.groupId});
+// ── Chat tab ──────────────────────────────────────────────────────────────────
+class _ChatTab extends ConsumerStatefulWidget {
+  const _ChatTab({required this.groupId});
   final String groupId;
 
   @override
-  State<_WhiteboardTab> createState() => _WhiteboardTabState();
+  ConsumerState<_ChatTab> createState() => _ChatTabState();
 }
 
-class _WhiteboardTabState extends State<_WhiteboardTab> {
+class _ChatTabState extends ConsumerState<_ChatTab> {
   final _ctrl = TextEditingController();
+  final _scroll = ScrollController();
+  bool _sending = false;
 
   @override
   void dispose() {
     _ctrl.dispose();
+    _scroll.dispose();
     super.dispose();
+  }
+
+  void _scrollToBottom() {
+    if (_scroll.hasClients) {
+      _scroll.animateTo(
+        _scroll.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
+  Future<void> _send() async {
+    final text = _ctrl.text.trim();
+    if (text.isEmpty || _sending) return;
+    setState(() => _sending = true);
+    _ctrl.clear();
+    try {
+      await sendChatMessage(ref, widget.groupId, text);
+      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: _green.withOpacity(0.08),
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: _green.withOpacity(0.15)),
-            ),
-            child: const Text('Shared notes — visible to all group members',
-                style: TextStyle(color: _green, fontSize: 11)),
+    final currentUser = ref.watch(authStateProvider).valueOrNull;
+    final msgsAsync = ref.watch(groupChatProvider(widget.groupId));
+
+    return Column(
+      children: [
+        Expanded(
+          child: msgsAsync.when(
+            loading: () => const Center(
+                child: CircularProgressIndicator(color: _green, strokeWidth: 2)),
+            error: (_, __) => Center(
+                child: Text('Could not load messages',
+                    style: TextStyle(color: colors.textSecondary))),
+            data: (msgs) {
+              if (msgs.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.chat_bubble_outline_rounded,
+                          color: colors.textDisabled, size: 40),
+                      const SizedBox(height: 12),
+                      Text('No messages yet',
+                          style: TextStyle(
+                              color: colors.textSecondary, fontSize: 14)),
+                      const SizedBox(height: 4),
+                      Text('Start the conversation!',
+                          style: TextStyle(
+                              color: colors.textDisabled, fontSize: 12)),
+                    ],
+                  ),
+                );
+              }
+              WidgetsBinding.instance
+                  .addPostFrameCallback((_) => _scrollToBottom());
+              return ListView.builder(
+                controller: _scroll,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                itemCount: msgs.length,
+                itemBuilder: (_, i) {
+                  final msg = msgs[i];
+                  final isMe = msg.senderId == currentUser?.id;
+                  return _ChatBubble(
+                      msg: msg, isMe: isMe, colors: colors);
+                },
+              );
+            },
           ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: TextField(
-              controller: _ctrl,
-              maxLines: null,
-              expands: true,
-              textAlignVertical: TextAlignVertical.top,
-              style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.5),
-              decoration: InputDecoration(
-                hintText: 'Write anything… grocery list, trip notes, reminders.',
-                hintStyle: TextStyle(color: colors.textSecondary, fontSize: 14),
-                border: InputBorder.none,
-                filled: true,
-                fillColor: colors.surfaceDefault,
-                contentPadding: const EdgeInsets.all(14),
+        ),
+        // Input bar
+        Container(
+          padding: EdgeInsets.fromLTRB(
+              12, 8, 12, MediaQuery.of(context).padding.bottom + 8),
+          decoration: BoxDecoration(
+            color: colors.surfaceDefault,
+            border: Border(top: BorderSide(color: colors.borderDefault)),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _ctrl,
+                  style: TextStyle(color: colors.textPrimary, fontSize: 14),
+                  onSubmitted: (_) => _send(),
+                  textInputAction: TextInputAction.send,
+                  decoration: InputDecoration(
+                    hintText: 'Message…',
+                    hintStyle:
+                        TextStyle(color: colors.textSecondary, fontSize: 14),
+                    filled: true,
+                    fillColor: colors.surfaceRaised,
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 10),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(22),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: _send,
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: const BoxDecoration(
+                    color: _green,
+                    shape: BoxShape.circle,
+                  ),
+                  child: _sending
+                      ? const Padding(
+                          padding: EdgeInsets.all(10),
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.black),
+                        )
+                      : const Icon(Icons.send_rounded,
+                          color: Colors.black, size: 18),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ChatBubble extends StatelessWidget {
+  const _ChatBubble(
+      {required this.msg, required this.isMe, required this.colors});
+  final ChatMessage msg;
+  final bool isMe;
+  final SplitboColors colors;
+
+  @override
+  Widget build(BuildContext context) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    final t = msg.createdAt;
+    final timeStr =
+        '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        mainAxisAlignment:
+            isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (!isMe) ...[
+            Container(
+              width: 28,
+              height: 28,
+              margin: const EdgeInsets.only(right: 6),
+              decoration: BoxDecoration(
+                color: _green.withOpacity(0.15),
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Text(
+                  msg.senderName.isNotEmpty
+                      ? msg.senderName[0].toUpperCase()
+                      : '?',
+                  style: const TextStyle(
+                      color: _green,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700),
+                ),
+              ),
+            ),
+          ],
+          Flexible(
+            child: Container(
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.7,
+              ),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: isMe ? _green : colors.surfaceRaised,
+                borderRadius: BorderRadius.only(
+                  topLeft: const Radius.circular(16),
+                  topRight: const Radius.circular(16),
+                  bottomLeft: Radius.circular(isMe ? 16 : 4),
+                  bottomRight: Radius.circular(isMe ? 4 : 16),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (!isMe)
+                    Text(
+                      msg.senderName,
+                      style: TextStyle(
+                          color: colors.textSecondary,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600),
+                    ),
+                  if (!isMe) const SizedBox(height: 2),
+                  Text(
+                    msg.text,
+                    style: TextStyle(
+                      color: isMe ? Colors.black : colors.textPrimary,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Align(
+                    alignment: Alignment.bottomRight,
+                    child: Text(
+                      timeStr,
+                      style: TextStyle(
+                        color: isMe
+                            ? Colors.black54
+                            : colors.textSecondary,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -1633,7 +1832,6 @@ class _AddMemberSheetState extends ConsumerState<_AddMemberSheet>
                 children: [
                   const Text('Add Members',
                       style: TextStyle(
-                          color: Colors.white,
                           fontSize: 18,
                           fontWeight: FontWeight.w700)),
                   const Spacer(),
@@ -1707,7 +1905,7 @@ class _SearchTab extends StatelessWidget {
         children: [
           TextField(
             controller: ctrl,
-            style: const TextStyle(color: Colors.white),
+            style: TextStyle(color: colors.textPrimary),
             onChanged: onSearch,
             decoration: InputDecoration(
               hintText: 'Search by name…',
@@ -1760,7 +1958,7 @@ class _SearchTab extends StatelessWidget {
                       ),
                     ),
                     title: Text(u.displayName,
-                        style: const TextStyle(color: Colors.white)),
+                        style: TextStyle(color: colors.textPrimary)),
                     trailing: TextButton(
                       onPressed: () => onAdd(u.id, u.displayName),
                       style: TextButton.styleFrom(foregroundColor: _green),
@@ -2021,7 +2219,7 @@ class _QrInviteTabState extends ConsumerState<_QrInviteTab> {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: const Color(0xFF252525),
+              color: colors.surfaceRaised,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: colors.borderDefault),
             ),

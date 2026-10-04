@@ -94,7 +94,29 @@ final watchGroupBalanceProvider = StreamProvider.family<BalanceEntity?,
           userId: args.userId,
         ));
 
-// Client-side balance computation from expense streams.
+// Heals memberDisplayNames for any memberIds that are missing a display name.
+// Fires once per group per app session from _GroupDetailBodyState.
+final healGroupDisplayNamesProvider = FutureProvider.family<void, String>((ref, groupId) async {
+  final fs = ref.read(firebaseFirestoreProvider);
+  final groupDoc = await fs.collection('${dbPrefix}groups').doc(groupId).get();
+  final memberIds = List<String>.from(groupDoc.data()?['memberIds'] as List? ?? []);
+  final existing = Map<String, String>.from(
+      groupDoc.data()?['memberDisplayNames'] as Map? ?? {});
+  final missing = memberIds.where((id) => !existing.containsKey(id)).toList();
+  if (missing.isEmpty) return;
+  final updates = <String, dynamic>{};
+  for (final uid in missing) {
+    try {
+      final userDoc = await fs.collection('${dbPrefix}users').doc(uid).get();
+      final name = userDoc.data()?['displayName'] as String?;
+      if (name != null && name.isNotEmpty) updates['memberDisplayNames.$uid'] = name;
+    } catch (_) {}
+  }
+  if (updates.isEmpty) return;
+  await fs.collection('${dbPrefix}groups').doc(groupId).update(updates);
+});
+
+// ── Client-side balance computation ───────────────────────────────────────────
 // Returns Map<otherUserId, netAmount> — positive = they owe currentUser, negative = currentUser owes them.
 final computeGroupBalancesProvider =
     Provider.family<Map<String, double>, String>((ref, groupId) {
@@ -115,3 +137,56 @@ final computeGroupBalancesProvider =
   }
   return net;
 });
+
+// ── Group chat ─────────────────────────────────────────────────────────────────
+
+class ChatMessage {
+  const ChatMessage({
+    required this.id,
+    required this.senderId,
+    required this.senderName,
+    required this.text,
+    required this.createdAt,
+  });
+  final String id;
+  final String senderId;
+  final String senderName;
+  final String text;
+  final DateTime createdAt;
+}
+
+final groupChatProvider = StreamProvider.family<List<ChatMessage>, String>((ref, groupId) {
+  final fs = ref.watch(firebaseFirestoreProvider);
+  return fs
+      .collection('${dbPrefix}groups')
+      .doc(groupId)
+      .collection('messages')
+      .orderBy('createdAt')
+      .snapshots()
+      .map((snap) => snap.docs
+          .map((d) => ChatMessage(
+                id: d.id,
+                senderId: d.data()['senderId'] as String? ?? '',
+                senderName: d.data()['senderName'] as String? ?? '',
+                text: d.data()['text'] as String? ?? '',
+                createdAt:
+                    (d.data()['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+              ))
+          .toList());
+});
+
+Future<void> sendChatMessage(WidgetRef ref, String groupId, String text) async {
+  final user = ref.read(authStateProvider).valueOrNull;
+  if (user == null || text.trim().isEmpty) return;
+  await ref
+      .read(firebaseFirestoreProvider)
+      .collection('${dbPrefix}groups')
+      .doc(groupId)
+      .collection('messages')
+      .add({
+    'senderId': user.id,
+    'senderName': user.displayName ?? 'Unknown',
+    'text': text.trim(),
+    'createdAt': FieldValue.serverTimestamp(),
+  });
+}

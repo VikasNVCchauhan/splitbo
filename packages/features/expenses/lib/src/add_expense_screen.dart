@@ -275,6 +275,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
   void _showGroupPicker(List<GroupEntity> groups) {
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _GroupPickerSheet(
         groups: groups,
@@ -292,6 +293,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
   void _showScanOptions() {
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _ScanSheet(
         onCamera: () {
@@ -991,7 +993,7 @@ class _GroupPickerSheet extends StatelessWidget {
     final colors = context.colors;
     return Container(
       margin: EdgeInsets.fromLTRB(12, 12, 12,
-          max(12.0, MediaQuery.of(context).padding.bottom + 80)),
+          MediaQuery.of(context).padding.bottom + 12),
       decoration: BoxDecoration(
         color: colors.surfaceDefault,
         borderRadius: BorderRadius.circular(24),
@@ -1009,14 +1011,14 @@ class _GroupPickerSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
                 'Select Group',
                 style: TextStyle(
-                    color: Colors.white,
+                    color: colors.textPrimary,
                     fontSize: 17,
                     fontWeight: FontWeight.w700),
               ),
@@ -1049,7 +1051,7 @@ class _GroupPickerSheet extends StatelessWidget {
               title: Text(
                 g.name,
                 style: TextStyle(
-                  color: Colors.white,
+                  color: colors.textPrimary,
                   fontWeight:
                       isSelected ? FontWeight.w700 : FontWeight.w500,
                   fontSize: 15,
@@ -1576,7 +1578,7 @@ class _ScanSheet extends StatelessWidget {
     final colors = context.colors;
     return Container(
       margin: EdgeInsets.fromLTRB(12, 12, 12,
-          max(12.0, MediaQuery.of(context).padding.bottom + 80)),
+          MediaQuery.of(context).padding.bottom + 12),
       decoration: BoxDecoration(
         color: colors.surfaceDefault,
         borderRadius: BorderRadius.circular(20),

@@ -6,6 +6,8 @@ import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:local_auth/local_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'csv_export_stub.dart'
     if (dart.library.html) 'csv_export_web.dart'
@@ -310,7 +312,6 @@ class SettingsScreen extends ConsumerWidget {
             const Text(
               'Update Profile Photo',
               style: TextStyle(
-                  color: Colors.white,
                   fontSize: 17,
                   fontWeight: FontWeight.w700),
             ),
@@ -988,7 +989,71 @@ class _SecuritySheet extends StatefulWidget {
 }
 
 class _SecuritySheetState extends State<_SecuritySheet> {
+  static const _prefKey = 'biometric_enabled';
   bool _biometricEnabled = false;
+  bool _loading = true;
+  final _auth = LocalAuthentication();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPref();
+  }
+
+  Future<void> _loadPref() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _biometricEnabled = prefs.getBool(_prefKey) ?? false;
+      _loading = false;
+    });
+  }
+
+  Future<void> _toggle(bool val) async {
+    final colors = context.colors;
+    if (val) {
+      bool supported = false;
+      try {
+        supported = await _auth.isDeviceSupported() &&
+            await _auth.canCheckBiometrics;
+      } catch (_) {}
+
+      if (!supported) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Biometrics not available on this device',
+                style: TextStyle(color: colors.textPrimary)),
+          ));
+        }
+        return;
+      }
+
+      bool authenticated = false;
+      try {
+        authenticated = await _auth.authenticate(
+          localizedReason: 'Confirm your identity to enable biometric lock',
+          options: const AuthenticationOptions(
+            biometricOnly: false,
+            stickyAuth: true,
+          ),
+        );
+      } catch (_) {
+        authenticated = false;
+      }
+      if (!authenticated || !mounted) return;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_prefKey, val);
+    if (!mounted) return;
+    setState(() => _biometricEnabled = val);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(
+        val ? 'Biometric lock enabled' : 'Biometric lock disabled',
+        style: TextStyle(color: colors.textPrimary),
+      ),
+    ));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1026,7 +1091,6 @@ class _SecuritySheetState extends State<_SecuritySheet> {
             ),
           ),
           const SizedBox(height: 16),
-          // Face ID / biometric toggle row
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Container(
@@ -1054,9 +1118,9 @@ class _SecuritySheetState extends State<_SecuritySheet> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Authenticate with Face ID',
+                        Text('Authenticate with Face ID',
                             style: TextStyle(
-                                color: Colors.white,
+                                color: colors.textPrimary,
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600)),
                         Text(
@@ -1069,37 +1133,32 @@ class _SecuritySheetState extends State<_SecuritySheet> {
                       ],
                     ),
                   ),
-                  Switch(
-                    value: _biometricEnabled,
-                    onChanged: (val) {
-                      setState(() => _biometricEnabled = val);
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text(
-                          val
-                              ? 'Biometric lock enabled'
-                              : 'Biometric lock disabled',
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                        backgroundColor: const Color(0xFF1E1E1E),
-                        duration: const Duration(seconds: 2),
-                      ));
-                    },
-                    activeColor: green,
-                    activeTrackColor: green.withOpacity(0.3),
-                    inactiveThumbColor: const Color(0xFF757575),
-                    inactiveTrackColor: colors.borderDefault,
-                  ),
+                  if (_loading)
+                    const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: green))
+                  else
+                    Switch(
+                      value: _biometricEnabled,
+                      onChanged: _toggle,
+                      activeColor: green,
+                      activeTrackColor: green.withOpacity(0.3),
+                      inactiveThumbColor: const Color(0xFF757575),
+                      inactiveTrackColor: colors.borderDefault,
+                    ),
                 ],
               ),
             ),
           ),
           const SizedBox(height: 12),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Text(
               'Splitbo uses Firebase Auth with automatic session expiry. All data is encrypted in transit and at rest.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Color(0xFF4A4A4A), fontSize: 12),
+              style: TextStyle(color: colors.textSecondary, fontSize: 12),
             ),
           ),
           const SizedBox(height: 28),

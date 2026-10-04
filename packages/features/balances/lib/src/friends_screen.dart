@@ -4,8 +4,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:data/data.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 const _green = Color(0xFF86BC25);
 
@@ -444,7 +446,7 @@ class _AddFriendSheetState extends ConsumerState<_AddFriendSheet>
   @override
   void initState() {
     super.initState();
-    _tab = TabController(length: 2, vsync: this);
+    _tab = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -559,7 +561,7 @@ class _AddFriendSheetState extends ConsumerState<_AddFriendSheet>
               indicatorColor: _green,
               labelColor: _green,
               unselectedLabelColor: colors.textSecondary,
-              tabs: const [Tab(text: 'Manual'), Tab(text: 'Search')],
+              tabs: const [Tab(text: 'Manual'), Tab(text: 'Search'), Tab(text: 'QR Invite')],
             ),
             Expanded(
               child: TabBarView(
@@ -632,12 +634,106 @@ class _AddFriendSheetState extends ConsumerState<_AddFriendSheet>
                       ),
                     ),
                   ),
+                  // ── QR Invite tab ────────────────────────────────
+                  _QrInviteTab(scrollCtrl: scrollCtrl),
                 ],
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+// ── QR Invite tab ─────────────────────────────────────────────────────────────
+class _QrInviteTab extends ConsumerWidget {
+  const _QrInviteTab({required this.scrollCtrl});
+  final ScrollController scrollCtrl;
+
+  static const _baseUrl = 'https://vikasnvcchauhan.github.io/splitbo/#/profile/';
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.colors;
+    final user = ref.watch(authStateProvider).valueOrNull;
+    if (user == null) return const SizedBox.shrink();
+
+    final profileUrl = '$_baseUrl${user.id}';
+    final bottomPad = MediaQuery.of(context).padding.bottom;
+
+    return ListView(
+      controller: scrollCtrl,
+      padding: EdgeInsets.fromLTRB(24, 24, 24, bottomPad + 24),
+      children: [
+        Text(
+          'Share your profile link so friends can add you on Splitbo.',
+          style: TextStyle(
+              color: colors.textSecondary, fontSize: 13, height: 1.5),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 28),
+        Center(
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: QrImageView(
+              data: profileUrl,
+              version: QrVersions.auto,
+              size: 200,
+              backgroundColor: Colors.white,
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        Text(
+          user.displayName ?? user.email ?? '',
+          style: TextStyle(
+              color: colors.textPrimary,
+              fontSize: 16,
+              fontWeight: FontWeight.w700),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 6),
+        Text(
+          profileUrl,
+          style: TextStyle(color: colors.textSecondary, fontSize: 12),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 20),
+        SizedBox(
+          height: 48,
+          child: ElevatedButton.icon(
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: profileUrl));
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('Link copied to clipboard'),
+                    backgroundColor: const Color(0xFF1E1E1E),
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _green,
+              foregroundColor: Colors.black,
+              elevation: 0,
+              shape: const StadiumBorder(),
+            ),
+            icon: const Icon(Icons.copy_rounded, size: 18),
+            label: const Text('Copy Link',
+                style: TextStyle(fontWeight: FontWeight.w700)),
+          ),
+        ),
+      ],
     );
   }
 }

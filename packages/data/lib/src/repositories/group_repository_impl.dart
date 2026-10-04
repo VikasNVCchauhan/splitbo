@@ -40,6 +40,18 @@ class GroupRepositoryImpl implements GroupRepository {
     }
   }
 
+  Future<Map<String, String>> _fetchDisplayNames(List<String> userIds) async {
+    final result = <String, String>{};
+    for (final uid in userIds) {
+      try {
+        final doc = await _users.doc(uid).get();
+        final name = doc.data()?['displayName'] as String?;
+        if (name != null && name.isNotEmpty) result[uid] = name;
+      } catch (_) {}
+    }
+    return result;
+  }
+
   @override
   Future<Result<GroupEntity, AppError>> createGroup({
     required String name,
@@ -60,8 +72,16 @@ class GroupRepositoryImpl implements GroupRepository {
         currency: currency,
       );
       await docRef.set(dto.toFirestore());
-      // Write nameLower for prefix search queries
       await docRef.update({'nameLower': name.toLowerCase()});
+      // Populate display names for all initial members
+      final displayNames = await _fetchDisplayNames(memberIds);
+      if (displayNames.isNotEmpty) {
+        final updates = <String, dynamic>{};
+        for (final e in displayNames.entries) {
+          updates['memberDisplayNames.${e.key}'] = e.value;
+        }
+        await docRef.update(updates);
+      }
       return Ok(dto.toEntity());
     } on FirebaseException catch (e) {
       return Err(_mapError(e));
@@ -101,9 +121,14 @@ class GroupRepositoryImpl implements GroupRepository {
     required List<String> userIds,
   }) async {
     try {
-      await _groups.doc(groupId).update({
+      final displayNames = await _fetchDisplayNames(userIds);
+      final update = <String, dynamic>{
         'memberIds': FieldValue.arrayUnion(userIds),
-      });
+      };
+      for (final e in displayNames.entries) {
+        update['memberDisplayNames.${e.key}'] = e.value;
+      }
+      await _groups.doc(groupId).update(update);
       return const Ok(null);
     } on FirebaseException catch (e) {
       return Err(_mapError(e));
