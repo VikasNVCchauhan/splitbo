@@ -3,8 +3,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 const _green = Color(0xFF86BC25);
 const _charcoal = Color(0xFF141414);
-const _charcoalHome = Color(0xFF090A0D);
-const _limeHome = Color(0xFFC1F802);
+const _charcoalHome = Color(0xFF141414); // home SVG dark text color
+const _limeHome = Color(0xFFC3FD00);     // home SVG green color
 
 /// The Splitbo icon mark only (S-shaped diagonal bar + circles).
 /// Pass [color] to override the default brand green.
