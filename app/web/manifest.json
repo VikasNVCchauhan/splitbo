@@ -1,11 +1,11 @@
 {
-    "name": "app",
-    "short_name": "app",
+    "name": "Splitbo",
+    "short_name": "Splitbo",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#111111",
+    "theme_color": "#86BC25",
+    "description": "Split expenses with friends, effortlessly.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
