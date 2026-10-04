@@ -159,97 +159,78 @@ class _ActivityTile extends ConsumerWidget {
     return GestureDetector(
       onTap: () => _showActions(context, ref),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: colors.surfaceRaised,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: colors.borderDefault),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: colors.borderDefault.withOpacity(0.6)),
         ),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Category icon
+            // Category icon — neutral, no color accent
             Container(
-              width: 40,
-              height: 40,
+              width: 42,
+              height: 42,
               decoration: BoxDecoration(
-                color: colors.brandPrimary.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(10),
+                color: colors.surfaceDefault,
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: colors.brandPrimary, size: 20),
+              child: Icon(icon, color: colors.textSecondary, size: 20),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 13),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Sentence: "You added "Dinner" in "Goa Trip""
-                  Text.rich(
-                    TextSpan(children: [
-                      TextSpan(
-                        text: isPaidByMe ? 'You' : 'Member',
-                        style: TextStyle(
-                            color: colors.textPrimary,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600),
-                      ),
-                      TextSpan(
-                        text: ' added ',
-                        style: TextStyle(
-                            color: colors.textSecondary, fontSize: 13),
-                      ),
-                      TextSpan(
-                        text: '"${expense.description}"',
-                        style: TextStyle(
-                            color: colors.textPrimary,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600),
-                      ),
-                      TextSpan(
-                        text: ' in ',
-                        style: TextStyle(
-                            color: colors.textSecondary, fontSize: 13),
-                      ),
-                      TextSpan(
-                        text: '"$groupName"',
-                        style: TextStyle(
-                            color: colors.brandPrimary,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600),
-                      ),
-                    ]),
+                  Text(
+                    expense.description,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: colors.textPrimary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -0.1,
+                    ),
                   ),
                   const SizedBox(height: 3),
-                  Text(dateStr,
-                      style: TextStyle(
-                          color: colors.textSecondary, fontSize: 11)),
-                  // Balance line
-                  if (netForMe != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      netForMe > 0
-                          ? 'You get back $symbol${netForMe.toStringAsFixed(0)}'
-                          : 'You owe $symbol${netForMe.abs().toStringAsFixed(0)}',
-                      style: TextStyle(
-                        color: netForMe > 0
-                            ? colors.semanticPositive
-                            : const Color(0xFFFF6B6B),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
+                  Text(
+                    '$groupName · $dateStr',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: colors.textSecondary,
+                      fontSize: 12,
                     ),
-                  ],
+                  ),
                 ],
               ),
             ),
-            // Amount
-            Text(
-              '$symbol${expense.amount.toStringAsFixed(0)}',
-              style: TextStyle(
-                  color: colors.brandPrimary,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700),
+            const SizedBox(width: 12),
+            // Right column: amount + balance pill
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  '$symbol${expense.amount.toStringAsFixed(0)}',
+                  style: TextStyle(
+                    color: colors.textPrimary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                if (netForMe != null) ...[
+                  const SizedBox(height: 4),
+                  _BalancePill(
+                    label: netForMe > 0
+                        ? '+$symbol${netForMe.toStringAsFixed(0)}'
+                        : '-$symbol${netForMe.abs().toStringAsFixed(0)}',
+                    positive: netForMe > 0,
+                  ),
+                ],
+              ],
             ),
           ],
         ),
@@ -539,6 +520,33 @@ class _EditExpenseSheetState extends ConsumerState<_EditExpenseSheet> {
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BalancePill extends StatelessWidget {
+  const _BalancePill({required this.label, required this.positive});
+  final String label;
+  final bool positive;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = positive ? const Color(0xFF86BC25) : const Color(0xFFFF6B6B);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          letterSpacing: -0.1,
         ),
       ),
     );
