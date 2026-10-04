@@ -272,14 +272,7 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
       automaticallyImplyLeading: false,
       centerTitle: false,
       titleSpacing: 20,
-      title: ClipRRect(
-        borderRadius: BorderRadius.circular(6),
-        child: Image.asset(
-          'assets/images/home_logo2.jpg',
-          height: 32,
-          fit: BoxFit.contain,
-        ),
-      ),
+      title: const SplitboHomeLogo(height: 32),
       actions: [
         IconButton(
           icon: Icon(Icons.search_rounded, color: colors.textPrimary, size: 24),

@@ -19,14 +19,7 @@ class GroupsScreen extends ConsumerWidget {
         backgroundColor: colors.backgroundDefault,
         elevation: 0,
         automaticallyImplyLeading: false,
-        title: ClipRRect(
-          borderRadius: BorderRadius.circular(6),
-          child: Image.asset(
-            'assets/images/home_logo2.jpg',
-            height: 28,
-            fit: BoxFit.contain,
-          ),
-        ),
+        title: const SplitboHomeLogo(height: 28),
       ),
       body: groupsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
