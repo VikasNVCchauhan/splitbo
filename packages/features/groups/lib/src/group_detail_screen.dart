@@ -63,6 +63,7 @@ class _GroupDetailBodyState extends ConsumerState<_GroupDetailBody>
     with SingleTickerProviderStateMixin {
   late final TabController _tab;
   bool _scrolled = false;
+  bool _totalHealed = false;
 
   @override
   void initState() {
@@ -84,6 +85,18 @@ class _GroupDetailBodyState extends ConsumerState<_GroupDetailBody>
     final expensesAsync = ref.watch(watchExpensesProvider(group.id));
     final expenses = expensesAsync.valueOrNull ?? [];
     final computedTotal = expenses.fold<double>(0.0, (sum, e) => sum + e.amount);
+
+    // Heal stale totalExpenses on the group doc (runs once per session per group)
+    if (!_totalHealed && expensesAsync.hasValue &&
+        (computedTotal - group.totalExpenses).abs() > 0.01) {
+      _totalHealed = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(groupRepositoryProvider).updateGroup(
+          groupId: group.id,
+          totalExpenses: computedTotal,
+        );
+      });
+    }
 
     return Scaffold(
       backgroundColor: colors.backgroundDefault,

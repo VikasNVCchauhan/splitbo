@@ -76,6 +76,7 @@ class GroupRepositoryImpl implements GroupRepository {
     String? name,
     String? description,
     String? avatarUrl,
+    double? totalExpenses,
   }) async {
     try {
       final updates = <String, dynamic>{
@@ -83,6 +84,7 @@ class GroupRepositoryImpl implements GroupRepository {
         if (name != null) 'nameLower': name.toLowerCase(),
         if (description != null) 'description': description,
         if (avatarUrl != null) 'avatarUrl': avatarUrl,
+        if (totalExpenses != null) 'totalExpenses': totalExpenses,
       };
       await _groups.doc(groupId).update(updates);
       return getGroup(groupId);

@@ -23,6 +23,7 @@ abstract interface class GroupRepository {
     String? name,
     String? description,
     String? avatarUrl,
+    double? totalExpenses,
   });
 
   Future<Result<void, AppError>> addMembers({
