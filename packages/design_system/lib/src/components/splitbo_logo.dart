@@ -73,7 +73,7 @@ class SplitboHomeLogo extends StatelessWidget {
     return Image.asset(
       isDark
           ? 'packages/design_system/assets/images/logo_dark.png'
-          : 'packages/design_system/assets/images/logo_light.jpg',
+          : 'packages/design_system/assets/images/logo_light.png',
       height: height,
       fit: BoxFit.contain,
     );
