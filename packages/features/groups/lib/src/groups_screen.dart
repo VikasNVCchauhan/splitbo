@@ -87,7 +87,7 @@ class _GroupsBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
       children: [
         // Create a Group button — always visible at top
         SizedBox(

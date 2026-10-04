@@ -24,7 +24,7 @@ class HomeScreen extends ConsumerWidget {
       backgroundColor: colors.backgroundDefault,
       appBar: _HomeAppBar(user: user),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
