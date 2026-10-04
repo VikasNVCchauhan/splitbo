@@ -129,7 +129,7 @@ class _GroupDetailBodyState extends ConsumerState<_GroupDetailBody>
         animation: _tab,
         builder: (context, _) {
           if (_tab.index == 5) return const SizedBox.shrink();
-          if (_tab.index != 0) return const SizedBox.shrink();
+          if (_tab.index != 1) return const SizedBox.shrink();
           return FloatingActionButton.extended(
             heroTag: 'addExpense',
             onPressed: () =>
@@ -159,6 +159,7 @@ class _GroupDetailBodyState extends ConsumerState<_GroupDetailBody>
                 group: group,
                 computedTotal: computedTotal,
                 onEditPhoto: () => _showGroupSettings(context),
+                onAddMember: () => _showAddMemberSheet(context),
               ),
             ),
             SliverPersistentHeader(
@@ -171,6 +172,11 @@ class _GroupDetailBodyState extends ConsumerState<_GroupDetailBody>
           body: TabBarView(
             controller: _tab,
             children: [
+              // ── Members ───────────────────────────────────────
+              _MembersTab(
+                group: group,
+                onAddMember: () => _showAddMemberSheet(context),
+              ),
               // ── Expenses ──────────────────────────────────────
               expensesAsync.when(
                 loading: () => const Center(
@@ -222,13 +228,8 @@ class _GroupDetailBodyState extends ConsumerState<_GroupDetailBody>
                     ? const _ComingSoon(label: 'Totals')
                     : _TotalsTab(expenses: expenses, group: group),
               ),
-              // ── Whiteboard ────────────────────────────────────
+              // ── Notes ─────────────────────────────────────────
               _WhiteboardTab(groupId: group.id),
-              // ── Members ───────────────────────────────────────
-              _MembersTab(
-                group: group,
-                onAddMember: () => _showAddMemberSheet(context),
-              ),
             ],
           ),
         ),
@@ -322,7 +323,7 @@ class _PillTabBar extends StatefulWidget {
 
 class _PillTabBarState extends State<_PillTabBar> {
   static const _labels = [
-    'Expenses', 'Balances', 'Charts', 'Totals', 'Whiteboard', 'Members'
+    'Members', 'Expenses', 'Balances', 'Charts', 'Totals', 'Notes'
   ];
 
   @override
@@ -411,10 +412,12 @@ class _LinkedInHeader extends StatelessWidget {
     required this.group,
     required this.computedTotal,
     required this.onEditPhoto,
+    required this.onAddMember,
   });
   final GroupEntity group;
   final double computedTotal;
   final VoidCallback onEditPhoto;
+  final VoidCallback onAddMember;
 
   static const _memberColors = [
     Color(0xFF739800), Color(0xFF00D4FF), Color(0xFFFF6B9D),
@@ -425,9 +428,6 @@ class _LinkedInHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final symbol = group.currency == 'INR' ? '₹' : group.currency;
-    final members = group.memberIds;
-    final visibleMembers = members.length.clamp(0, 5);
-    final overflow = members.length - visibleMembers;
 
     return Stack(
       clipBehavior: Clip.none,
@@ -552,8 +552,8 @@ class _LinkedInHeader extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(group.name,
-                            style: const TextStyle(
-                                color: Colors.white,
+                            style: TextStyle(
+                                color: colors.textPrimary,
                                 fontSize: 18,
                                 fontWeight: FontWeight.w700)),
                         const SizedBox(height: 3),
@@ -567,78 +567,29 @@ class _LinkedInHeader extends StatelessWidget {
                   ),
                 ),
 
-                // Member avatars stack (right side)
-                if (members.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10),
-                    child: Column(
-                      children: [
-                        SizedBox(
-                          height: 32,
-                          width: visibleMembers * 22.0 +
-                              (overflow > 0 ? 24 : 0) +
-                              8,
-                          child: Stack(
-                            children: [
-                              for (int i = 0; i < visibleMembers; i++)
-                                Positioned(
-                                  left: i * 22.0,
-                                  child: Container(
-                                    width: 32,
-                                    height: 32,
-                                    decoration: BoxDecoration(
-                                      color: _memberColors[
-                                              i % _memberColors.length]
-                                          .withOpacity(0.2),
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                          color: colors.backgroundDefault, width: 2),
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        String.fromCharCode(65 + i),
-                                        style: TextStyle(
-                                            color: _memberColors[
-                                                i % _memberColors.length],
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w800),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              if (overflow > 0)
-                                Positioned(
-                                  left: visibleMembers * 22.0,
-                                  child: Container(
-                                    width: 32,
-                                    height: 32,
-                                    decoration: BoxDecoration(
-                                      color:
-                                          colors.textSecondary.withOpacity(0.1),
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                          color: colors.backgroundDefault, width: 2),
-                                    ),
-                                    child: Center(
-                                      child: Text('+$overflow',
-                                          style: TextStyle(
-                                              color: colors.textSecondary,
-                                              fontSize: 9)),
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text('Members',
-                            style: TextStyle(
-                                color: colors.textSecondary,
-                                fontSize: 10,
-                                letterSpacing: 0.3)),
-                      ],
+                // Add member button (right side)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: GestureDetector(
+                    onTap: onAddMember,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: _green.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: _green.withOpacity(0.4)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.person_add_outlined, color: _green, size: 16),
+                          const SizedBox(width: 6),
+                          Text('Add', style: TextStyle(color: _green, fontSize: 12, fontWeight: FontWeight.w700)),
+                        ],
+                      ),
                     ),
                   ),
+                ),
               ],
             ),
           ),
@@ -693,7 +644,6 @@ class _GroupSettingsSheetState extends ConsumerState<_GroupSettingsSheet> {
                 children: [
                   const Text('Group Settings',
                       style: TextStyle(
-                          color: Colors.white,
                           fontSize: 17,
                           fontWeight: FontWeight.w700)),
                   const Spacer(),
