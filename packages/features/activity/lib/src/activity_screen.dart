@@ -35,7 +35,7 @@ class ActivityScreen extends ConsumerWidget {
             }
             context.push('/expense/new');
           },
-          backgroundColor: const Color(0xFF739800),
+          backgroundColor: const Color(0xFF86BC25),
           foregroundColor: Colors.black,
           elevation: 2,
           icon: const Icon(Icons.add),

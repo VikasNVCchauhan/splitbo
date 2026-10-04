@@ -17,7 +17,7 @@ import 'csv_export_stub.dart'
     if (dart.library.html) 'csv_export_web.dart'
     if (dart.library.io) 'csv_export_io.dart';
 
-const _green = Color(0xFF739800);
+const _green = Color(0xFF86BC25);
 
 class GroupDetailScreen extends ConsumerWidget {
   const GroupDetailScreen({super.key, required this.groupId});
@@ -94,15 +94,15 @@ class _GroupDetailBodyState extends ConsumerState<_GroupDetailBody>
             : Colors.transparent,
         elevation: _scrolled ? 4 : 0,
         shadowColor: Colors.black54,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: colors.textPrimary),
         centerTitle: true,
         title: AnimatedOpacity(
           duration: const Duration(milliseconds: 200),
           opacity: _scrolled ? 1.0 : 0.0,
           child: Text(
             group.name,
-            style: const TextStyle(
-                color: Colors.white,
+            style: TextStyle(
+                color: colors.textPrimary,
                 fontSize: 17,
                 fontWeight: FontWeight.w700),
           ),
@@ -147,7 +147,7 @@ class _GroupDetailBodyState extends ConsumerState<_GroupDetailBody>
       body: NotificationListener<ScrollNotification>(
         onNotification: (n) {
           if (n.depth == 0) {
-            final scrolled = n.metrics.pixels > 180;
+            final scrolled = n.metrics.pixels > 220;
             if (scrolled != _scrolled) setState(() => _scrolled = scrolled);
           }
           return false;
@@ -155,11 +155,20 @@ class _GroupDetailBodyState extends ConsumerState<_GroupDetailBody>
         child: NestedScrollView(
           headerSliverBuilder: (_, __) => [
             SliverToBoxAdapter(
-              child: _LinkedInHeader(
+              child: _GroupHeader(
                 group: group,
                 computedTotal: computedTotal,
-                onEditPhoto: () => _showGroupSettings(context),
+                onAddExpense: () => context.push('/expense/new?groupId=${group.id}'),
+                onViewBalances: () => _tab.animateTo(2),
                 onAddMember: () => _showAddMemberSheet(context),
+                onShare: () {
+                  Clipboard.setData(ClipboardData(
+                    text: 'https://vikasnvcchauhan.github.io/splitbo/#/invite/${group.id}',
+                  ));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Invite link copied')),
+                  );
+                },
               ),
             ),
             SliverPersistentHeader(
@@ -406,195 +415,151 @@ class _PillTabBarState extends State<_PillTabBar> {
   }
 }
 
-// ── LinkedIn-style group header ───────────────────────────────────────────────
-class _LinkedInHeader extends StatelessWidget {
-  const _LinkedInHeader({
+// ── WhatsApp-style group header ───────────────────────────────────────────────
+class _GroupHeader extends StatelessWidget {
+  const _GroupHeader({
     required this.group,
     required this.computedTotal,
-    required this.onEditPhoto,
+    required this.onAddExpense,
+    required this.onViewBalances,
     required this.onAddMember,
+    required this.onShare,
   });
   final GroupEntity group;
   final double computedTotal;
-  final VoidCallback onEditPhoto;
+  final VoidCallback onAddExpense;
+  final VoidCallback onViewBalances;
   final VoidCallback onAddMember;
-
-  static const _memberColors = [
-    Color(0xFF739800), Color(0xFF00D4FF), Color(0xFFFF6B9D),
-    Color(0xFFFFB347), Color(0xFF9B59B6), Color(0xFF2ECC71),
-  ];
+  final VoidCallback onShare;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
     final symbol = group.currency == 'INR' ? '₹' : group.currency;
+    final safePad = MediaQuery.of(context).padding.top;
 
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        // ── Cover banner ─────────────────────────────────────────
-        GestureDetector(
-          onTap: onEditPhoto,
-          child: Container(
-            height: 140,
-            width: double.infinity,
+    return Container(
+      color: colors.backgroundDefault,
+      padding: EdgeInsets.only(top: safePad + 56, bottom: 8),
+      child: Column(
+        children: [
+          // ── Avatar ───────────────────────────────────────────────
+          Container(
+            width: 96,
+            height: 96,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  _green.withOpacity(0.25),
-                  colors.backgroundDefault,
-                ],
+              color: _green.withOpacity(0.12),
+              shape: BoxShape.circle,
+              border: Border.all(color: _green.withOpacity(0.35), width: 2.5),
+            ),
+            child: Center(
+              child: Text(
+                group.name.isNotEmpty ? group.name[0].toUpperCase() : '?',
+                style: const TextStyle(
+                    fontSize: 40, fontWeight: FontWeight.w800, color: _green),
               ),
             ),
-            child: Stack(
-              children: [
-                // Subtle pattern
-                Positioned.fill(
-                  child: Opacity(
-                    opacity: 0.06,
-                    child: Image.asset(
-                      'assets/images/logo_icon.jpg',
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-                Positioned(
-                  right: 12,
-                  bottom: 12,
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: colors.backgroundDefault.withOpacity(0.5),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.camera_alt_outlined,
-                            color: Colors.white, size: 12),
-                        SizedBox(width: 4),
-                        Text('Edit',
-                            style: TextStyle(
-                                color: Colors.white, fontSize: 11)),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
           ),
-        ),
+          const SizedBox(height: 14),
 
-        // ── Info row (below banner) ───────────────────────────────
-        Padding(
-          padding: const EdgeInsets.only(top: 100),
-          child: Container(
-            color: colors.backgroundDefault,
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          // ── Group name ───────────────────────────────────────────
+          Text(
+            group.name,
+            style: TextStyle(
+                color: colors.textPrimary,
+                fontSize: 22,
+                fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 4),
+
+          // ── Subtitle: Group · N members ──────────────────────────
+          Text(
+            'Group · ${group.memberCount} member${group.memberCount == 1 ? '' : 's'}',
+            style: TextStyle(
+                color: _green, fontSize: 13, fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            '$symbol${computedTotal.toStringAsFixed(0)} total spent',
+            style: TextStyle(color: colors.textSecondary, fontSize: 12),
+          ),
+          const SizedBox(height: 24),
+
+          // ── Quick actions row ────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                // Group avatar overlapping banner
-                Transform.translate(
-                  offset: const Offset(0, -28),
-                  child: GestureDetector(
-                    onTap: onEditPhoto,
-                    child: Container(
-                      width: 76,
-                      height: 76,
-                      decoration: BoxDecoration(
-                        color: _green.withOpacity(0.12),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: colors.backgroundDefault, width: 3),
-                      ),
-                      child: Stack(
-                        children: [
-                          Center(
-                            child: Text(
-                              group.name.isNotEmpty
-                                  ? group.name[0].toUpperCase()
-                                  : '?',
-                              style: const TextStyle(
-                                  fontSize: 30,
-                                  fontWeight: FontWeight.w800,
-                                  color: _green),
-                            ),
-                          ),
-                          Positioned(
-                            right: 0,
-                            bottom: 0,
-                            child: Container(
-                              width: 22,
-                              height: 22,
-                              decoration: const BoxDecoration(
-                                color: _green,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(Icons.edit,
-                                  color: Colors.black, size: 12),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                _QuickAction(
+                  icon: Icons.add_rounded,
+                  label: 'Add',
+                  onTap: onAddExpense,
+                  colors: colors,
                 ),
-                const SizedBox(width: 12),
-
-                // Name + stats
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(group.name,
-                            style: TextStyle(
-                                color: colors.textPrimary,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700)),
-                        const SizedBox(height: 3),
-                        Text(
-                          '$symbol${computedTotal.toStringAsFixed(0)} total · ${group.memberCount} member${group.memberCount == 1 ? '' : 's'}',
-                          style: TextStyle(
-                              color: colors.textSecondary, fontSize: 12),
-                        ),
-                      ],
-                    ),
-                  ),
+                _QuickAction(
+                  icon: Icons.swap_horiz_rounded,
+                  label: 'Settle',
+                  onTap: onViewBalances,
+                  colors: colors,
                 ),
-
-                // Add member button (right side)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: GestureDetector(
-                    onTap: onAddMember,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: _green.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: _green.withOpacity(0.4)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.person_add_outlined, color: _green, size: 16),
-                          const SizedBox(width: 6),
-                          Text('Add', style: TextStyle(color: _green, fontSize: 12, fontWeight: FontWeight.w700)),
-                        ],
-                      ),
-                    ),
-                  ),
+                _QuickAction(
+                  icon: Icons.person_add_outlined,
+                  label: 'Invite',
+                  onTap: onAddMember,
+                  colors: colors,
+                ),
+                _QuickAction(
+                  icon: Icons.ios_share_rounded,
+                  label: 'Share',
+                  onTap: onShare,
+                  colors: colors,
                 ),
               ],
             ),
           ),
-        ),
-      ],
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickAction extends StatelessWidget {
+  const _QuickAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    required this.colors,
+  });
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final SplitboColors colors;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: colors.surfaceDefault,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Icon(icon, color: _green, size: 24),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            label,
+            style: TextStyle(color: colors.textSecondary, fontSize: 12),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -871,7 +836,7 @@ class _GroupSettingsSheetState extends ConsumerState<_GroupSettingsSheet> {
                   itemCount: group.memberIds.length,
                   itemBuilder: (_, i) {
                     const memberColors = [
-                      Color(0xFF739800), Color(0xFF00D4FF),
+                      Color(0xFF86BC25), Color(0xFF00D4FF),
                       Color(0xFFFF6B9D), Color(0xFFFFB347),
                       Color(0xFF9B59B6), Color(0xFF2ECC71),
                     ];
@@ -1037,7 +1002,7 @@ class _ChartsTab extends StatelessWidget {
     final max = sorted.isEmpty ? 1.0 : sorted.first.value;
 
     const barColors = [
-      Color(0xFF739800), Color(0xFF00D4FF), Color(0xFFFF6B9D),
+      Color(0xFF86BC25), Color(0xFF00D4FF), Color(0xFFFF6B9D),
       Color(0xFFFFB347), Color(0xFF9B59B6), Color(0xFF2ECC71),
       Color(0xFFFF6B6B), Color(0xFFE91E63), Color(0xFF03A9F4),
     ];
@@ -1372,7 +1337,7 @@ class _MembersTab extends StatelessWidget {
   final VoidCallback onAddMember;
 
   static const _memberColors = [
-    Color(0xFF739800), Color(0xFF00D4FF), Color(0xFFFF6B9D),
+    Color(0xFF86BC25), Color(0xFF00D4FF), Color(0xFFFF6B9D),
     Color(0xFFFFB347), Color(0xFF9B59B6), Color(0xFF2ECC71),
   ];
 
@@ -1380,136 +1345,121 @@ class _MembersTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final members = group.memberIds;
-    return Column(
-      children: [
-        // Add member header row
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Row(
-            children: [
-              Text(
-                '${members.length} Member${members.length == 1 ? '' : 's'}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const Spacer(),
-              GestureDetector(
-                onTap: onAddMember,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: _green,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.person_add_outlined,
-                          color: Colors.black, size: 16),
-                      SizedBox(width: 6),
-                      Text('Add Member',
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
-                          )),
-                    ],
+
+    return ListView.builder(
+      padding: const EdgeInsets.only(top: 8, bottom: 80),
+      itemCount: members.length + 2,
+      itemBuilder: (context, i) {
+        // ── Section header ─────────────────────────────────────
+        if (i == 0) {
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            child: Row(
+              children: [
+                Text(
+                  '${members.length} member${members.length == 1 ? '' : 's'}',
+                  style: TextStyle(
+                    color: colors.textSecondary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
+                const Spacer(),
+                Icon(Icons.search_rounded, color: colors.textSecondary, size: 20),
+              ],
+            ),
+          );
+        }
+        // ── Add members row ─────────────────────────────────────
+        if (i == 1) {
+          return InkWell(
+            onTap: onAddMember,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              child: Row(
+                children: [
+                  Container(
+                    width: 46,
+                    height: 46,
+                    decoration: const BoxDecoration(
+                      color: _green,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.add_rounded, color: Colors.black, size: 24),
+                  ),
+                  const SizedBox(width: 14),
+                  Text(
+                    'Add members',
+                    style: TextStyle(
+                      color: colors.textPrimary,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
-        Divider(height: 1, color: colors.borderDefault),
-        Expanded(
-          child: members.isEmpty
-              ? Center(
+            ),
+          );
+        }
+        // ── Member row ─────────────────────────────────────────
+        final idx = i - 2;
+        final memberId = members[idx];
+        final color = _memberColors[idx % _memberColors.length];
+        final initials = memberId.length >= 2
+            ? memberId.substring(0, 2).toUpperCase()
+            : memberId.toUpperCase();
+        final isAdmin = idx == 0;
+
+        return InkWell(
+          onTap: () {},
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 23,
+                  backgroundColor: color.withOpacity(0.18),
+                  child: Text(
+                    initials,
+                    style: TextStyle(
+                      color: color,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
                   child: Column(
-                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.people_outline,
-                          color: colors.textSecondary, size: 40),
-                      const SizedBox(height: 12),
-                      Text('No members yet',
-                          style:
-                              TextStyle(color: colors.textSecondary, fontSize: 14)),
-                      const SizedBox(height: 16),
-                      GestureDetector(
-                        onTap: onAddMember,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: _green,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Text('+ Add First Member',
-                              style: TextStyle(
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.w700)),
+                      Text(
+                        memberId,
+                        style: TextStyle(
+                          color: colors.textPrimary,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
+                      if (isAdmin)
+                        Text(
+                          'Admin',
+                          style: TextStyle(
+                            color: _green,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                     ],
                   ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  itemCount: members.length,
-                  itemBuilder: (context, i) {
-                    final memberId = members[i];
-                    final color =
-                        _memberColors[i % _memberColors.length];
-                    final initials = memberId.length >= 2
-                        ? memberId.substring(0, 2).toUpperCase()
-                        : memberId.toUpperCase();
-                    return ListTile(
-                      leading: CircleAvatar(
-                        radius: 20,
-                        backgroundColor: color.withOpacity(0.15),
-                        child: Text(
-                          initials,
-                          style: TextStyle(
-                            color: color,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                      title: Text(
-                        memberId,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      trailing: i == 0
-                          ? Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: _green.withOpacity(0.12),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: const Text(
-                                'Admin',
-                                style: TextStyle(
-                                  color: _green,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            )
-                          : null,
-                    );
-                  },
                 ),
-        ),
-      ],
+                Icon(Icons.chevron_right_rounded,
+                    color: colors.textDisabled, size: 20),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -1767,7 +1717,7 @@ class _SearchTab extends StatelessWidget {
               hintStyle: TextStyle(color: colors.textSecondary),
               prefixIcon: Icon(Icons.search, color: colors.textSecondary),
               filled: true,
-              fillColor: const Color(0xFF252525),
+              fillColor: colors.surfaceDefault,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(color: colors.borderDefault),
@@ -1846,6 +1796,7 @@ class _ManualTab extends StatelessWidget {
   static InputDecoration _fieldDeco(String label, String hint, IconData icon, {
     required Color textSecondary,
     required Color borderColor,
+    required Color fillColor,
   }) =>
       InputDecoration(
         labelText: label,
@@ -1854,7 +1805,7 @@ class _ManualTab extends StatelessWidget {
         labelStyle: TextStyle(color: textSecondary),
         prefixIcon: Icon(icon, color: textSecondary),
         filled: true,
-        fillColor: const Color(0xFF252525),
+        fillColor: fillColor,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: borderColor),
@@ -1884,26 +1835,26 @@ class _ManualTab extends StatelessWidget {
           const SizedBox(height: 16),
           TextField(
             controller: nameCtrl,
-            style: const TextStyle(color: Colors.white),
+            style: TextStyle(color: colors.textPrimary),
             textCapitalization: TextCapitalization.words,
             decoration: _fieldDeco('Name *', 'e.g. Rahul, Priya', Icons.person_outline,
-                textSecondary: colors.textSecondary, borderColor: colors.borderDefault),
+                textSecondary: colors.textSecondary, borderColor: colors.borderDefault, fillColor: colors.surfaceDefault),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: emailCtrl,
-            style: const TextStyle(color: Colors.white),
+            style: TextStyle(color: colors.textPrimary),
             keyboardType: TextInputType.emailAddress,
             decoration: _fieldDeco('Email (optional)', 'email@example.com', Icons.email_outlined,
-                textSecondary: colors.textSecondary, borderColor: colors.borderDefault),
+                textSecondary: colors.textSecondary, borderColor: colors.borderDefault, fillColor: colors.surfaceDefault),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: phoneCtrl,
-            style: const TextStyle(color: Colors.white),
+            style: TextStyle(color: colors.textPrimary),
             keyboardType: TextInputType.phone,
             decoration: _fieldDeco('Phone (optional)', '+91 98765 43210', Icons.phone_outlined,
-                textSecondary: colors.textSecondary, borderColor: colors.borderDefault),
+                textSecondary: colors.textSecondary, borderColor: colors.borderDefault, fillColor: colors.surfaceDefault),
           ),
           const SizedBox(height: 20),
           SizedBox(
@@ -2215,7 +2166,7 @@ class _EditGroupSheetState extends ConsumerState<_EditGroupSheet> {
                 labelStyle: TextStyle(color: colors.textSecondary),
                 prefixIcon: Icon(Icons.group_outlined, color: colors.textSecondary),
                 filled: true,
-                fillColor: const Color(0xFF252525),
+                fillColor: colors.surfaceDefault,
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(color: colors.borderDefault)),
@@ -2658,7 +2609,7 @@ class _EditExpenseSheetState extends ConsumerState<_EditExpenseSheet> {
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(color: _green)),
                 filled: true,
-                fillColor: const Color(0xFF252525),
+                fillColor: colors.surfaceDefault,
               ),
               items: ExpenseCategory.values
                   .map((c) => DropdownMenuItem(
@@ -2731,7 +2682,7 @@ class _DarkInputField extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: _green)),
         filled: true,
-        fillColor: const Color(0xFF252525),
+        fillColor: colors.surfaceDefault,
       ),
     );
   }

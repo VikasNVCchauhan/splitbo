@@ -221,7 +221,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
   void _showQuickCreateGroup() {
     final nameCtrl = TextEditingController();
     final colors = context.colors;
-    const brandGreen = Color(0xFF739800);
+    const brandGreen = Color(0xFF86BC25);
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -408,7 +408,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
           SnackBar(
             content: const Row(
               children: [
-                Icon(Icons.check_circle_rounded, color: Color(0xFF739800), size: 18),
+                Icon(Icons.check_circle_rounded, color: Color(0xFF86BC25), size: 18),
                 SizedBox(width: 8),
                 Text('Receipt scanned!', style: TextStyle(color: Colors.white)),
               ],
@@ -485,7 +485,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
               }
             },
             child: const Text('Create',
-                style: TextStyle(color: Color(0xFF739800))),
+                style: TextStyle(color: Color(0xFF86BC25))),
           ),
         ],
       ),
@@ -524,10 +524,10 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
             ...people.map((name) => ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: CircleAvatar(
-                    backgroundColor: const Color(0xFF739800).withOpacity(0.12),
+                    backgroundColor: const Color(0xFF86BC25).withOpacity(0.12),
                     child: Text(name.isNotEmpty ? name[0].toUpperCase() : '?',
                         style: const TextStyle(
-                            color: Color(0xFF739800),
+                            color: Color(0xFF86BC25),
                             fontWeight: FontWeight.w700)),
                   ),
                   title: Text(name,
@@ -557,7 +557,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
                             }
                           },
                           style: TextButton.styleFrom(
-                              foregroundColor: const Color(0xFF739800)),
+                              foregroundColor: const Color(0xFF86BC25)),
                           child: const Text('Add'),
                         ),
                 )),
@@ -652,7 +652,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
     final spacing = context.spacing;
     final radius = context.radius;
     final groupsAsync = ref.watch(watchGroupsProvider);
-    const brandGreen = Color(0xFF739800);
+    const brandGreen = Color(0xFF86BC25);
 
     // Guest mode — redirect to sign-in
     if (ref.watch(guestModeProvider)) {
@@ -1029,14 +1029,14 @@ class _GroupPickerSheet extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF739800).withOpacity(0.12),
+                  color: const Color(0xFF86BC25).withOpacity(0.12),
                   shape: BoxShape.circle,
                 ),
                 child: Center(
                   child: Text(
                     g.name[0].toUpperCase(),
                     style: const TextStyle(
-                      color: Color(0xFF739800),
+                      color: Color(0xFF86BC25),
                       fontWeight: FontWeight.w700,
                       fontSize: 16,
                     ),
@@ -1058,7 +1058,7 @@ class _GroupPickerSheet extends StatelessWidget {
               ),
               trailing: isSelected
                   ? const Icon(Icons.check_circle_rounded,
-                      color: Color(0xFF739800), size: 22)
+                      color: Color(0xFF86BC25), size: 22)
                   : null,
               onTap: () => onSelect(g),
             );
@@ -1089,7 +1089,7 @@ class _SplitSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    const brandGreen = Color(0xFF739800);
+    const brandGreen = Color(0xFF86BC25);
 
     // Compute entered total for tracker
     double enteredTotal = 0;
@@ -1121,7 +1121,7 @@ class _SplitSection extends StatelessWidget {
           Row(
             children: [
               const Icon(Icons.call_split_rounded,
-                  size: 16, color: Color(0xFF739800)),
+                  size: 16, color: Color(0xFF86BC25)),
               const SizedBox(width: 6),
               Text(
                 'Split',
@@ -1342,7 +1342,7 @@ class _SplitPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const brandGreen = Color(0xFF739800);
+    const brandGreen = Color(0xFF86BC25);
     final colors = context.colors;
     return GestureDetector(
       onTap: disabled ? onTap : onTap,
@@ -1401,7 +1401,7 @@ class _ScanReceiptBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    const brandGreen = Color(0xFF739800);
+    const brandGreen = Color(0xFF86BC25);
     final hasPreview = previewBytes != null;
     final scanOk = scanHint?.contains('✓') ?? false;
 
@@ -1434,13 +1434,13 @@ class _ScanReceiptBanner extends StatelessWidget {
                       height: 18,
                       child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Color(0xFF739800)),
+                          color: Color(0xFF86BC25)),
                     ),
                     SizedBox(width: 12),
                     Text(
                       'Scanning receipt…',
                       style: TextStyle(
-                        color: Color(0xFF739800),
+                        color: Color(0xFF86BC25),
                         fontWeight: FontWeight.w600,
                         fontSize: 15,
                       ),
@@ -1654,10 +1654,10 @@ class _SheetOption extends StatelessWidget {
         width: 42,
         height: 42,
         decoration: BoxDecoration(
-          color: const Color(0xFF739800).withOpacity(0.12),
+          color: const Color(0xFF86BC25).withOpacity(0.12),
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, color: const Color(0xFF739800), size: 20),
+        child: Icon(icon, color: const Color(0xFF86BC25), size: 20),
       ),
       title: Text(label,
           style: TextStyle(

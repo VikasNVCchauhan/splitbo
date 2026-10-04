@@ -39,7 +39,7 @@ class BalanceScreen extends ConsumerWidget {
       ),
       body: groupsAsync.when(
         loading: () => const Center(
-          child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF739800)),
+          child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF86BC25)),
         ),
         error: (_, __) => const Center(child: Text('Could not load groups.')),
         data: (groups) {
@@ -127,7 +127,7 @@ class _BalanceSummary extends ConsumerWidget {
                   child: _SummaryCard(
                     label: 'Owed to you',
                     amount: totalOwed,
-                    color: const Color(0xFF739800),
+                    color: const Color(0xFF86BC25),
                   ),
                 ),
               ],
@@ -192,7 +192,7 @@ class _BalanceRowTile extends StatelessWidget {
               radius: 22,
               backgroundColor: iOwe
                   ? const Color(0xFFFF6B6B).withOpacity(0.15)
-                  : const Color(0xFF739800).withOpacity(0.15),
+                  : const Color(0xFF86BC25).withOpacity(0.15),
               child: Text(
                 row.otherName.isNotEmpty
                     ? row.otherName[0].toUpperCase()
@@ -200,7 +200,7 @@ class _BalanceRowTile extends StatelessWidget {
                 style: TextStyle(
                   color: iOwe
                       ? const Color(0xFFFF6B6B)
-                      : const Color(0xFF739800),
+                      : const Color(0xFF86BC25),
                   fontWeight: FontWeight.w700,
                   fontSize: 16,
                 ),
@@ -240,7 +240,7 @@ class _BalanceRowTile extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                     color: iOwe
                         ? const Color(0xFFFF6B6B)
-                        : const Color(0xFF739800),
+                        : const Color(0xFF86BC25),
                   ),
                 ),
                 if (iOwe)
@@ -248,7 +248,7 @@ class _BalanceRowTile extends StatelessWidget {
                     margin: const EdgeInsets.only(top: 4),
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF739800),
+                      color: const Color(0xFF86BC25),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: const Text(
@@ -337,7 +337,7 @@ class _SettleUpSheetState extends ConsumerState<_SettleUpSheet> {
           const SnackBar(
             content: Row(
               children: [
-                Icon(Icons.check_circle_rounded, color: Color(0xFF739800), size: 18),
+                Icon(Icons.check_circle_rounded, color: Color(0xFF86BC25), size: 18),
                 SizedBox(width: 8),
                 Text('Marked as settled ✓'),
               ],
@@ -370,6 +370,7 @@ class _SettleUpSheetState extends ConsumerState<_SettleUpSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final iOwe = widget.row.amount < 0;
 
     return Padding(
@@ -445,14 +446,14 @@ class _SettleUpSheetState extends ConsumerState<_SettleUpSheet> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(color: Color(0xFF739800)),
+                    borderSide: const BorderSide(color: Color(0xFF86BC25)),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide(color: Colors.grey[800]!),
                   ),
                   filled: true,
-                  fillColor: const Color(0xFF2A2A2A),
+                  fillColor: colors.surfaceDefault,
                 ),
               ),
             ),
@@ -473,14 +474,14 @@ class _SettleUpSheetState extends ConsumerState<_SettleUpSheet> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(color: Color(0xFF739800)),
+                    borderSide: const BorderSide(color: Color(0xFF86BC25)),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide(color: Colors.grey[800]!),
                   ),
                   filled: true,
-                  fillColor: const Color(0xFF2A2A2A),
+                  fillColor: colors.surfaceDefault,
                 ),
               ),
             ),
@@ -498,17 +499,17 @@ class _SettleUpSheetState extends ConsumerState<_SettleUpSheet> {
                       child: OutlinedButton.icon(
                         onPressed: _payViaUpi,
                         icon: const Icon(Icons.currency_rupee_rounded,
-                            color: Color(0xFF739800), size: 18),
+                            color: Color(0xFF86BC25), size: 18),
                         label: const Text(
                           'Pay via UPI / GPay / PhonePe',
                           style: TextStyle(
-                            color: Color(0xFF739800),
+                            color: Color(0xFF86BC25),
                             fontWeight: FontWeight.w600,
                             fontSize: 14,
                           ),
                         ),
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Color(0xFF739800)),
+                          side: const BorderSide(color: Color(0xFF86BC25)),
                           shape: const StadiumBorder(),
                         ),
                       ),
@@ -522,10 +523,10 @@ class _SettleUpSheetState extends ConsumerState<_SettleUpSheet> {
                     child: ElevatedButton(
                       onPressed: _saving ? null : _markSettled,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF739800),
+                        backgroundColor: const Color(0xFF86BC25),
                         foregroundColor: Colors.black,
                         disabledBackgroundColor:
-                            const Color(0xFF739800).withOpacity(0.4),
+                            const Color(0xFF86BC25).withOpacity(0.4),
                         elevation: 0,
                         shape: const StadiumBorder(),
                       ),
@@ -616,7 +617,7 @@ class _EmptyBalances extends StatelessWidget {
           Icon(
             Icons.check_circle_outline_rounded,
             size: 72,
-            color: const Color(0xFF739800).withOpacity(0.35),
+            color: const Color(0xFF86BC25).withOpacity(0.35),
           ),
           const SizedBox(height: 20),
           Text(

@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 // Brand tokens
-const _green = Color(0xFF739800);
+const _green = Color(0xFF86BC25);
 const _black = Color(0xFF000000);
 
 class SignInScreen extends ConsumerStatefulWidget {

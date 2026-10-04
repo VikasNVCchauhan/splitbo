@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-const _green = Color(0xFF739800); // light-mode fallback only — prefer colors.brandPrimary in widgets
+const _green = Color(0xFF86BC25); // light-mode fallback only — prefer colors.brandPrimary in widgets
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -272,7 +272,14 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
       automaticallyImplyLeading: false,
       centerTitle: false,
       titleSpacing: 20,
-      title: const SplitboHomeLogo(height: 32),
+      title: ClipRRect(
+        borderRadius: BorderRadius.circular(6),
+        child: Image.asset(
+          'assets/images/home_logo2.jpg',
+          height: 32,
+          fit: BoxFit.contain,
+        ),
+      ),
       actions: [
         IconButton(
           icon: Icon(Icons.search_rounded, color: colors.textPrimary, size: 24),

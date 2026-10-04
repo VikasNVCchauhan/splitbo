@@ -82,7 +82,7 @@ class SettingsScreen extends ConsumerWidget {
         ),
       ),
       body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
         children: [
           const SizedBox(height: 16),
 
@@ -96,7 +96,7 @@ class SettingsScreen extends ConsumerWidget {
                     children: [
                       CircleAvatar(
                         radius: 44,
-                        backgroundColor: const Color(0xFF739800).withOpacity(0.15),
+                        backgroundColor: const Color(0xFF86BC25).withOpacity(0.15),
                         backgroundImage: user?.avatarUrl != null
                             ? NetworkImage(user!.avatarUrl!)
                             : null,
@@ -106,7 +106,7 @@ class SettingsScreen extends ConsumerWidget {
                                 style: const TextStyle(
                                   fontSize: 32,
                                   fontWeight: FontWeight.w800,
-                                  color: Color(0xFF739800),
+                                  color: Color(0xFF86BC25),
                                 ),
                               )
                             : null,
@@ -559,7 +559,7 @@ class SettingsScreen extends ConsumerWidget {
                 padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
                 child: Row(
                   children: [
-                    Icon(icon, color: const Color(0xFF739800), size: 22),
+                    Icon(icon, color: const Color(0xFF86BC25), size: 22),
                     const SizedBox(width: 10),
                     Text(title,
                         style: TextStyle(
@@ -704,7 +704,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
 
   @override
   Widget build(BuildContext context) {
-    const brandGreen = Color(0xFF739800);
+    const brandGreen = Color(0xFF86BC25);
     final colors = context.colors;
 
     return Padding(
@@ -984,7 +984,7 @@ class _SecuritySheetState extends State<_SecuritySheet> {
 
   @override
   Widget build(BuildContext context) {
-    const green = Color(0xFF739800);
+    const green = Color(0xFF86BC25);
     final colors = context.colors;
 
     return Container(
@@ -1156,7 +1156,7 @@ class _WhatsAppSheetState extends State<_WhatsAppSheet> {
 
   @override
   Widget build(BuildContext context) {
-    const green = Color(0xFF739800);
+    const green = Color(0xFF86BC25);
     final colors = context.colors;
 
     return Padding(
@@ -1358,7 +1358,7 @@ class _ThemeOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const green = Color(0xFF739800);
+    const green = Color(0xFF86BC25);
     final colors = context.colors;
     return Expanded(
       child: GestureDetector(

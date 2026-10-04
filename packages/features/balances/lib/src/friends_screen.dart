@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-const _green = Color(0xFF739800);
+const _green = Color(0xFF86BC25);
 
 // ── Provider: watch contacts for current user ─────────────────────────────────
 final _contactsProvider = StreamProvider<List<_Contact>>((ref) {
@@ -311,7 +311,7 @@ class _FriendTile extends StatelessWidget {
   final VoidCallback onTap;
 
   static const _avatarColors = [
-    Color(0xFF739800), Color(0xFF00D4FF), Color(0xFFFF6B9D),
+    Color(0xFF86BC25), Color(0xFF00D4FF), Color(0xFFFF6B9D),
     Color(0xFFFFB347), Color(0xFF9B59B6), Color(0xFF2ECC71),
   ];
 
@@ -711,7 +711,7 @@ class _DarkField extends StatelessWidget {
     final colors = context.colors;
     return TextField(
       controller: ctrl,
-      style: const TextStyle(color: Colors.white),
+      style: TextStyle(color: colors.textPrimary),
       textCapitalization:
           capitalize ? TextCapitalization.words : TextCapitalization.none,
       onChanged: onChanged,
@@ -720,7 +720,7 @@ class _DarkField extends StatelessWidget {
         labelStyle: TextStyle(color: colors.textSecondary),
         prefixIcon: Icon(icon, color: colors.textSecondary, size: 20),
         filled: true,
-        fillColor: const Color(0xFF252525),
+        fillColor: colors.surfaceDefault,
         border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(color: colors.borderDefault)),

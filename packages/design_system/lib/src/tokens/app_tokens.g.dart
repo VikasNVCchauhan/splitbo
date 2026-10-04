@@ -17,7 +17,7 @@ abstract final class _Palette {
   static const Color green400  = Color(0xFFC7FE06);
   static const Color green500  = Color(0xFFC3FD00); // brand primary #C3FD00
   static const Color green600  = Color(0xFF9BCB00); // pressed/hover
-  static const Color green700  = Color(0xFF739800);
+  static const Color green700  = Color(0xFF86BC25);
   static const Color green800  = Color(0xFF4C6600);
   static const Color green900  = Color(0xFF263300);
 
