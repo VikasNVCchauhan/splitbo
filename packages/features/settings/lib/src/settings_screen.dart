@@ -286,6 +286,7 @@ class SettingsScreen extends ConsumerWidget {
     final colors = context.colors;
     showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (_) => Container(
         margin: const EdgeInsets.all(12),
@@ -424,6 +425,7 @@ class SettingsScreen extends ConsumerWidget {
   void _showWhatsAppSheet(BuildContext context, WidgetRef ref, UserEntity? user) {
     showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => ProviderScope(
@@ -436,6 +438,7 @@ class SettingsScreen extends ConsumerWidget {
   void _showSecurity(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (_) => const _SecuritySheet(),
     );
@@ -444,6 +447,7 @@ class SettingsScreen extends ConsumerWidget {
   void _showAppearance(BuildContext context, WidgetRef ref) {
     showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (_) => ProviderScope(
         parent: ProviderScope.containerOf(context),
@@ -535,6 +539,7 @@ class SettingsScreen extends ConsumerWidget {
     final colors = context.colors;
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => DraggableScrollableSheet(
@@ -623,6 +628,7 @@ class SettingsScreen extends ConsumerWidget {
       BuildContext context, WidgetRef ref, UserEntity? user) {
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => ProviderScope(

@@ -263,6 +263,7 @@ class _GroupDetailBodyState extends ConsumerState<_GroupDetailBody>
   void _showGroupSettings(BuildContext context) {
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => ProviderScope(
@@ -299,6 +300,7 @@ class _GroupDetailBodyState extends ConsumerState<_GroupDetailBody>
   void _showAddMemberSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => ProviderScope(
@@ -751,6 +753,7 @@ class _GroupSettingsSheetState extends ConsumerState<_GroupSettingsSheet> {
   void _showEditName(BuildContext context) {
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => ProviderScope(
@@ -763,6 +766,7 @@ class _GroupSettingsSheetState extends ConsumerState<_GroupSettingsSheet> {
   void _showAddMemberSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => ProviderScope(
@@ -776,6 +780,7 @@ class _GroupSettingsSheetState extends ConsumerState<_GroupSettingsSheet> {
     final colors = context.colors;
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (_) => Container(
         margin: const EdgeInsets.all(12),
@@ -819,6 +824,7 @@ class _GroupSettingsSheetState extends ConsumerState<_GroupSettingsSheet> {
     final colors = context.colors;
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => DraggableScrollableSheet(
@@ -2335,7 +2341,7 @@ class _ExpenseList extends ConsumerWidget {
     final colors = context.colors;
     final symbol = group.currency == 'INR' ? '₹' : group.currency;
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
       itemCount: expenses.length,
       itemBuilder: (context, i) {
         final e = expenses[i];
@@ -2402,10 +2408,11 @@ class _ExpenseList extends ConsumerWidget {
     final colors = context.colors;
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => Container(
+      builder: (ctx) => Container(
         margin: const EdgeInsets.all(12),
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 94),
+        padding: EdgeInsets.fromLTRB(20, 16, 20, MediaQuery.of(ctx).padding.bottom + 16),
         decoration: BoxDecoration(
           color: colors.surfaceDefault,
           borderRadius: BorderRadius.circular(20),
@@ -2508,6 +2515,7 @@ class _ExpenseList extends ConsumerWidget {
       BuildContext context, WidgetRef ref, ExpenseEntity e) {
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => ProviderScope(

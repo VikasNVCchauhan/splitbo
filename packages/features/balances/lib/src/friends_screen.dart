@@ -238,6 +238,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     }
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => ProviderScope(
@@ -250,6 +251,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   void _showFriendDetails(BuildContext context, _Contact contact) {
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _FriendDetailSheet(contact: contact),
     );
