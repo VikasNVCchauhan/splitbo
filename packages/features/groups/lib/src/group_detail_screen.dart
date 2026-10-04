@@ -175,7 +175,7 @@ class _GroupDetailBodyState extends ConsumerState<_GroupDetailBody>
           return false;
         },
         child: NestedScrollView(
-          floatHeaderSlivers: true,
+          floatHeaderSlivers: false,
           headerSliverBuilder: (_, __) => [
             SliverToBoxAdapter(
               child: _GroupHeader(
