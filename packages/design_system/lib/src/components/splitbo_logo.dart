@@ -74,6 +74,7 @@ class SplitboHomeLogo extends StatelessWidget {
       isDark
           ? 'packages/design_system/assets/images/logo_dark.jpg'
           : 'packages/design_system/assets/images/logo_light.jpg',
+      // JPGs have solid bg matching backgroundDefault (white in light, black in dark)
       height: height,
       fit: BoxFit.contain,
     );
