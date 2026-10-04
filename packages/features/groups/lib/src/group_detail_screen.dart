@@ -117,8 +117,8 @@ class _GroupDetailBodyState extends ConsumerState<_GroupDetailBody>
                     : colors.backgroundDefault.withOpacity(0.4),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.settings_outlined,
-                  color: Colors.white, size: 20),
+              child: Icon(Icons.settings_outlined,
+                  color: colors.textPrimary, size: 20),
             ),
             onPressed: () => _showGroupSettings(context),
           ),
@@ -153,6 +153,7 @@ class _GroupDetailBodyState extends ConsumerState<_GroupDetailBody>
           return false;
         },
         child: NestedScrollView(
+          floatHeaderSlivers: true,
           headerSliverBuilder: (_, __) => [
             SliverToBoxAdapter(
               child: _GroupHeader(
@@ -318,7 +319,7 @@ class _PillTabDelegate extends SliverPersistentHeaderDelegate {
   }
 
   @override
-  bool shouldRebuild(_PillTabDelegate old) => old.controller != controller;
+  bool shouldRebuild(_PillTabDelegate old) => true;
 }
 
 // Self-updating pill bar — only this widget rebuilds on tab change.
@@ -342,7 +343,7 @@ class _PillTabBarState extends State<_PillTabBar> {
   }
 
   void _onTabChange() {
-    if (mounted && !widget.controller.indexIsChanging) setState(() {});
+    if (mounted) setState(() {});
   }
 
   @override
@@ -963,22 +964,23 @@ class _SettingsRow extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
-    this.color = Colors.white,
+    this.color,
     this.trailing,
   });
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  final Color color;
+  final Color? color;
   final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+    final c = color ?? colors.textPrimary;
     return ListTile(
       onTap: onTap,
-      leading: Icon(icon, color: color, size: 22),
-      title: Text(label, style: TextStyle(color: color, fontSize: 15)),
+      leading: Icon(icon, color: c, size: 22),
+      title: Text(label, style: TextStyle(color: c, fontSize: 15)),
       trailing: trailing ?? Icon(Icons.chevron_right, color: colors.textSecondary, size: 20),
     );
   }
