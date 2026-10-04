@@ -1,3 +1,5 @@
+import 'dart:math' show max;
+
 import 'package:data/data.dart';
 import 'package:design_system/design_system.dart';
 import 'package:domain/domain.dart';
@@ -374,7 +376,7 @@ class _SettleUpSheetState extends ConsumerState<_SettleUpSheet> {
     final iOwe = widget.row.amount < 0;
 
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(bottom: max(MediaQuery.of(context).viewInsets.bottom, MediaQuery.of(context).padding.bottom + 80)),
       child: Container(
         margin: const EdgeInsets.all(12),
         decoration: BoxDecoration(
@@ -547,7 +549,7 @@ class _SettleUpSheetState extends ConsumerState<_SettleUpSheet> {
                 ],
               ),
             ),
-            const SizedBox(height: 28),
+            const SizedBox(height: 94),
           ],
         ),
       ),

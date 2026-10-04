@@ -1,3 +1,5 @@
+import 'dart:math' show max;
+
 import 'package:data/data.dart';
 import 'package:design_system/design_system.dart';
 import 'package:domain/domain.dart';
@@ -287,7 +289,7 @@ class SettingsScreen extends ConsumerWidget {
       backgroundColor: Colors.transparent,
       builder: (_) => Container(
         margin: const EdgeInsets.all(12),
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+        padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(context).padding.bottom + 80),
         decoration: BoxDecoration(
           color: colors.surfaceDefault,
           borderRadius: BorderRadius.circular(24),
@@ -352,7 +354,7 @@ class SettingsScreen extends ConsumerWidget {
       SnackBar(
         content: const Text('Coming soon',
             style: TextStyle(color: Colors.white)),
-        backgroundColor: context.colors.surfaceDefault,
+        backgroundColor: const Color(0xFF1E1E1E),
         duration: const Duration(seconds: 2),
       ),
     );
@@ -578,7 +580,7 @@ class SettingsScreen extends ConsumerWidget {
               Expanded(
                 child: ListView(
                   controller: ctrl,
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 94),
                   children: [
                     ...items.map((item) => Padding(
                           padding: const EdgeInsets.only(bottom: 20),
@@ -688,7 +690,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
           SnackBar(
             content: const Text('Profile updated ✓',
                 style: TextStyle(color: Colors.white)),
-            backgroundColor: context.colors.surfaceRaised,
+            backgroundColor: const Color(0xFF1E1E1E),
           ),
         );
       },
@@ -696,7 +698,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
         SnackBar(
           content: Text(err.message,
               style: const TextStyle(color: Colors.white)),
-          backgroundColor: context.colors.surfaceRaised,
+          backgroundColor: const Color(0xFF1E1E1E),
         ),
       ),
     );
@@ -709,10 +711,10 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
 
     return Padding(
       padding:
-          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          EdgeInsets.only(bottom: max(MediaQuery.of(context).viewInsets.bottom, MediaQuery.of(context).padding.bottom + 80)),
       child: Container(
         margin: const EdgeInsets.all(12),
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+        padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(context).padding.bottom + 80),
         decoration: BoxDecoration(
           color: colors.surfaceDefault,
           borderRadius: BorderRadius.circular(24),
@@ -1072,7 +1074,7 @@ class _SecuritySheetState extends State<_SecuritySheet> {
                               : 'Biometric lock disabled',
                           style: const TextStyle(color: Colors.white),
                         ),
-                        backgroundColor: colors.surfaceRaised,
+                        backgroundColor: const Color(0xFF1E1E1E),
                         duration: const Duration(seconds: 2),
                       ));
                     },
@@ -1146,7 +1148,7 @@ class _WhatsAppSheetState extends State<_WhatsAppSheet> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: const Text('WhatsApp number saved',
               style: TextStyle(color: Colors.white)),
-          backgroundColor: context.colors.surfaceRaised,
+          backgroundColor: const Color(0xFF1E1E1E),
         ));
       }
     } catch (_) {

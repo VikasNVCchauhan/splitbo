@@ -624,7 +624,7 @@ class _GroupSettingsSheetState extends ConsumerState<_GroupSettingsSheet> {
             Expanded(
               child: ListView(
                 controller: ctrl,
-                padding: const EdgeInsets.symmetric(vertical: 8),
+                padding: const EdgeInsets.fromLTRB(0, 8, 0, 94),
                 children: [
                   _SettingsRow(
                     icon: Icons.camera_alt_outlined,
@@ -635,7 +635,7 @@ class _GroupSettingsSheetState extends ConsumerState<_GroupSettingsSheet> {
                         SnackBar(
                           content: const Text('Photo upload coming soon',
                               style: TextStyle(color: Colors.white)),
-                          backgroundColor: colors.surfaceRaised,
+                          backgroundColor: const Color(0xFF1E1E1E),
                         ),
                       );
                     },
@@ -668,7 +668,7 @@ class _GroupSettingsSheetState extends ConsumerState<_GroupSettingsSheet> {
                         SnackBar(
                           content: const Text('Invite link copied',
                               style: TextStyle(color: Colors.white)),
-                          backgroundColor: colors.surfaceRaised,
+                          backgroundColor: const Color(0xFF1E1E1E),
                         ),
                       );
                     },
@@ -901,7 +901,7 @@ class _GroupSettingsSheetState extends ConsumerState<_GroupSettingsSheet> {
                 SnackBar(
                   content: const Text('Leave group coming soon',
                       style: TextStyle(color: Colors.white)),
-                  backgroundColor: colors.surfaceRaised,
+                  backgroundColor: const Color(0xFF1E1E1E),
                 ),
               );
             },
@@ -944,7 +944,7 @@ class _GroupSettingsSheetState extends ConsumerState<_GroupSettingsSheet> {
                     SnackBar(
                       content: Text(e.message,
                           style: const TextStyle(color: Colors.white)),
-                      backgroundColor: colors.surfaceRaised,
+                      backgroundColor: const Color(0xFF1E1E1E),
                     ),
                   ),
                 );
@@ -1531,7 +1531,7 @@ class _AddMemberSheetState extends ConsumerState<_AddMemberSheet>
         SnackBar(
           content: Text('$displayName added to group',
               style: const TextStyle(color: Colors.white)),
-          backgroundColor: context.colors.surfaceRaised,
+          backgroundColor: const Color(0xFF1E1E1E),
         ),
       );
       setState(() => _results.removeWhere((r) => r.id == userId));
@@ -1570,7 +1570,7 @@ class _AddMemberSheetState extends ConsumerState<_AddMemberSheet>
             SnackBar(
               content: Text('${match.displayName} found on Splitbo and added!',
                   style: const TextStyle(color: Colors.white)),
-              backgroundColor: context.colors.surfaceRaised,
+              backgroundColor: const Color(0xFF1E1E1E),
             ),
           );
         }
@@ -1602,7 +1602,7 @@ class _AddMemberSheetState extends ConsumerState<_AddMemberSheet>
         SnackBar(
           content: Text('$name added as guest',
               style: const TextStyle(color: Colors.white)),
-          backgroundColor: context.colors.surfaceRaised,
+          backgroundColor: const Color(0xFF1E1E1E),
         ),
       );
     }
@@ -2047,7 +2047,7 @@ class _QrInviteTabState extends ConsumerState<_QrInviteTab> {
                       SnackBar(
                         content: const Text('Link copied!',
                             style: TextStyle(color: Colors.white)),
-                        backgroundColor: colors.surfaceRaised,
+                        backgroundColor: const Color(0xFF1E1E1E),
                         duration: const Duration(seconds: 2),
                       ),
                     );
@@ -2114,14 +2114,14 @@ class _EditGroupSheetState extends ConsumerState<_EditGroupSheet> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Group updated', style: TextStyle(color: Colors.white)),
-            backgroundColor: context.colors.surfaceRaised,
+            backgroundColor: const Color(0xFF1E1E1E),
           ),
         );
       },
       err: (e) => ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.message, style: const TextStyle(color: Colors.white)),
-          backgroundColor: context.colors.surfaceRaised,
+          backgroundColor: const Color(0xFF1E1E1E),
         ),
       ),
     );
@@ -2131,10 +2131,10 @@ class _EditGroupSheetState extends ConsumerState<_EditGroupSheet> {
   Widget build(BuildContext context) {
     final colors = context.colors;
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(bottom: max(MediaQuery.of(context).viewInsets.bottom, MediaQuery.of(context).padding.bottom + 80)),
       child: Container(
         margin: const EdgeInsets.all(12),
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+        padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(context).padding.bottom + 80),
         decoration: BoxDecoration(
           color: colors.surfaceDefault,
           borderRadius: BorderRadius.circular(24),
@@ -2302,7 +2302,7 @@ class _ExpenseList extends ConsumerWidget {
       backgroundColor: Colors.transparent,
       builder: (_) => Container(
         margin: const EdgeInsets.all(12),
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 94),
         decoration: BoxDecoration(
           color: colors.surfaceDefault,
           borderRadius: BorderRadius.circular(20),
@@ -2380,14 +2380,14 @@ class _ExpenseList extends ConsumerWidget {
                     SnackBar(
                       content: const Text('Expense deleted',
                           style: TextStyle(color: Colors.white)),
-                      backgroundColor: colors.surfaceRaised,
+                      backgroundColor: const Color(0xFF1E1E1E),
                     ),
                   ),
                   err: (err) => ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(err.message,
                           style: const TextStyle(color: Colors.white)),
-                      backgroundColor: colors.surfaceRaised,
+                      backgroundColor: const Color(0xFF1E1E1E),
                     ),
                   ),
                 );
@@ -2535,7 +2535,7 @@ class _EditExpenseSheetState extends ConsumerState<_EditExpenseSheet> {
           SnackBar(
             content: const Text('Expense updated',
                 style: TextStyle(color: Colors.white)),
-            backgroundColor: context.colors.surfaceRaised,
+            backgroundColor: const Color(0xFF1E1E1E),
           ),
         );
       },
@@ -2543,7 +2543,7 @@ class _EditExpenseSheetState extends ConsumerState<_EditExpenseSheet> {
         SnackBar(
           content: Text(err.message,
               style: const TextStyle(color: Colors.white)),
-          backgroundColor: context.colors.surfaceRaised,
+          backgroundColor: const Color(0xFF1E1E1E),
         ),
       ),
     );
@@ -2554,10 +2554,10 @@ class _EditExpenseSheetState extends ConsumerState<_EditExpenseSheet> {
     final colors = context.colors;
     return Padding(
       padding:
-          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          EdgeInsets.only(bottom: max(MediaQuery.of(context).viewInsets.bottom, MediaQuery.of(context).padding.bottom + 80)),
       child: Container(
         margin: const EdgeInsets.all(12),
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+        padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(context).padding.bottom + 80),
         decoration: BoxDecoration(
           color: colors.surfaceDefault,
           borderRadius: BorderRadius.circular(24),

@@ -388,7 +388,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               content: Text('Group matched: ${match.name}',
                   style: const TextStyle(color: Colors.white)),
-              backgroundColor: context.colors.surfaceRaised,
+              backgroundColor: const Color(0xFF1E1E1E),
               duration: const Duration(seconds: 3),
             ));
           } else if (mounted && result.groupName!.isNotEmpty) {
@@ -413,7 +413,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
                 Text('Receipt scanned!', style: TextStyle(color: Colors.white)),
               ],
             ),
-            backgroundColor: context.colors.surfaceRaised,
+            backgroundColor: const Color(0xFF1E1E1E),
             duration: const Duration(seconds: 3),
           ),
         );
@@ -477,7 +477,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                       content: Text('Group "${group.name}" created',
                           style: const TextStyle(color: Colors.white)),
-                      backgroundColor: context.colors.surfaceRaised,
+                      backgroundColor: const Color(0xFF1E1E1E),
                     ));
                   },
                   err: (_) {},
@@ -552,7 +552,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
                               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                                 content: Text('$name added to group',
                                     style: const TextStyle(color: Colors.white)),
-                                backgroundColor: context.colors.surfaceRaised,
+                                backgroundColor: const Color(0xFF1E1E1E),
                               ));
                             }
                           },
@@ -638,7 +638,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg, style: const TextStyle(color: Colors.white)),
-        backgroundColor: context.colors.surfaceRaised,
+        backgroundColor: const Color(0xFF1E1E1E),
         duration: const Duration(seconds: 6),
       ),
     );
@@ -1162,7 +1162,7 @@ class _SplitSection extends StatelessWidget {
                   SnackBar(
                     content: const Text('Shares split — coming soon',
                         style: TextStyle(color: Colors.white)),
-                    backgroundColor: colors.surfaceRaised,
+                    backgroundColor: const Color(0xFF1E1E1E),
                     duration: const Duration(seconds: 2),
                   ),
                 ),
@@ -1177,7 +1177,7 @@ class _SplitSection extends StatelessWidget {
                   SnackBar(
                     content: const Text('Adjustment split — coming soon',
                         style: TextStyle(color: Colors.white)),
-                    backgroundColor: colors.surfaceRaised,
+                    backgroundColor: const Color(0xFF1E1E1E),
                     duration: const Duration(seconds: 2),
                   ),
                 ),
@@ -1707,7 +1707,7 @@ class _CategoryChip extends StatelessWidget {
       selected: selected,
       showCheckmark: false,
       onSelected: onSelected,
-      backgroundColor: colors.surfaceRaised,
+      backgroundColor: const Color(0xFF1E1E1E),
       selectedColor: colors.brandPrimaryLt,
       side: BorderSide(
           color: selected ? colors.brandPrimary : colors.borderDefault),

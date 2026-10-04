@@ -326,7 +326,7 @@ class _ActivityTile extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: colors.surfaceRaised,
+        backgroundColor: const Color(0xFF1E1E1E),
         title: Text('Delete Expense',
             style: TextStyle(color: colors.textPrimary)),
         content: Text('Delete "${expense.description}"?',
@@ -348,7 +348,7 @@ class _ActivityTile extends ConsumerWidget {
                   SnackBar(
                     content: Text('Expense deleted',
                         style: TextStyle(color: colors.textPrimary)),
-                    backgroundColor: colors.surfaceRaised,
+                    backgroundColor: const Color(0xFF1E1E1E),
                   ),
                 );
               }
@@ -427,7 +427,7 @@ class _EditExpenseSheetState extends ConsumerState<_EditExpenseSheet> {
           SnackBar(
             content: Text('Expense updated',
                 style: TextStyle(color: context.colors.textPrimary)),
-            backgroundColor: context.colors.surfaceRaised,
+            backgroundColor: const Color(0xFF1E1E1E),
           ),
         );
       },
@@ -435,7 +435,7 @@ class _EditExpenseSheetState extends ConsumerState<_EditExpenseSheet> {
         SnackBar(
           content: Text(err.message,
               style: TextStyle(color: context.colors.textPrimary)),
-          backgroundColor: context.colors.surfaceRaised,
+          backgroundColor: const Color(0xFF1E1E1E),
         ),
       ),
     );

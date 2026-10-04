@@ -1,3 +1,5 @@
+import 'dart:math' show max;
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:data/data.dart';
 import 'package:design_system/design_system.dart';
@@ -496,7 +498,7 @@ class _AddFriendSheetState extends ConsumerState<_AddFriendSheet> {
       SnackBar(
         content: Text('${_nameCtrl.text.trim()} added as a friend',
             style: const TextStyle(color: Colors.white)),
-        backgroundColor: context.colors.surfaceRaised,
+        backgroundColor: const Color(0xFF1E1E1E),
       ),
     );
   }
@@ -505,10 +507,10 @@ class _AddFriendSheetState extends ConsumerState<_AddFriendSheet> {
   Widget build(BuildContext context) {
     final colors = context.colors;
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(bottom: max(MediaQuery.of(context).viewInsets.bottom, MediaQuery.of(context).padding.bottom + 80)),
       child: Container(
         margin: const EdgeInsets.all(12),
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+        padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(context).padding.bottom + 80),
         decoration: BoxDecoration(
           color: colors.surfaceDefault,
           borderRadius: BorderRadius.circular(24),
@@ -595,7 +597,7 @@ class _FriendDetailSheet extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.all(12),
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
+      padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(context).padding.bottom + 80),
       decoration: BoxDecoration(
         color: colors.surfaceDefault,
         borderRadius: BorderRadius.circular(24),
