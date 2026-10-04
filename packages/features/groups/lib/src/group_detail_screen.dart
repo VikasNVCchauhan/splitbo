@@ -1022,6 +1022,7 @@ class _ChartsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final symbol = group.currency == 'INR' ? '₹' : group.currency;
     final byCategory = <ExpenseCategory, double>{};
     for (final e in expenses) {
@@ -1029,58 +1030,99 @@ class _ChartsTab extends StatelessWidget {
     }
     final sorted = byCategory.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
-    final max = sorted.isEmpty ? 1.0 : sorted.first.value;
+    final total = sorted.fold(0.0, (s, e) => s + e.value);
 
-    const barColors = [
+    const segColors = [
       Color(0xFF86BC25), Color(0xFF00D4FF), Color(0xFFFF6B9D),
       Color(0xFFFFB347), Color(0xFF9B59B6), Color(0xFF2ECC71),
-      Color(0xFFFF6B6B), Color(0xFFE91E63), Color(0xFF03A9F4),
+      Color(0xFFFF6B6B), Color(0xFF03A9F4), Color(0xFFE91E63),
     ];
 
+    if (sorted.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.pie_chart_outline, size: 48, color: colors.textDisabled),
+            const SizedBox(height: 12),
+            Text('No expenses yet',
+                style: TextStyle(color: colors.textSecondary, fontSize: 15)),
+          ],
+        ),
+      );
+    }
+
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 100),
       children: [
-        const Text('Spending by Category',
+        Text('Spending by Category',
             style: TextStyle(
-                color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
-        const SizedBox(height: 20),
+                color: colors.textPrimary,
+                fontSize: 17,
+                fontWeight: FontWeight.w700)),
+        const SizedBox(height: 24),
+        // Donut chart
+        SizedBox(
+          height: 220,
+          child: CustomPaint(
+            painter: _DonutChartPainter(
+              segments: sorted.map((e) => e.value / total).toList(),
+              colors: List.generate(sorted.length,
+                  (i) => segColors[i % segColors.length]),
+            ),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Total',
+                      style: TextStyle(
+                          color: colors.textSecondary, fontSize: 12)),
+                  const SizedBox(height: 4),
+                  Text('$symbol${total.toStringAsFixed(0)}',
+                      style: TextStyle(
+                          color: colors.textPrimary,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800)),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+        // Legend
         ...sorted.asMap().entries.map((entry) {
           final i = entry.key;
           final cat = entry.value.key;
           final amount = entry.value.value;
-          final pct = amount / max;
-          final color = barColors[i % barColors.length];
+          final pct = total > 0 ? (amount / total * 100) : 0.0;
+          final color = segColors[i % segColors.length];
           return Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Row(
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(cat.label,
-                        style: const TextStyle(
-                            color: Colors.white, fontSize: 13)),
-                    Text('$symbol${amount.toStringAsFixed(0)}',
-                        style: TextStyle(
-                            color: color,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700)),
-                  ],
+                Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                      color: color, shape: BoxShape.circle),
                 ),
-                const SizedBox(height: 6),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: Stack(
-                    children: [
-                      Container(height: 8, color: const Color(0xFF252525)),
-                      FractionallySizedBox(
-                        widthFactor: pct.clamp(0.02, 1.0),
-                        child: Container(height: 8, color: color),
-                      ),
-                    ],
-                  ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(cat.label,
+                      style: TextStyle(
+                          color: colors.textPrimary,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500)),
                 ),
+                Text('${pct.toStringAsFixed(1)}%',
+                    style: TextStyle(
+                        color: colors.textSecondary, fontSize: 13)),
+                const SizedBox(width: 12),
+                Text('$symbol${amount.toStringAsFixed(0)}',
+                    style: TextStyle(
+                        color: color,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700)),
               ],
             ),
           );
@@ -1088,6 +1130,39 @@ class _ChartsTab extends StatelessWidget {
       ],
     );
   }
+}
+
+class _DonutChartPainter extends CustomPainter {
+  const _DonutChartPainter({required this.segments, required this.colors});
+  final List<double> segments;
+  final List<Color> colors;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.shortestSide / 2) - 8;
+    final strokeWidth = radius * 0.38;
+    final rect = Rect.fromCircle(center: center, radius: radius - strokeWidth / 2);
+
+    double startAngle = -pi / 2;
+    const gap = 0.03;
+
+    for (int i = 0; i < segments.length; i++) {
+      final sweep = (segments[i] * 2 * pi) - gap;
+      if (sweep <= 0) continue;
+      final paint = Paint()
+        ..color = colors[i]
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth
+        ..strokeCap = StrokeCap.round;
+      canvas.drawArc(rect, startAngle, sweep, false, paint);
+      startAngle += segments[i] * 2 * pi;
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DonutChartPainter old) =>
+      old.segments != segments || old.colors != colors;
 }
 
 // ── Balances tab ──────────────────────────────────────────────────────────────
