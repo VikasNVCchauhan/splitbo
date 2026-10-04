@@ -89,8 +89,10 @@ class _HomeLogoColorMapper implements ColorMapper {
     String attributeName,
     Color color,
   ) {
+    // Always use brand green for the lime/icon parts
+    if (color == _limeHome) return _green;
+    // Dark mode: text → white; Light mode: text stays near-black
     if (isDark && color == _charcoalHome) return Colors.white;
-    if (!isDark && color == _limeHome) return _green; // olive in light mode
     return color;
   }
 }
