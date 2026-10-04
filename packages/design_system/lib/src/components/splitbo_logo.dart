@@ -61,7 +61,7 @@ class _WordmarkColorMapper implements ColorMapper {
 }
 
 /// Full "SplitBo" wordmark for the home/post-login screens.
-/// Uses the home variant SVG — icon in brand green, text adapts to dark/light mode.
+/// Switches between the light-mode and dark-mode logo JPGs based on theme.
 class SplitboHomeLogo extends StatelessWidget {
   const SplitboHomeLogo({super.key, this.height = 40});
 
@@ -70,29 +70,12 @@ class SplitboHomeLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return SvgPicture.asset(
-      'packages/design_system/assets/images/logo_home.svg',
+    return Image.asset(
+      isDark
+          ? 'packages/design_system/assets/images/logo_dark.jpg'
+          : 'packages/design_system/assets/images/logo_light.jpg',
       height: height,
-      colorMapper: _HomeLogoColorMapper(isDark: isDark),
+      fit: BoxFit.contain,
     );
-  }
-}
-
-class _HomeLogoColorMapper implements ColorMapper {
-  const _HomeLogoColorMapper({required this.isDark});
-  final bool isDark;
-
-  @override
-  Color substitute(
-    String? id,
-    String elementName,
-    String attributeName,
-    Color color,
-  ) {
-    // Always use brand green for the lime/icon parts
-    if (color == _limeHome) return _green;
-    // Dark mode: text → white; Light mode: text stays near-black
-    if (isDark && color == _charcoalHome) return Colors.white;
-    return color;
   }
 }
