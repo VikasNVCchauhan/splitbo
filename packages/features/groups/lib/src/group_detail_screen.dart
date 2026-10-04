@@ -68,7 +68,7 @@ class _GroupDetailBodyState extends ConsumerState<_GroupDetailBody>
   @override
   void initState() {
     super.initState();
-    _tab = TabController(length: 6, vsync: this);
+    _tab = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -141,7 +141,16 @@ class _GroupDetailBodyState extends ConsumerState<_GroupDetailBody>
       floatingActionButton: AnimatedBuilder(
         animation: _tab,
         builder: (context, _) {
-          if (_tab.index == 5) return const SizedBox.shrink();
+          if (_tab.index == 0) {
+            return FloatingActionButton(
+              heroTag: 'addMember',
+              onPressed: () => _showAddMemberSheet(context),
+              backgroundColor: _green,
+              foregroundColor: Colors.black,
+              elevation: 2,
+              child: const Icon(Icons.person_add_outlined),
+            );
+          }
           if (_tab.index != 1) return const SizedBox.shrink();
           return FloatingActionButton.extended(
             heroTag: 'addExpense',
@@ -222,36 +231,17 @@ class _GroupDetailBodyState extends ConsumerState<_GroupDetailBody>
                     ? _EmptyExpenses(groupId: group.id)
                     : _ExpenseList(expenses: expenses, group: group),
               ),
-              // ── Balances ──────────────────────────────────────
+              // ── Stats (Balances + Charts + Totals) ───────────
               expensesAsync.when(
                 loading: () => const Center(
                     child: CircularProgressIndicator(
                         color: _green, strokeWidth: 2)),
-                error: (_, __) => const _ComingSoon(label: 'Balances'),
-                data: (expenses) =>
-                    _BalancesTab(expenses: expenses, group: group),
-              ),
-              // ── Charts ────────────────────────────────────────
-              expensesAsync.when(
-                loading: () => const Center(
-                    child: CircularProgressIndicator(
-                        color: _green, strokeWidth: 2)),
-                error: (_, __) => const _ComingSoon(label: 'Charts'),
+                error: (_, __) => const _ComingSoon(label: 'Stats'),
                 data: (expenses) => expenses.isEmpty
-                    ? const _ComingSoon(label: 'Charts')
-                    : _ChartsTab(expenses: expenses, group: group),
+                    ? const _ComingSoon(label: 'Stats')
+                    : _StatsTab(expenses: expenses, group: group),
               ),
-              // ── Totals ────────────────────────────────────────
-              expensesAsync.when(
-                loading: () => const Center(
-                    child: CircularProgressIndicator(
-                        color: _green, strokeWidth: 2)),
-                error: (_, __) => const _ComingSoon(label: 'Totals'),
-                data: (expenses) => expenses.isEmpty
-                    ? const _ComingSoon(label: 'Totals')
-                    : _TotalsTab(expenses: expenses, group: group),
-              ),
-              // ── Notes ─────────────────────────────────────────
+              // ── Chat ──────────────────────────────────────────
               _WhiteboardTab(groupId: group.id),
             ],
           ),
@@ -348,7 +338,7 @@ class _PillTabBar extends StatefulWidget {
 
 class _PillTabBarState extends State<_PillTabBar> {
   static const _labels = [
-    'Members', 'Expenses', 'Balances', 'Charts', 'Totals', 'Chat'
+    'Members', 'Expenses', 'Stats', 'Chat'
   ];
 
   final _keys = List.generate(_labels.length, (_) => GlobalKey());
@@ -471,7 +461,7 @@ class _GroupHeader extends StatelessWidget {
 
     return Container(
       color: colors.backgroundDefault,
-      padding: EdgeInsets.only(top: safePad + 56, bottom: 8),
+      padding: EdgeInsets.only(top: safePad + 12, bottom: 8),
       child: Column(
         children: [
           // ── Avatar ───────────────────────────────────────────────
@@ -1020,9 +1010,9 @@ class _SettingsRow extends StatelessWidget {
   }
 }
 
-// ── Charts tab ────────────────────────────────────────────────────────────────
-class _ChartsTab extends StatelessWidget {
-  const _ChartsTab({required this.expenses, required this.group});
+// ── Stats tab (Balances + Charts + Totals merged) ────────────────────────────
+class _StatsTab extends StatelessWidget {
+  const _StatsTab({required this.expenses, required this.group});
   final List<ExpenseEntity> expenses;
   final GroupEntity group;
 
@@ -1030,13 +1020,21 @@ class _ChartsTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final symbol = group.currency == 'INR' ? '₹' : group.currency;
+    final total = expenses.fold(0.0, (s, e) => s + e.amount);
+
     final byCategory = <ExpenseCategory, double>{};
     for (final e in expenses) {
       byCategory[e.category] = (byCategory[e.category] ?? 0) + e.amount;
     }
     final sorted = byCategory.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
-    final total = sorted.fold(0.0, (s, e) => s + e.value);
+
+    final memberCount = group.memberIds.length;
+    final fairShare = memberCount > 0 ? total / memberCount : 0.0;
+    final paid = <String, double>{};
+    for (final e in expenses) {
+      paid[e.paidBy] = (paid[e.paidBy] ?? 0) + e.amount;
+    }
 
     const segColors = [
       Color(0xFF86BC25), Color(0xFF00D4FF), Color(0xFFFF6B9D),
@@ -1044,95 +1042,199 @@ class _ChartsTab extends StatelessWidget {
       Color(0xFFFF6B6B), Color(0xFF03A9F4), Color(0xFFE91E63),
     ];
 
-    if (sorted.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.pie_chart_outline, size: 48, color: colors.textDisabled),
-            const SizedBox(height: 12),
-            Text('No expenses yet',
-                style: TextStyle(color: colors.textSecondary, fontSize: 15)),
-          ],
-        ),
-      );
-    }
-
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 100),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
       children: [
-        Text('Spending by Category',
-            style: TextStyle(
-                color: colors.textPrimary,
-                fontSize: 17,
-                fontWeight: FontWeight.w700)),
-        const SizedBox(height: 24),
-        // Donut chart
-        SizedBox(
-          height: 220,
-          child: CustomPaint(
-            painter: _DonutChartPainter(
-              segments: sorted.map((e) => e.value / total).toList(),
-              colors: List.generate(sorted.length,
-                  (i) => segColors[i % segColors.length]),
-            ),
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('Total',
-                      style: TextStyle(
-                          color: colors.textSecondary, fontSize: 12)),
-                  const SizedBox(height: 4),
-                  Text('$symbol${total.toStringAsFixed(0)}',
-                      style: TextStyle(
-                          color: colors.textPrimary,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800)),
-                ],
+        // Grand Total card
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: _green.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: _green.withOpacity(0.2)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Grand Total',
+                  style: TextStyle(color: colors.textSecondary, fontSize: 12)),
+              const SizedBox(height: 4),
+              Text('$symbol${total.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                      color: _green, fontSize: 28, fontWeight: FontWeight.w800)),
+              Text(
+                  '${expenses.length} expense${expenses.length == 1 ? '' : 's'}',
+                  style: TextStyle(
+                      color: colors.textSecondary, fontSize: 13)),
+            ],
+          ),
+        ),
+        if (sorted.isNotEmpty) ...[
+          const SizedBox(height: 24),
+          Text('Spending by Category',
+              style: TextStyle(
+                  color: colors.textPrimary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700)),
+          const SizedBox(height: 20),
+          SizedBox(
+            height: 200,
+            child: CustomPaint(
+              painter: _DonutChartPainter(
+                segments: sorted.map((e) => e.value / total).toList(),
+                colors: List.generate(
+                    sorted.length, (i) => segColors[i % segColors.length]),
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('Total',
+                        style: TextStyle(
+                            color: colors.textSecondary, fontSize: 12)),
+                    const SizedBox(height: 4),
+                    Text('$symbol${total.toStringAsFixed(0)}',
+                        style: TextStyle(
+                            color: colors.textPrimary,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800)),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
-        const SizedBox(height: 24),
-        // Legend
-        ...sorted.asMap().entries.map((entry) {
-          final i = entry.key;
-          final cat = entry.value.key;
-          final amount = entry.value.value;
-          final pct = total > 0 ? (amount / total * 100) : 0.0;
-          final color = segColors[i % segColors.length];
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Row(
-              children: [
-                Container(
-                  width: 12,
-                  height: 12,
-                  decoration: BoxDecoration(
-                      color: color, shape: BoxShape.circle),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(cat.label,
+          const SizedBox(height: 16),
+          ...sorted.asMap().entries.map((entry) {
+            final i = entry.key;
+            final cat = entry.value.key;
+            final amount = entry.value.value;
+            final pct = total > 0 ? (amount / total * 100) : 0.0;
+            final color = segColors[i % segColors.length];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(
+                children: [
+                  Container(
+                    width: 12,
+                    height: 12,
+                    decoration:
+                        BoxDecoration(color: color, shape: BoxShape.circle),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(cat.label,
+                        style: TextStyle(
+                            color: colors.textPrimary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500)),
+                  ),
+                  Text('${pct.toStringAsFixed(1)}%',
                       style: TextStyle(
-                          color: colors.textPrimary,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500)),
-                ),
-                Text('${pct.toStringAsFixed(1)}%',
-                    style: TextStyle(
-                        color: colors.textSecondary, fontSize: 13)),
-                const SizedBox(width: 12),
-                Text('$symbol${amount.toStringAsFixed(0)}',
-                    style: TextStyle(
-                        color: color,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700)),
-              ],
+                          color: colors.textSecondary, fontSize: 13)),
+                  const SizedBox(width: 12),
+                  Text('$symbol${amount.toStringAsFixed(0)}',
+                      style: TextStyle(
+                          color: color,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700)),
+                ],
+              ),
+            );
+          }),
+        ],
+        if (paid.isNotEmpty && memberCount > 0) ...[
+          const SizedBox(height: 28),
+          Text('Balances',
+              style: TextStyle(
+                  color: colors.textPrimary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700)),
+          const SizedBox(height: 4),
+          Text('Fair share: $symbol${fairShare.toStringAsFixed(0)} per person',
+              style:
+                  TextStyle(color: colors.textSecondary, fontSize: 13)),
+          const SizedBox(height: 16),
+          ...paid.entries.map((entry) {
+            final net = entry.value - fairShare;
+            final isPositive = net > 0;
+            return Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: colors.surfaceDefault,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: colors.borderDefault),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                        color: _green.withOpacity(0.12),
+                        shape: BoxShape.circle),
+                    child: const Center(
+                      child: Icon(Icons.person_outline,
+                          color: _green, size: 18),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                            group.memberDisplayNames[entry.key] ??
+                                'Member (${entry.key.substring(0, 6)}…)',
+                            style: TextStyle(
+                                color: colors.textPrimary, fontSize: 13)),
+                        Text(
+                            'Paid $symbol${entry.value.toStringAsFixed(0)}',
+                            style: TextStyle(
+                                color: colors.textSecondary,
+                                fontSize: 12)),
+                      ],
+                    ),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(isPositive ? 'gets back' : 'owes',
+                          style: TextStyle(
+                              color: isPositive
+                                  ? _green
+                                  : const Color(0xFFFF6B6B),
+                              fontSize: 11)),
+                      Text('$symbol${net.abs().toStringAsFixed(0)}',
+                          style: TextStyle(
+                              color: isPositive
+                                  ? _green
+                                  : const Color(0xFFFF6B6B),
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700)),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          }),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 50,
+            child: ElevatedButton(
+              onPressed: () => context.push('/balances'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _green,
+                foregroundColor: Colors.black,
+                elevation: 0,
+                shape: const StadiumBorder(),
+              ),
+              child: const Text('Settle Up',
+                  style: TextStyle(
+                      fontWeight: FontWeight.w700, fontSize: 15)),
             ),
-          );
-        }),
+          ),
+        ],
       ],
     );
   }
@@ -1169,193 +1271,6 @@ class _DonutChartPainter extends CustomPainter {
   @override
   bool shouldRepaint(_DonutChartPainter old) =>
       old.segments != segments || old.colors != colors;
-}
-
-// ── Balances tab ──────────────────────────────────────────────────────────────
-class _BalancesTab extends StatelessWidget {
-  const _BalancesTab({required this.expenses, required this.group});
-  final List<ExpenseEntity> expenses;
-  final GroupEntity group;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-    final symbol = group.currency == 'INR' ? '₹' : group.currency;
-    // Simple net balance per member: paid - fair share
-    final total = expenses.fold(0.0, (s, e) => s + e.amount);
-    final memberCount = group.memberIds.length;
-    if (memberCount == 0) return const _ComingSoon(label: 'Balances');
-    final fairShare = total / memberCount;
-
-    final paid = <String, double>{};
-    for (final e in expenses) {
-      paid[e.paidBy] = (paid[e.paidBy] ?? 0) + e.amount;
-    }
-
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
-      children: [
-        const Text('Who paid what',
-            style: TextStyle(
-                color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
-        const SizedBox(height: 4),
-        Text('Fair share per person: $symbol${fairShare.toStringAsFixed(0)}',
-            style: TextStyle(color: colors.textSecondary, fontSize: 13)),
-        const SizedBox(height: 20),
-        ...paid.entries.map((entry) {
-          final net = entry.value - fairShare;
-          final isPositive = net > 0;
-          return Container(
-            margin: const EdgeInsets.only(bottom: 10),
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: colors.surfaceDefault,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: colors.borderDefault),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: _green.withOpacity(0.12),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Center(
-                    child: Icon(Icons.person_outline, color: _green, size: 18),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                          group.memberDisplayNames[entry.key] ??
-                              'Member (${entry.key.substring(0, 6)}…)',
-                          style: const TextStyle(
-                              color: Colors.white, fontSize: 13)),
-                      Text('Paid $symbol${entry.value.toStringAsFixed(0)}',
-                          style: TextStyle(
-                              color: colors.textSecondary, fontSize: 12)),
-                    ],
-                  ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      isPositive ? 'gets back' : 'owes',
-                      style: TextStyle(
-                          color: isPositive
-                              ? _green
-                              : const Color(0xFFFF6B6B),
-                          fontSize: 11),
-                    ),
-                    Text(
-                      '$symbol${net.abs().toStringAsFixed(0)}',
-                      style: TextStyle(
-                          color: isPositive
-                              ? _green
-                              : const Color(0xFFFF6B6B),
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          );
-        }),
-        const SizedBox(height: 8),
-        // Settle Up CTA
-        if (paid.isNotEmpty)
-          SizedBox(
-            height: 50,
-            child: ElevatedButton(
-              onPressed: () => context.push('/balances'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _green,
-                foregroundColor: Colors.black,
-                elevation: 0,
-                shape: const StadiumBorder(),
-              ),
-              child: const Text('Settle Up',
-                  style: TextStyle(
-                      fontWeight: FontWeight.w700, fontSize: 15)),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-// ── Totals tab ────────────────────────────────────────────────────────────────
-class _TotalsTab extends StatelessWidget {
-  const _TotalsTab({required this.expenses, required this.group});
-  final List<ExpenseEntity> expenses;
-  final GroupEntity group;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-    final symbol = group.currency == 'INR' ? '₹' : group.currency;
-    final total = expenses.fold(0.0, (s, e) => s + e.amount);
-    final byCategory = <ExpenseCategory, double>{};
-    for (final e in expenses) {
-      byCategory[e.category] = (byCategory[e.category] ?? 0) + e.amount;
-    }
-
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
-      children: [
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: _green.withOpacity(0.08),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: _green.withOpacity(0.2)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Grand Total',
-                  style: TextStyle(color: colors.textSecondary, fontSize: 12)),
-              const SizedBox(height: 4),
-              Text('$symbol${total.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                      color: _green,
-                      fontSize: 28,
-                      fontWeight: FontWeight.w800)),
-              Text('${expenses.length} expense${expenses.length == 1 ? '' : 's'}',
-                  style: TextStyle(color: colors.textSecondary, fontSize: 13)),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-        const Text('By Category',
-            style: TextStyle(
-                color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
-        const SizedBox(height: 12),
-        ...byCategory.entries.map((e) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(e.key.label,
-                      style: const TextStyle(color: Colors.white, fontSize: 14)),
-                  Text('$symbol${e.value.toStringAsFixed(0)}',
-                      style: const TextStyle(
-                          color: _green,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600)),
-                ],
-              ),
-            )),
-      ],
-    );
-  }
 }
 
 // ── Whiteboard tab ────────────────────────────────────────────────────────────
@@ -1459,7 +1374,7 @@ class _MembersTab extends StatelessWidget {
 
     return ListView.builder(
       padding: const EdgeInsets.only(top: 8, bottom: 80),
-      itemCount: members.length + 2,
+      itemCount: members.length + 1,
       itemBuilder: (context, i) {
         // ── Section header ─────────────────────────────────────
         if (i == 0) {
@@ -1481,44 +1396,15 @@ class _MembersTab extends StatelessWidget {
             ),
           );
         }
-        // ── Add members row ─────────────────────────────────────
-        if (i == 1) {
-          return InkWell(
-            onTap: onAddMember,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              child: Row(
-                children: [
-                  Container(
-                    width: 46,
-                    height: 46,
-                    decoration: const BoxDecoration(
-                      color: _green,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.add_rounded, color: Colors.black, size: 24),
-                  ),
-                  const SizedBox(width: 14),
-                  Text(
-                    'Add members',
-                    style: TextStyle(
-                      color: colors.textPrimary,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
         // ── Member row ─────────────────────────────────────────
-        final idx = i - 2;
+        final idx = i - 1;
         final memberId = members[idx];
         final color = _memberColors[idx % _memberColors.length];
-        final initials = memberId.length >= 2
-            ? memberId.substring(0, 2).toUpperCase()
-            : memberId.toUpperCase();
+        final displayName =
+            group.memberDisplayNames[memberId] ?? memberId.substring(0, 8);
+        final initials = displayName.length >= 2
+            ? displayName.substring(0, 2).toUpperCase()
+            : displayName.toUpperCase();
         final isAdmin = idx == 0;
 
         return InkWell(
@@ -1545,7 +1431,7 @@ class _MembersTab extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        memberId,
+                        displayName,
                         style: TextStyle(
                           color: colors.textPrimary,
                           fontSize: 15,
@@ -2367,7 +2253,7 @@ class _ExpenseList extends ConsumerWidget {
                   width: 38,
                   height: 38,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF252525),
+                    color: colors.surfaceRaised,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(icon, color: _green, size: 18),
@@ -2378,8 +2264,8 @@ class _ExpenseList extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(e.description,
-                          style: const TextStyle(
-                              color: Colors.white,
+                          style: TextStyle(
+                              color: colors.textPrimary,
                               fontSize: 14,
                               fontWeight: FontWeight.w600)),
                       Text('$dateStr · Split among ${group.memberCount}',

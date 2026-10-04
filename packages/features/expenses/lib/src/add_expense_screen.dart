@@ -1711,7 +1711,7 @@ class _CategoryChip extends StatelessWidget {
       selected: selected,
       showCheckmark: false,
       onSelected: onSelected,
-      backgroundColor: const Color(0xFF1E1E1E),
+      backgroundColor: colors.surfaceRaised,
       selectedColor: colors.brandPrimaryLt,
       side: BorderSide(
           color: selected ? colors.brandPrimary : colors.borderDefault),

@@ -430,17 +430,26 @@ class _AddFriendSheet extends ConsumerStatefulWidget {
   ConsumerState<_AddFriendSheet> createState() => _AddFriendSheetState();
 }
 
-class _AddFriendSheetState extends ConsumerState<_AddFriendSheet> {
+class _AddFriendSheetState extends ConsumerState<_AddFriendSheet>
+    with SingleTickerProviderStateMixin {
   final _nameCtrl = TextEditingController();
   final _contactCtrl = TextEditingController();
   bool _saving = false;
+  late final TabController _tab;
 
   bool get _isValid =>
       _nameCtrl.text.trim().isNotEmpty &&
       _contactCtrl.text.trim().isNotEmpty;
 
   @override
+  void initState() {
+    super.initState();
+    _tab = TabController(length: 2, vsync: this);
+  }
+
+  @override
   void dispose() {
+    _tab.dispose();
     _nameCtrl.dispose();
     _contactCtrl.dispose();
     super.dispose();
@@ -508,76 +517,124 @@ class _AddFriendSheetState extends ConsumerState<_AddFriendSheet> {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    return Padding(
-      padding: EdgeInsets.only(bottom: max(MediaQuery.of(context).viewInsets.bottom, MediaQuery.of(context).padding.bottom + 80)),
-      child: Container(
-        margin: const EdgeInsets.all(12),
-        padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(context).padding.bottom + 80),
+    return DraggableScrollableSheet(
+      initialChildSize: 0.75,
+      maxChildSize: 0.92,
+      minChildSize: 0.5,
+      builder: (_, scrollCtrl) => Container(
         decoration: BoxDecoration(
           color: colors.surfaceDefault,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              children: [
-                const Text('Add Friend',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700)),
-                const Spacer(),
-                IconButton(
-                  icon: Icon(Icons.close, color: colors.textSecondary),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            _DarkField(
-              ctrl: _nameCtrl,
-              label: 'Full name',
-              icon: Icons.person_outline,
-              capitalize: true,
-              onChanged: (_) => setState(() {}),
-            ),
-            const SizedBox(height: 12),
-            _DarkField(
-              ctrl: _contactCtrl,
-              label: 'Phone number or email',
-              icon: Icons.alternate_email_rounded,
-              onChanged: (_) => setState(() {}),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'If they have a Splitbo account we\'ll link automatically. Otherwise they\'re added as a guest.',
-              style: TextStyle(color: colors.textSecondary, fontSize: 12, height: 1.4),
-            ),
-            const SizedBox(height: 20),
-            if (_isValid)
-              SizedBox(
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: _saving ? null : _save,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _green,
-                    foregroundColor: Colors.black,
-                    elevation: 0,
-                    shape: const StadiumBorder(),
-                  ),
-                  child: _saving
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2.5, color: Colors.black))
-                      : const Text('Add Friend',
-                          style: TextStyle(
-                              fontSize: 15, fontWeight: FontWeight.w700)),
-                ),
+            Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 4),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: colors.textSecondary.withOpacity(0.4),
+                borderRadius: BorderRadius.circular(2),
               ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              child: Row(
+                children: [
+                  Text('Add Friend',
+                      style: TextStyle(
+                          color: colors.textPrimary,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700)),
+                  const Spacer(),
+                  IconButton(
+                    icon: Icon(Icons.close, color: colors.textSecondary),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+            TabBar(
+              controller: _tab,
+              indicatorColor: _green,
+              labelColor: _green,
+              unselectedLabelColor: colors.textSecondary,
+              tabs: const [Tab(text: 'Manual'), Tab(text: 'Search')],
+            ),
+            Expanded(
+              child: TabBarView(
+                controller: _tab,
+                children: [
+                  // ── Manual tab ──────────────────────────────────
+                  ListView(
+                    controller: scrollCtrl,
+                    padding: EdgeInsets.fromLTRB(
+                        20, 20, 20, MediaQuery.of(context).padding.bottom + 20),
+                    children: [
+                      Text(
+                        'Add by name. Provide email or phone to link an existing Splitbo account automatically.',
+                        style: TextStyle(
+                            color: colors.textSecondary,
+                            fontSize: 13,
+                            height: 1.4),
+                      ),
+                      const SizedBox(height: 20),
+                      _DarkField(
+                        ctrl: _nameCtrl,
+                        label: 'Name *',
+                        icon: Icons.person_outline,
+                        capitalize: true,
+                        onChanged: (_) => setState(() {}),
+                      ),
+                      const SizedBox(height: 12),
+                      _DarkField(
+                        ctrl: _contactCtrl,
+                        label: 'Email (optional)',
+                        icon: Icons.email_outlined,
+                        onChanged: (_) => setState(() {}),
+                      ),
+                      const SizedBox(height: 20),
+                      if (_isValid)
+                        SizedBox(
+                          height: 52,
+                          child: ElevatedButton(
+                            onPressed: _saving ? null : _save,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _green,
+                              foregroundColor: Colors.black,
+                              elevation: 0,
+                              shape: const StadiumBorder(),
+                            ),
+                            child: _saving
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2.5,
+                                        color: Colors.black))
+                                : const Text('Add Friend',
+                                    style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700)),
+                          ),
+                        ),
+                    ],
+                  ),
+                  // ── Search tab ──────────────────────────────────
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Text(
+                        'Search by name coming soon',
+                        style: TextStyle(
+                            color: colors.textSecondary, fontSize: 15),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
