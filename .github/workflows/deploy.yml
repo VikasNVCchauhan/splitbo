@@ -32,6 +32,9 @@ jobs:
           cd app
           flutter build web --release --no-tree-shake-icons --base-href "/splitbo/"
 
+      - name: Add GitHub Pages route fallback
+        run: cp app/build/web/index.html app/build/web/404.html
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: app/build/web
